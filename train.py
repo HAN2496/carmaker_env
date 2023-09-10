@@ -9,7 +9,7 @@
 """
 import sys
 
-from UTurn_env3 import CarMakerEnv
+from env_UTurn1 import CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -45,12 +45,12 @@ def make_env(rank, seed=0):
     return _init
 
 def main():
-    env_num = 3
     num_proc = 2
+
+    env_num = 3
     road_type = "UTurn"
     naming = "env{}".format(env_num)
     prefix = road_type + "/" + naming
-
     args = Args(prefix=prefix, alg='sac')
 
     bestRewardCallback = getBestRewardCallback(args)
