@@ -39,6 +39,7 @@ class CarMakerEnv(gym.Env):
     def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_DLC'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
+        self.road_type = "DLC"
         
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 1
@@ -66,7 +67,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.traj_data = pd.read_csv("datafiles/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
         self.cm_thread.join()

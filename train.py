@@ -46,7 +46,12 @@ def make_env(rank, seed=0):
 
 def main():
     num_proc = 2
-
+    """
+    변경할 부분
+    1. env_num: env_{road_tpye}_{num}의 num과 동일하게 맞춰줄 것
+    2. road_type: 현재 도로 입력할 것
+    3. 위의 import에 제대로 된 env를 불러왔는지 확인할 것
+    """
     env_num = 3
     road_type = "UTurn"
     naming = "env{}".format(env_num)
@@ -56,11 +61,11 @@ def main():
     bestRewardCallback = getBestRewardCallback(args)
 
     env = SubprocVecEnv([make_env(i) for i in range(num_proc)])
-    env = VecMonitor(env, "models/{}".format(prefix))
+    env = VecMonitor(env, f"models/{prefix}")
 
     input("Program Start.\n")
 
-    model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join("tensorboard/{}".format(prefix)))
+    model = SAC('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join(f"tensorboard/{prefix}"))
 #    model = PPO.load("UTurn_env22_best_model.pkl", env=env, verbos=1, tensorboard_log=os.path.join("tensorboard/{}/Additional_study".format(naming)))
 
     try:
@@ -71,7 +76,7 @@ def main():
 
     finally:
         print("Saving model..")
-        model.save("models/{}_last.pkl".format(prefix))
+        model.save(f"models/{prefix}_last.pkl")
         print("Model saved.")
 
 

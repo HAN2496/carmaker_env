@@ -12,32 +12,31 @@ import matplotlib.pyplot as plt
 from stable_baselines3 import SAC
 
 if __name__ == '__main__':
+    road_type = "DLC"
+    env_num = "1"
     data_name = 'RL_ISO3888'
+
+
     env = CarMakerEnv(host='127.0.0.1', port=9999)
-    model = SAC.load("env13_best_model.pkl", env=env)
+    model = SAC.load(f"{road_type}/env{env_num}/env13_best_model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()
-    action1 = []
-    reward_arr=[]
+    action_lst = []
+    reward_lst=[]
     info_lst = []
-
-    tmp=0
     while True:
-        tmp+=1
         action = model.predict(obs)
         obs, reward, done, info = env.step(action[0])
         info_lst.append(info)
-        if tmp % 5 ==0:
-            action1.append(action[0])
-            reward_arr.append(reward)
-
+        action_lst.append(action[0])
+        reward_lst.append(reward)
         if done:
-            df1 = pd.DataFrame(data=reward_arr)
+            df1 = pd.DataFrame(data=reward_lst)
             df1.to_csv('{}_reward.csv'.format(data_name))
             df3 = pd.DataFrame(data=info_lst)
             df3.to_csv('{}_info.csv'.format(data_name), index=False)
-            df4 = pd.DataFrame(data=action1)
+            df4 = pd.DataFrame(data=action_lst)
             df4.to_csv('{}_action.csv'.format(data_name), index=False)
             print("Episode Finished.")
             break

@@ -40,6 +40,7 @@ class CarMakerEnv(gym.Env):
         # Action과 State의 크기 및 형태를 정의.
         # 예제에서는 3개의 action(brake, gas, steering angle)과 1개의 state(car.vx)를 예시로 작성
         self.check = check
+        self.road_type = "UTurn"
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
@@ -67,7 +68,7 @@ class CarMakerEnv(gym.Env):
         self.roll_before = 0
         self.yaw_before = 0
 
-        self.traj_data = pd.read_csv("datafiles/datasets_traj_UTurn_1.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_UTurn_1.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
         self.cm_thread.join()
