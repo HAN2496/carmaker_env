@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-data = pd.read_csv('datasets_traj_SLALOM_env17.csv')
+data = pd.read_csv('datasets_traj_DLC1.csv')
 sight = 27
 traj_tx = data.loc[:, "traj_tx"].values
 traj_tx_last = traj_tx[-1]
