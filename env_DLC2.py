@@ -47,7 +47,7 @@ class CarMakerEnv(gym.Env):
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 13
+        env_obs_num = 23
         sim_obs_num = 13
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -98,9 +98,10 @@ class CarMakerEnv(gym.Env):
         car_pos = np.array([0, 0, 0])
         car_v = 0
         car_steer = np.array([0, 0, 0])
-        car_dev = np.array([0, 0])
         car_alHori = 0
         car_roll = 0
+        cones_rel = np.zeros((20, 2))
+        collision=0
 
         done = False
 
@@ -140,16 +141,14 @@ class CarMakerEnv(gym.Env):
             car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
             car_roll = state[11]
-            lookahead_arr = [0, 5, 10, 15]
-            lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_arr)
-            lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
             sight = 5
             cone_in_sight = self.cone_arr.cone_in_sight(car_pos[0], sight)
-            cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight)
-            state = np.concatenate((np.array([car_steer[0], car_v]), car_dev, np.array([car_alHori]), lookahead_traj_rel))
+            cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight) # 20
+            collision = self.pass_cone_line(cones_rel)
+            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), cones_rel.flatten())) # 3 + 20
 
         # 리워드 계산
-        reward_state = np.concatenate((car_dev, np.array([car_alHori]), np.array([car_pos[0]])))
+        reward_state = np.concatenate((np.array([car_pos[0], car_alHori, collision])))
         reward = self.getReward(reward_state, time)
         info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : car_pos[0], "cary" : car_pos[1],
                 "caryaw" : car_pos[2], "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
@@ -191,6 +190,21 @@ class CarMakerEnv(gym.Env):
 
         return np.array(relative_coords)
 
+    def pass_cone_line(self, cones_rel):
+        width = 1.568
+        l1, l2 = 2.1976004311961135, 4.3 - 2.1976004311961135
+
+        car_upper_line = LineString([(-l1, width/2), (l2, width/2)])
+        car_lower_line = LineString([(-l1, -width/2), (l2, -width/2)])
+
+        for i in range(0, len(cones_rel)-1, 2):
+            cone1 = cones_rel[i]
+            cone2 = cones_rel[i+1]
+            line = LineString([cone1, cone2])
+            if car_upper_line.intersects(line) and car_lower_line.intersects(line):
+                return 0
+        return 1
+
     def getReward(self, state, time):
         time = time
 
@@ -198,25 +212,22 @@ class CarMakerEnv(gym.Env):
             # 에피소드 종료시
             return 0.0
 
-        dev_dist = abs(state[0])
-        dev_ang = abs(state[1])
-        alHori = abs(state[2])
-        car_x = state[3]
-
-        #devDist, devAng에 따른 리워드
-        reward_devDist = dev_dist * 100
-        reward_devAng = dev_ang * 500
+        carx = state[0]
+        alHori = state[1]
+        collision = state[2]
 
         #직선경로에서 차의 횡가속도를 0에 가깝게 만들기 위한 리워드
-        if car_x <= 50 or car_x >=111:
-            a_reward = alHori
+        if carx <= 50 or carx >=111:
+            a_reward = np.abs(alHori) * 1000
         else:
             a_reward = 0
 
-        e = - reward_devDist - reward_devAng - a_reward
+        col_reward = collision * 4000
+
+        e = - a_reward - col_reward
 
         if self.test_num % 300 == 0 and self.check == 0:
-            print("Time: {}, Reward : [ dist : {}] [ angle : {}] [alHori : {}]".format(time, round(dev_dist,3), round(dev_ang, 3), round(a_reward, 3)))
+            print(f"Time: {time}, [Reward: e], [alHori: {a_reward}], [col: {col_reward}]")
 
         return e
 

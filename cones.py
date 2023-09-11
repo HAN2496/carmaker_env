@@ -159,7 +159,7 @@ class Cone:
 
 if __name__ == "__main__":
     cones = Cone(1)
-    carx, cary, caryaw = 3, -8, 0
+    carx, cary, caryaw = 60, -8, 0.1
     cone_sight = cones.cone_in_sight(carx, 5)
     print(cone_sight)
     cones_rel = cones.to_relative_coordinates(carx, cary, caryaw, cones.cones)
