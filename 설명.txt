@@ -1,4 +1,9 @@
-U Turn
+[LANE CHANGE]
+env1:
+env2: 콘 state로 주고 충돌시 벌점
+
+
+[U Turn]
 env1: 동일한 위치에서의 IPG의 데이터를 주고 리워드를 줌.
 env2: IPG 뿐만 아니라 RL의 데이터도 주고 리워드를 줌.
 env3: PPO 시도 - 더 짧은 시야 제공. but 안됨
