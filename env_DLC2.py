@@ -11,6 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
+from cones import *
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -66,6 +67,7 @@ class CarMakerEnv(gym.Env):
         self.cm_thread.start()
 
         self.test_num = 0
+        self.cone_arr = Cone(1)
 
         self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
@@ -141,6 +143,7 @@ class CarMakerEnv(gym.Env):
             lookahead_arr = [0, 5, 10, 15]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_arr)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
+            sight = 5
             state = np.concatenate((np.array([car_steer[0], car_v]), car_dev, np.array([car_alHori]), lookahead_traj_rel))
 
         # 리워드 계산
