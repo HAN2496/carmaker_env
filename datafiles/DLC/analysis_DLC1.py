@@ -15,10 +15,10 @@ def str_to_float(df):
 
 def load_data(prefix, road_type):
     data = {}
-    data['info'] = pd.read_csv(f'{road_types}/{prefix}_info.csv')
-    data['reward'] = pd.read_csv(f'{road_types}/{prefix}_reward.csv').loc[:, "0"].values
+    data['info'] = pd.read_csv(f'{prefix}_info.csv')
+    data['reward'] = pd.read_csv(f'{prefix}_reward.csv').loc[:, "0"].values
     if prefix != 'datasets_traj':
-        data['action'] = pd.read_csv(f'{road_types}/{prefix}_action.csv')
+        data['action'] = pd.read_csv(f'{prefix}_action.csv')
     return data
 
 def extract_data(data, prefix):
@@ -42,7 +42,7 @@ def extract_data(data, prefix):
 
 #수정하는 부분
 road_types = 'DLC'
-df_traj = pd.read_csv(f'datafiles/{road_types}/datasets_traj_DLC.csv')
+df_traj = pd.read_csv(f'datasets_traj.csv')
 
 ipg = load_data('IPG', road_types)
 rl = load_data('RL', road_types)
