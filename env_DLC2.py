@@ -144,6 +144,8 @@ class CarMakerEnv(gym.Env):
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_arr)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
             sight = 5
+            cone_in_sight = self.cone_arr.cone_in_sight(car_pos[0], sight)
+            cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight)
             state = np.concatenate((np.array([car_steer[0], car_v]), car_dev, np.array([car_alHori]), lookahead_traj_rel))
 
         # 리워드 계산
