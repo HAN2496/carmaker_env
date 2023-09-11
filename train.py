@@ -9,7 +9,7 @@
 """
 import sys
 
-from env_UTurn1 import CarMakerEnv
+from env_DLC2 import CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -45,15 +45,16 @@ def make_env(rank, seed=0):
     return _init
 
 def main():
-    num_proc = 2
     """
     변경할 부분
     1. env_num: env_{road_tpye}_{num}의 num과 동일하게 맞춰줄 것
     2. road_type: 현재 도로 입력할 것
     3. 위의 import에 제대로 된 env를 불러왔는지 확인할 것
     """
-    env_num = 3
-    road_type = "UTurn"
+    env_num = 2
+    road_type = "DLC"
+
+    num_proc = 2
     naming = "env{}".format(env_num)
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')
