@@ -45,10 +45,9 @@ class CarMakerEnv(gym.Env):
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        self.cone = np.array([[50 + 30 * i, -3] for i in range(10)])
 
         env_obs_num = 23
-        sim_obs_num = 11
+        sim_obs_num = 13
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
@@ -67,9 +66,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.test_num = 0
         self.cone_arr = Cone(2)
-
 
     def __del__(self):
         self.cm_thread.join()
@@ -225,7 +222,7 @@ class CarMakerEnv(gym.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(check=0, simul_path='test_IPG_env18')
+    env = CarMakerEnv(check=0)
     act_lst = []
     next_state_lst = []
     info_lst = []
@@ -239,23 +236,20 @@ if __name__ == "__main__":
         done = False
         while not done:
             action = env.action_space.sample()  # 랜덤 액션 선택
-            if i==0:
-                act_lst.append(action)
-                df = pd.DataFrame(data=act_lst)
             next_state, reward, done, info = env.step(action)
-
-            if i==0:
-                next_state_lst.append(next_state)
-                info_lst.append(info)
+            next_state_lst.append(next_state)
+            info_lst.append(info)
+            act_lst.append(action)
+            df = pd.DataFrame(data=act_lst)
 
             if done == True:
                 print("Episode Finished.")
-                df.to_csv('env_action_check.csv')
+                df.to_csv('datafiles/SLALOM/env_test/env_action_check.csv')
 
                 df2 = pd.DataFrame(data=next_state_lst)
-                df2.to_csv('env_state_check.csv', index=False)
+                df2.to_csv('datafiles/SLALOM/env_test/env_state_check.csv', index=False)
 
                 df3 = pd.DataFrame(data=info_lst)
-                df3.to_csv('env_info_check.csv', index=False)
+                df3.to_csv('datafiles/SLALOM/env_test/env_info_check.csv', index=False)
 
                 break
