@@ -15,12 +15,13 @@ class Cone:
 
     def create_DLC_cone(self):
         sections = [
-            {'start': 0, 'gap': 5, 'cone_dist': 1.9748, 'num': 9, 'y_offset': -8.0525},
-            {'start': 50, 'gap': 3, 'cone_dist': 1.9748, 'num': 5, 'y_offset': -8.0525},
-            {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.52, 'num': 5, 'y_offset': -4.8315},
-            {'start': 99, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -8.0525},
-            {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 9, 'y_offset': -8.0525},
-            {'start': 161, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -8.0525}
+            {'start': 0, 'gap': 5, 'cone_dist': 1.9748, 'num': 10, 'y_offset': -8.0525},
+            {'start': 50, 'gap': 3, 'cone_dist': 1.9748, 'num': 5, 'y_offset': -8.0525}, #
+            {'start': 62, 'gap': 2.7, 'cone_dist': 5.4684, 'num': 5, 'y_offset': -6.3057},
+            {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.52, 'num': 5, 'y_offset': -4.8315}, #
+            {'start': 86.5, 'gap': 2.5, 'cone_dist': 5.981, 'num': 5, 'y_offset': -6.562},
+            {'start': 99, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -8.0525}, #
+            {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 15, 'y_offset': -8.0525}
         ]
 
         cones = []
@@ -159,6 +160,8 @@ class Cone:
 
 if __name__ == "__main__":
     cones = Cone(1)
+    plt.scatter(cones.cones[:, 0], cones.cones[:,1])
+    plt.axis("equal")
     carx, cary, caryaw = 60, -8, 0.1
     cone_sight = cones.cone_in_sight(carx, 5)
     print(cone_sight)
