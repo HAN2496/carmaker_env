@@ -44,7 +44,7 @@ class CarMakerEnv(gym.Env):
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        env_obs_num = 30
+        env_obs_num = 27
         sim_obs_num = 13
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -146,9 +146,8 @@ class CarMakerEnv(gym.Env):
             extract_key = ['alHori', 'caryaw', 'Steer.Vel']
             ipg_state_dict = self.find_ipg_data(car_pos[0])
             ipg_state = np.array([ipg_state_dict[key] for key in extract_key if key in ipg_state_dict])
-            rl_state = np.array([car_alHori, car_pos[2], car_steer[1]])
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
-            state = np.concatenate((np.array([car_steer[0], car_v]), car_dev, lookahead_traj_rel, ipg_state, rl_state)) #4 + 20 + 3 + 3
+            state = np.concatenate((np.array([car_steer[0], car_v]), car_dev, lookahead_traj_rel, ipg_state)) #4 + 20 + 3
 
         # 리워드 계산
         reward_state = np.concatenate((np.array([car_v, car_roll, car_pos[2], car_alHori, car_pos[0]]), car_steer, car_dev))
