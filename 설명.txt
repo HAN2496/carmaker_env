@@ -1,7 +1,11 @@
-[LANE CHANGE]
+[DLC(LANE CHANGE)]
 env1:
 env2: 콘 state로 주고 충돌시 벌점
 
+[SLALOM]
+env1:
+env2:
+env3: cones 제작하여 학습
 
 [U Turn]
 env1: 동일한 위치에서의 IPG의 데이터를 주고 리워드를 줌.

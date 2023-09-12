@@ -11,6 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
+import math
 from cones import *
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
@@ -37,19 +38,17 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_DLC'):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
-        self.road_type = "DLC"
-        
-        #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
+        self.road_type = "SLALOM"
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 23
-        sim_obs_num = 13
+        self.cone = np.array([[50 + 30 * i, -3] for i in range(10)])
 
+        env_obs_num = 23
+        sim_obs_num = 11
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
@@ -67,9 +66,10 @@ class CarMakerEnv(gym.Env):
         self.cm_thread.start()
 
         self.test_num = 0
-        self.cone_arr = Cone(1)
 
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.test_num = 0
+        self.cone_arr = Cone(2)
+
 
     def __del__(self):
         self.cm_thread.join()
@@ -90,17 +90,16 @@ class CarMakerEnv(gym.Env):
         return self._initial_state()
 
     def step(self, action1):
-        #Simulink의 tcpiprcv와 tcpipsend를 연결
         action = np.append(action1, self.test_num)
-
         self.test_num += 1
         time = 0
-        car_pos = np.array([0, 0, 0])
-        car_v = 0
-        car_steer = np.array([0, 0, 0])
         car_alHori = 0
+        car_pos = np.array([0, 0, 0])
+        car_steer = np.array([0, 0, 0])
+        collision = 0
+        car_v = 0
         car_roll = 0
-        collision=0
+        collision = 0
 
         done = False
 
@@ -132,62 +131,26 @@ class CarMakerEnv(gym.Env):
         else:
             # 튜플로 넘어온 값을 numpy array로 변환
             state = np.array(state) #어레이 변환
-            state = state[1:] #connect 제거
-            time = state[0] # Time
-            car_pos = state[1:4] # Car.(x, y, yaw)
-            car_v = state[4] #Car.v
-            car_steer = state[5:8] #Car.Steer.(Ang, Vel, Acc)
-            car_dev = state[8:10] #Car.DevDist, Car.DevAng
-            car_alHori = state[10] #alHori
-            car_roll = state[11]
+            state = state[1:]
+            time = state[0]
+            car_pos = state[1:4] #x, y, yaw
+            car_v = state[4] #1
+            car_steer = state[5:8]
+            car_alHori = state[8]
+            car_roll = state[9]
             sight = 5
-            cone_in_sight = self.cone_arr.cone_in_sight(car_pos[0], sight)
+            cone_in_sight = self.cone_arr.cone_in_sight(car_pos[0], sight) # (10, 2)
             cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight) # 20
             collision = self.pass_cone_line(cones_rel)
-            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), cones_rel.flatten())) # 3 + 20
+            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), cones_rel.flatten()))
 
         # 리워드 계산
         reward_state = np.array([car_pos[0], car_alHori, collision])
         reward = self.getReward(reward_state, time)
         info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : car_pos[0], "cary" : car_pos[1],
-                "caryaw" : car_pos[2], "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
+                "caryaw" : car_pos[2], "carv" : car_v, "AlHori" : car_alHori, "Roll": car_roll}
+
         return state, reward, done, info
-
-    #lookahead trajectory의 위치 반환
-    def find_lookahead_traj(self, x, y, distances):
-        distances = np.array(distances)
-        result_points = []
-
-        min_idx = np.argmin(np.sum((self.traj_data - np.array([x, y])) ** 2, axis=1))
-
-        for dist in distances:
-            lookahead_idx = min_idx
-            total_distance = 0.0
-            while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
-                total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
-                lookahead_idx += 1
-
-            if lookahead_idx < len(self.traj_data):
-                result_points.append(self.traj_data[lookahead_idx])
-            else:
-                result_points.append(self.traj_data[-1])
-
-        return result_points
-
-    #절대좌표를 상대좌표로 변환
-    def to_relative_coordinates(self, x, y, yaw, abs_coords):
-        relative_coords = []
-
-        for point in abs_coords:
-            dx = point[0] - x
-            dy = point[1] - y
-
-            rotated_x = dx * np.cos(-yaw) - dy * np.sin(-yaw)
-            rotated_y = dx * np.sin(-yaw) + dy * np.cos(-yaw)
-
-            relative_coords.append((rotated_x, rotated_y))
-
-        return np.array(relative_coords)
 
     def pass_cone_line(self, cones_rel):
         width = 1.568
@@ -214,6 +177,30 @@ class CarMakerEnv(gym.Env):
         else:
             return 0
 
+    def find_cones(self, carx):
+        if carx <= 50:
+            return np.array([[-5000, -300], [50, -3]])
+        elif carx >= 320:
+            return np.array([[320, -3], [4200, -300]])
+        else:
+            for i in range(1, 10):
+                if carx - 50 - 30 * i <= 0:
+                    return np.array([[50 + 30 * (i - 1), -3], [50 + 30 * i, -3]])
+
+    def to_relative_coordinates(self, x, y, yaw, arr):
+        relative_coords = []
+
+        for point in arr:
+            dx = point[0] - x
+            dy = point[1] - y
+
+            rotated_x = dx * np.cos(-yaw) - dy * np.sin(-yaw)
+            rotated_y = dx * np.sin(-yaw) + dy * np.cos(-yaw)
+
+            relative_coords.append((rotated_x, rotated_y))
+
+        return np.array(relative_coords)
+
     def getReward(self, state, time):
         time = time
 
@@ -225,31 +212,26 @@ class CarMakerEnv(gym.Env):
         alHori = state[1]
         collision = state[2]
 
-        #직선경로에서 차의 횡가속도를 0에 가깝게 만들기 위한 리워드
-        if carx <= 50 or carx >=111:
-            a_reward = np.abs(alHori) * 1000
-        else:
-            a_reward = 0
-
         col_reward = collision * 4000
 
-        e = - a_reward - col_reward
+        e = - col_reward
 
         if self.test_num % 300 == 0 and self.check == 0:
-            print(f"Time: {time}, [Reward: {e}], [alHori: {a_reward}], [col: {col_reward}]")
+            print(f"Time: {time}, [Reward: {e}], [col: {col_reward}]")
 
         return e
 
 
+
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(check=0)
+    env = CarMakerEnv(check=0, simul_path='test_IPG_env18')
     act_lst = []
     next_state_lst = []
     info_lst = []
 
 
-    for i in range(2):
+    for i in range(1):
         # 환경 초기화
         state = env.reset()
 
