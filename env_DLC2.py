@@ -226,7 +226,7 @@ class CarMakerEnv(gym.Env):
         e = - a_reward - col_reward
 
         if self.test_num % 300 == 0 and self.check == 0:
-            print(f"Time: {time}, [Reward: e], [alHori: {a_reward}], [col: {col_reward}]")
+            print(f"Time: {time}, [Reward: {e}], [alHori: {a_reward}], [col: {col_reward}]")
 
         return e
 
