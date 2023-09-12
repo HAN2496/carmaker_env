@@ -78,6 +78,7 @@ def main():
     finally:
         print("Saving model..")
         model.save(f"models/{prefix}_last.pkl")
+        model.save(f"modeltmp/{prefix}_last.pkl")
         print("Model saved.")
 
 
