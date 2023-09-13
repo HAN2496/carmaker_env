@@ -5,7 +5,8 @@ env2: 콘 state로 주고 충돌시 벌점
 [SLALOM]
 env1:
 env2:
-env3: cones 제작하여 학습
+env3: cones 제작하여 학습 -> 꺾어야 하는 부분에서 꺾이지 않음
+ 1) 로드를 더 넓게?
 
 [U Turn]
 env1: 동일한 위치에서의 IPG의 데이터를 주고 리워드를 줌.
