@@ -33,9 +33,9 @@ class Cone:
             {'start': 50, 'gap': 3, 'cone_dist': 1.9748, 'num': 5, 'y_offset': -8.0525}, #
             {'start': 64.7, 'gap': 2.7, 'cone_dist': 5.4684, 'num': 4, 'y_offset': -6.3057},
             {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.52, 'num': 5, 'y_offset': -4.8315}, #
-            {'start': 86.5, 'gap': 2.5, 'cone_dist': 5.981, 'num': 5, 'y_offset': -6.562},
+            {'start': 89, 'gap': 2.5, 'cone_dist': 5.981, 'num': 4, 'y_offset': -6.562},
             {'start': 99, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -8.0525}, #
-            {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 15, 'y_offset': -8.0525}
+            {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 20, 'y_offset': -8.0525}
         ]
 
         return self.create_cone(sections)
@@ -53,6 +53,12 @@ class Cone:
             {'start': 400, 'gap': 10, 'cone_dist': 5.25, 'num': 15, 'y_offset': -5.25}
         ]
         return self.create_cone(sections)
+
+    def see_cone(self):
+        plt.scatter(self.cones[:,0], self.cones[:, 1])
+        plt.axis("equal")
+        plt.xlim([50, 100])
+        plt.show()
 
     def cone_in_sight(self, carx, sight):
         return np.array([cone for cone in self.cones if carx - 2.1976004311961135 <= cone[0]][:sight*2])
@@ -189,8 +195,8 @@ class Cone:
             y_points = cones_rel[tmp1:tmp1+2][:, 1]
             plt.plot(x_points, y_points, '-')
 
-        ax.set_xlim(-5,5)
-        ax.set_ylim(-5, 5)
+        ax.set_xlim(-20,40)
+        ax.set_ylim(-10, 10)
         plt.show()
 """
     def check_collision(self, carx, cary, caryaw):
@@ -212,10 +218,10 @@ class Cone:
 """
 
 if __name__ == "__main__":
-    cones = Cone(2)
-    carx, cary, caryaw = 60, -5.2, 0
+    cones = Cone(1)
+    #cones.see_cone()
+    carx, cary, caryaw = 70, -3.2, 0
     cone_sight = cones.cone_in_sight(carx, 5)
-    print(cone_sight)
     cones_rel = cones.to_relative_coordinates(carx, cary, caryaw, cones.cones)
     print(cones.pass_cone_line(cones_rel))
     col = cones.check_collision(cones_rel)
