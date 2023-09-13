@@ -91,7 +91,29 @@ class Cone:
             cone2 = cones_rel[i+1]
             line = LineString([cone1, cone2])
             line_center = [(cone1[0] + cone2[0]) / 2, (cone1[1] + cone2[1]) / 2]
-           #자동차 영역에 있는지 확인
+            if car_upper_line.intersects(line) or car_lower_line.intersects(line):
+                check = 1
+                if not (car_upper_line.intersects(line) and car_lower_line.intersects(line)):
+                    return 1
+        if check == 0:
+            return 1
+        else:
+            return 0
+
+    def distance_from_car_to_line(self, cones_rel):
+        width = 1.568
+        l1, l2 = 2.1976004311961135, 4.3 - 2.1976004311961135
+        dist = 0
+        check = 0
+
+        car_upper_line = LineString([(-l1, width/2), (l2, width/2)])
+        car_lower_line = LineString([(-l1, -width/2), (l2, -width/2)])
+
+        for i in range(0, len(cones_rel)-1, 2):
+            cone1 = cones_rel[i]
+            cone2 = cones_rel[i+1]
+            line = LineString([cone1, cone2])
+            line_center = [(cone1[0] + cone2[0]) / 2, (cone1[1] + cone2[1]) / 2]
             if car_upper_line.intersects(line) or car_lower_line.intersects(line):
                 check = 1
                 # 연결선 중 하나라도 모두 교차하지 않을 경우
@@ -101,30 +123,6 @@ class Cone:
             return 1
         else:
             return 0
-
-    def distance_from_car_to_line(self, cones_rel, carx, cary):
-        width = 1.568
-        l1, l2 = 2.1976004311961135, 4.3 - 2.1976004311961135
-        closest_distance = float("inf")
-
-        car_upper_line = LineString([(-l1, width/2), (l2, width/2)])
-        car_lower_line = LineString([(-l1, -width/2), (l2, -width/2)])
-
-        for i in range(0, len(cones_rel) - 1, 2):
-            cone1 = cones_rel[i]
-            cone2 = cones_rel[i+1]
-            line = LineString([cone1, cone2])
-
-            # 연결선 중 자동차를 통과하는 연결선을 찾음
-            if car_upper_line.intersects(line) and car_lower_line.intersects(line):
-                # 해당 연결선의 중심점을 찾음
-                center = line.centroid
-                distance = center.distance(Point(carx, cary))
-
-                if distance < closest_distance:
-                    closest_distance = distance
-
-        return closest_distance
     def check_collision(self, cones_rel):
         width = 1.568
         length = 4.3
