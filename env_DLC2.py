@@ -140,11 +140,11 @@ class CarMakerEnv(gym.Env):
             car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
             car_roll = state[11]
-            sight = 5
+            sight = 10
             cone_in_sight = self.cone_arr.cone_in_sight(car_pos[0], sight)
             cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight) # 20
             collision = self.pass_cone_line(cones_rel)
-            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), cones_rel.flatten())) # 3 + 20
+            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), cones_rel.flatten())) # 3 + 40
 
         # 리워드 계산
         reward_state = np.array([car_pos[0], car_alHori, collision])
