@@ -51,14 +51,9 @@ def main():
     2. road_type: 현재 도로 입력할 것. DLC, SLALOM, UTurn
     3. 위의 import에 제대로 된 env를 불러왔는지 확인할 것
     """
-<<<<<<< Updated upstream
-    env_num = 3
-    road_type = "SLALOM"
-    comment = "2"
-=======
-    env_num = 4
+    env_num = 2
     road_type = "UTurn"
->>>>>>> Stashed changes
+    comment = "2nd"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
