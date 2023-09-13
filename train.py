@@ -60,11 +60,12 @@ def main():
     1. env_num: env_{road_tpye}_{num}의 num과 동일하게 맞춰줄 것
     2. road_type: 현재 도로 입력할 것. DLC, SLALOM, UTurn
     3. 위의 import에 제대로 된 env를 불러왔는지 확인할 것
+    4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
     env_num = 2
-    road_type = "check"
-    comment = "check"
-    explanation = "DLC 콘 수정 / sight 5 -> 10으로 증가"
+    road_type = "DLC"
+    comment = "3"
+    explanation = "DLC cone edited / sight 5 -> 10"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
