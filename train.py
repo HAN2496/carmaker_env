@@ -53,9 +53,10 @@ def main():
     """
     env_num = 3
     road_type = "SLALOM"
+    comment = "2"
 
     num_proc = 2
-    naming = "env{}".format(env_num)
+    naming = f"env{env_num}_{comment}"
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')
 
