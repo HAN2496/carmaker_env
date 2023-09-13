@@ -15,6 +15,8 @@ if __name__ == '__main__':
     road_type = "DLC"
     env_num = "1"
     data_name = 'RL'
+    comment = "WS_test"
+    prefix = data_name + comment
 
 
     env = CarMakerEnv(host='127.0.0.1', port=9999, simul_path='pythonCtrl_DLC')
@@ -34,10 +36,10 @@ if __name__ == '__main__':
         reward_lst.append(reward)
         if done:
             df1 = pd.DataFrame(data=reward_lst)
-            df1.to_csv(f'datafiles/{road_type}/{data_name}_reward.csv')
+            df1.to_csv(f'datafiles/{road_type}/{prefix}_reward.csv')
             df3 = pd.DataFrame(data=info_lst)
-            df3.to_csv(f'datafiles/{road_type}/{data_name}_info.csv', index=False)
+            df3.to_csv(f'datafiles/{road_type}/{prefix}_info.csv', index=False)
             df4 = pd.DataFrame(data=action_lst)
-            df4.to_csv(f'datafiles/{road_type}/{data_name}_action.csv', index=False)
+            df4.to_csv(f'datafiles/{road_type}/{prefix}_action.csv', index=False)
             print("Episode Finished. Data saved.")
             break

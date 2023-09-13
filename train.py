@@ -20,8 +20,7 @@ import torch
 import logging
 from datetime import datetime
 
-logging.basicConfig(filename='Log.txt', level=logging.INFO,
-                    format='%(asctime)s - %(message)s')
+logging.basicConfig(filename='Log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 # GPU를 사용할 수 있는지 확인합니다.
 if torch.cuda.is_available():
     device_id = 0
@@ -56,8 +55,8 @@ def main():
     3. 위의 import에 제대로 된 env를 불러왔는지 확인할 것
     """
     env_num = 2
-    road_type = "UTurn"
-    comment = "2nd"
+    road_type = "check"
+    comment = "check"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
