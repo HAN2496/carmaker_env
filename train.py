@@ -21,6 +21,13 @@ import logging
 from datetime import datetime
 
 logging.basicConfig(filename='Log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
+custom_logger = logging.getLogger('customLogger')
+handler = logging.FileHandler('Log.txt')
+formatter = logging.Formatter('%(message)s')
+handler.setFormatter(formatter)
+custom_logger.addHandler(handler)
+custom_logger.setLevel(logging.INFO)
+
 # GPU를 사용할 수 있는지 확인합니다.
 if torch.cuda.is_available():
     device_id = 0
@@ -74,6 +81,8 @@ def main():
 #    model = PPO.load("UTurn_env22_best_model.pkl", env=env, verbos=1, tensorboard_log=os.path.join("tensorboard/{}/Additional_study".format(naming)))
 
     try:
+        custom_logger.info(f"[{prefix}]")
+        custom_logger.info(f"")
         logging.info(f"{prefix} - Training Start")
         model.learn(total_timesteps=10000*400, log_interval=50, callback=bestRewardCallback)
 
