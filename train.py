@@ -64,6 +64,7 @@ def main():
     env_num = 2
     road_type = "check"
     comment = "check"
+    explanation = "DLC 콘 수정 / sight 5 -> 10으로 증가"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
@@ -82,7 +83,7 @@ def main():
 
     try:
         custom_logger.info(f"[{prefix}]")
-        custom_logger.info(f"")
+        custom_logger.info(f" --> {explanation}")
         logging.info(f"{prefix} - Training Start")
         model.learn(total_timesteps=10000*400, log_interval=50, callback=bestRewardCallback)
 
