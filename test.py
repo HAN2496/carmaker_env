@@ -18,7 +18,8 @@ if __name__ == '__main__':
 
 
     env = CarMakerEnv(host='127.0.0.1', port=9999, simul_path='pythonCtrl_DLC')
-    model = SAC.load(f"datafiles/{road_type}/608099_best_model.pkl", env=env)
+#    model = SAC.load(f"datafiles/{road_type}/608099_best_model.pkl", env=env)
+    model = SAC.load(f"model_forcheck/{road_type}/env2_2nd/991999_best_model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()
