@@ -13,11 +13,15 @@ from env_UTurn4 import CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
-from stable_baselines3.common.env_util import make_vec_env
 from stable_baselines3.common.vec_env import VecMonitor
 from stable_baselines3.common.utils import set_random_seed
 import os
 import torch
+import logging
+from datetime import datetime
+
+logging.basicConfig(filename='Log.txt', level=logging.INFO,
+                    format='%(asctime)s - %(message)s')
 # GPU를 사용할 수 있는지 확인합니다.
 if torch.cuda.is_available():
     device_id = 0
@@ -71,13 +75,16 @@ def main():
 #    model = PPO.load("UTurn_env22_best_model.pkl", env=env, verbos=1, tensorboard_log=os.path.join("tensorboard/{}/Additional_study".format(naming)))
 
     try:
+        logging.info(f"{prefix} - Training Start")
         model.learn(total_timesteps=10000*400, log_interval=50, callback=bestRewardCallback)
 
     except KeyboardInterrupt:
+        logging.info(f"{prefix} - Keyboard Interrupt")
         print("Learning interrupted. Will save the model now.")
 
     finally:
         print("Saving model..")
+        logging.info(f"{prefix} - Training End")
         model.save(f"models/{prefix}_last.pkl")
         model.save(f"model_forcheck/{prefix}_last.pkl")
         print("Model saved.")
