@@ -64,7 +64,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_UTurn_env23_1.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_UTurn_1.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
         self.cm_thread.join()

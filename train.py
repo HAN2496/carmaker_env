@@ -9,7 +9,7 @@
 """
 import sys
 
-from env_SLALOM3 import CarMakerEnv
+from env_UTurn4 import CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -51,11 +51,17 @@ def main():
     2. road_type: 현재 도로 입력할 것. DLC, SLALOM, UTurn
     3. 위의 import에 제대로 된 env를 불러왔는지 확인할 것
     """
+<<<<<<< Updated upstream
     env_num = 3
     road_type = "SLALOM"
+    comment = "2"
+=======
+    env_num = 4
+    road_type = "UTurn"
+>>>>>>> Stashed changes
 
     num_proc = 2
-    naming = "env{}".format(env_num)
+    naming = f"env{env_num}_{comment}"
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')
 
@@ -70,7 +76,7 @@ def main():
 #    model = PPO.load("UTurn_env22_best_model.pkl", env=env, verbos=1, tensorboard_log=os.path.join("tensorboard/{}/Additional_study".format(naming)))
 
     try:
-        model.learn(total_timesteps=10000*300, log_interval=50, callback=bestRewardCallback)
+        model.learn(total_timesteps=10000*400, log_interval=50, callback=bestRewardCallback)
 
     except KeyboardInterrupt:
         print("Learning interrupted. Will save the model now.")

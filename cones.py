@@ -42,7 +42,8 @@ class Cone:
 
     def create_SLALOM_cone(self):
         sections = [
-            {'start': 0, 'gap': 5, 'cone_dist': 2, 'num': 18, 'y_offset': -5.25}, #
+            {'start': 0, 'gap': 5, 'cone_dist': 2, 'num': 18, 'y_offset': -5.25},
+            {'start': 85, 'gap': 5, 'cone_dist': 5.25, 'num': 2, 'y_offset': -2.625}, #
             {'start': 100, 'gap': 60, 'cone_dist': 5.25, 'num': 5, 'y_offset': -2.625}, #
             {'start': 110, 'gap': 60, 'cone_dist': 5.25, 'num': 5, 'y_offset': -5.25},
             {'start': 120, 'gap': 60, 'cone_dist': 5.25, 'num': 5, 'y_offset': -5.25},
