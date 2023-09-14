@@ -1,35 +1,26 @@
-import gym
-from stable_baselines3 import PPO
-from stable_baselines3.common.evaluation import evaluate_policy
-from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.results_plotter import load_results, ts2xy
-import numpy as np
 import matplotlib.pyplot as plt
-import os
-log_dir = "/tmp/gym/"
-os.makedirs(log_dir, exist_ok=True)
-# Callback for plotting
-def plotting_callback(_locals, _globals):
-    global episode_rewards
-    # Get the monitor's data
-    x, y = ts2xy(load_results(log_dir), 'timesteps')
-    if len(x) > 0:
-        episode_rewards.append(y[-1])
-    if len(episode_rewards) % 10 == 0:  # plot every 10 episodes
-        plt.plot(episode_rewards)
-        plt.ylabel('Reward')
-        plt.xlabel('Episode')
-        plt.title('Training Progress')
-        plt.pause(0.01)
-    return True
+import numpy as np
 
-# Initialize the environment and PPO agent
-env = Monitor(gym.make('CartPole-v1'), filename=log_dir)
-model = PPO("MlpPolicy", env, verbose=1)
+# 1. y = -5.25인 직선
+x = np.linspace(0, 400, 1000)
+y = [-5.25 for _ in x]
 
-# Main training loop with plotting callback
-episode_rewards = []
-model.learn(total_timesteps=50000, callback=plotting_callback)
+plt.plot(x, y, label='y=-5.25', color='blue')
 
-# After training, display the progress
+# 2. (100, -5.25)를 기준으로 x값을 30만큼 증가시킨 100 개의 콘.
+x_cones = [100 + i*30 for i in range(10)]
+y_cones = [-5.25 for _ in x_cones]
+plt.scatter(x_cones, y_cones, label='Cones', color='red')
+
+# 3. (10, -5.25)을 중심으로 하는 직사각형
+rectangle = plt.Rectangle((5, -5.25), 4.3, 1.5, fill=True, color='green', label='car')
+plt.gca().add_patch(rectangle)
+
+# 그래프 출력
+plt.xlim(0, 400)
+plt.ylim(-10, 0)
+plt.xlabel('X')
+plt.ylabel('Y')
+plt.legend()
+plt.axis('equal')
 plt.show()

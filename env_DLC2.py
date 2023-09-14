@@ -140,7 +140,7 @@ class CarMakerEnv(gym.Env):
             #car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
             car_roll = state[11]
-            sight = 8
+            sight = 5
             cone_in_sight = self.cone_arr.cone_in_sight(car_pos[0], sight)
             cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight) # 20
             cones_dist = self.distance_to_closest_cone_line(cones_rel)
