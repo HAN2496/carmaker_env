@@ -11,6 +11,8 @@ class Cone:
             self.cones = self.create_DLC_cone()
         elif type == 2:
             self.cones = self.create_SLALOM_cone()
+        elif type == 3:
+            self.cones = self.create_SLALOM_cone2()
         else:
             self.cones = self.create_DLC_cone()
 #        self.cones_rel = self.to_relative_coordinates()
@@ -52,7 +54,12 @@ class Cone:
             {'start': 400, 'gap': 10, 'cone_dist': 5.25, 'num': 15, 'y_offset': -5.25}
         ]
         return self.create_cone(sections)
-
+    def create_SLALOM_cone2(self):
+        sections = [
+            {'start': 100, 'gap': 60, 'cone_dist': 5.25, 'num': 5, 'y_offset': -2.625}, #
+            {'start': 130, 'gap': 60, 'cone_dist': 5.25, 'num': 5, 'y_offset': -7.875} #
+        ]
+        return self.create_cone(sections)
     def see_cone(self):
         plt.scatter(self.cones[:,0], self.cones[:, 1])
         plt.axis("equal")
@@ -97,8 +104,8 @@ class Cone:
                 if not (car_upper_line.intersects(line) and car_lower_line.intersects(line)):
                     return 1
         if check == 0:
-        else:
-            return 0
+            pass
+        return 0
 
     def distance_to_closest_cone_line(self, cones_rel):
         l1, l2 = 2.1976004311961135, 4.3 - 2.1976004311961135
@@ -147,7 +154,7 @@ class Cone:
             y_points = self.cones[tmp1:tmp1+2][:, 1]
             plt.plot(x_points, y_points, '-')
 
-        ax.set_xlim(0, 161)
+        ax.set_xlim(0, 400)
         ax.set_ylim(-10, 0)
         plt.axis('equal')
         plt.show()
@@ -206,10 +213,10 @@ class Cone:
 """
 
 if __name__ == "__main__":
-    cones = Cone(1)
+    cones = Cone(3)
     print(cones.cones[1, 1])
     #cones.see_cone()
-    carx, cary, caryaw = 70, -5.5, 0.2
+    carx, cary, caryaw = 50, -7.5, 0.2
     cone_sight = cones.cone_in_sight(carx, 5)
     cones_rel = cones.to_relative_coordinates(carx, cary, caryaw, cones.cones)
     print(cones.pass_cone_line(cones_rel))

@@ -3,7 +3,7 @@ env1:
 env2: 콘 state로 주고 충돌시 벌점
  env2_2: 학습 막바지에 오히려 경로를 따라가지 못함.
  env2_3: sight 5 -> 10 증가 & cone 정보 수정 But 똑같은 현상이 나타남
- env2_4: cone 연결선의 중심과 차의 중심 사이에서 가장 가까운 거리를 rewaqrd로 제공
+ env2_4: cone 연결선의 중심과 차의 중심 사이에서 가장 가까운 거리를 reward로 제공
 
 [SLALOM]
 env1:
