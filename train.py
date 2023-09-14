@@ -62,9 +62,9 @@ def main():
     3. 위의 import에 제대로 된 env를 불러왔는지 확인할 것
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
-    env_num = 2
-    road_type = "DLC"
-    comment = "3"
+    env_num = 4
+    road_type = "UTurn"
+    comment = "2nd"
     explanation = "DLC cone edited / sight 5 -> 10"
 
     num_proc = 2
