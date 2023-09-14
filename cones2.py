@@ -97,7 +97,6 @@ class Cone:
                 if not (car_upper_line.intersects(line) and car_lower_line.intersects(line)):
                     return 1
         if check == 0:
-            return 1
         else:
             return 0
 
@@ -148,8 +147,9 @@ class Cone:
             y_points = self.cones[tmp1:tmp1+2][:, 1]
             plt.plot(x_points, y_points, '-')
 
-        ax.set_xlim(carx-10, carx+10)
+        ax.set_xlim(0, 161)
         ax.set_ylim(-10, 0)
+        plt.axis('equal')
         plt.show()
 
     def plot_shapes_rel(self, carx, cary):
@@ -217,5 +217,5 @@ if __name__ == "__main__":
     col = cones.check_collision(cones_rel)
     #print(col)
     #print(cones_rel)
-    #cones.plot_shapes_abs(carx, cary)
+    cones.plot_shapes_abs(carx, cary)
     cones.plot_shapes_rel(carx, cary)
