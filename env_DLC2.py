@@ -100,7 +100,7 @@ class CarMakerEnv(gym.Env):
         car_steer = np.array([0, 0, 0])
         car_alHori = 0
         car_roll = 0
-        collision=0
+        cones_dist=0
 
         done = False
 
@@ -137,17 +137,17 @@ class CarMakerEnv(gym.Env):
             car_pos = state[1:4] # Car.(x, y, yaw)
             car_v = state[4] #Car.v
             car_steer = state[5:8] #Car.Steer.(Ang, Vel, Acc)
-            car_dev = state[8:10] #Car.DevDist, Car.DevAng
+            #car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
             car_roll = state[11]
-            sight = 10
+            sight = 8
             cone_in_sight = self.cone_arr.cone_in_sight(car_pos[0], sight)
             cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight) # 20
-            collision = self.pass_cone_line(cones_rel)
-            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), cones_rel.flatten())) # 3 + 40
+            cones_dist = self.distance_to_closest_cone_line(cones_rel)
+            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), cones_rel.flatten())) # 3 + 32
 
         # 리워드 계산
-        reward_state = np.array([car_pos[0], car_alHori, collision])
+        reward_state = np.array([car_pos[0], car_alHori, cones_dist])
         reward = self.getReward(reward_state, time)
         info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : car_pos[0], "cary" : car_pos[1],
                 "caryaw" : car_pos[2], "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
@@ -190,10 +190,10 @@ class CarMakerEnv(gym.Env):
         return np.array(relative_coords)
 
     def pass_cone_line(self, cones_rel):
+        min_distance = float('inf')
+        flag = False
         width = 1.568
         l1, l2 = 2.1976004311961135, 4.3 - 2.1976004311961135
-        dist = 0
-        check = 0
 
         car_upper_line = LineString([(-l1, width/2), (l2, width/2)])
         car_lower_line = LineString([(-l1, -width/2), (l2, -width/2)])
@@ -202,18 +202,44 @@ class CarMakerEnv(gym.Env):
             cone1 = cones_rel[i]
             cone2 = cones_rel[i+1]
             line = LineString([cone1, cone2])
-            line_center = [(cone1[0] + cone2[0]) / 2, (cone1[1] + cone2[1]) / 2]
-           #자동차 영역에 있는지 확인
-            if car_upper_line.intersects(line) or car_lower_line.intersects(line):
-                check = 1
-                # 연결선 중 하나라도 모두 교차하지 않을 경우
-                if not (car_upper_line.intersects(line) and car_lower_line.intersects(line)):
-                    return 1
-        if check == 0:
-            return 1
-        else:
-            return 0
 
+            upper_intersect = car_upper_line.intersects(line)
+            lower_intersect = car_lower_line.intersects(line)
+
+            if upper_intersect and lower_intersect:
+                flag = True
+            else:
+                flag = False
+                line_center = [(cone1[0] + cone2[0]) / 2, (cone1[1] + cone2[1]) / 2]
+                dx = line_center[0]
+                dy = line_center[1]
+                distance = np.sqrt(dx ** 2 + dy ** 2)
+
+                if distance < min_distance:
+                    min_distance = distance
+
+        if flag:
+            return 0
+        else:
+            return min_distance
+
+
+    def distance_to_closest_cone_line(self, cones_rel):
+        min_distance = float('inf')
+
+        for i in range(0, len(cones_rel) - 1, 2):
+            cone1 = cones_rel[i]
+            cone2 = cones_rel[i + 1]
+            line_center = [(cone1[0] + cone2[0]) / 2, (cone1[1] + cone2[1]) / 2]
+
+            dx = line_center[0]
+            dy = line_center[1]
+            distance = np.sqrt(dx ** 2 + dy ** 2)
+
+            if distance < min_distance:
+                min_distance = distance
+
+        return min_distance
     def getReward(self, state, time):
         time = time
 
@@ -223,7 +249,7 @@ class CarMakerEnv(gym.Env):
 
         carx = state[0]
         alHori = state[1]
-        collision = state[2]
+        cones_dist = state[2]
 
         #직선경로에서 차의 횡가속도를 0에 가깝게 만들기 위한 리워드
         if carx <= 50 or carx >=111:
@@ -231,12 +257,12 @@ class CarMakerEnv(gym.Env):
         else:
             a_reward = 0
 
-        col_reward = collision * 4000
+        col_reward = cones_dist * 4000
 
         e = - a_reward - col_reward
 
         if self.test_num % 300 == 0 and self.check == 0:
-            print(f"Time: {time}, [Reward: {e}], [alHori: {a_reward}], [col: {col_reward}]")
+            print(f"[Time: {time}], [Reward: {e}], [alHori: {a_reward}], [col: {col_reward}]")
 
         return e
 
