@@ -60,5 +60,5 @@ finally:
     conn.close()
     time.sleep(1)
     df = pd.DataFrame(data=lst, columns=columns)
-    df.to_csv('test.csv')
+    df.to_csv('datasets_traj_SLALOM.csv')
     print('data saved')

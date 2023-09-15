@@ -101,7 +101,7 @@ class Cone:
 if __name__ == "__main__":
     cone_abs = Cone()
     carx, cary, caryaw = 100, -6.235, 0
-    sight = 5
+    sight = 3
     print(cone_abs.cone_in_sight(carx, sight))
     cone_rel = cone_abs.to_relative_coordinates(carx, cary, caryaw, cone_abs.cone_arr)
     #print(cone_abs.plot_shapes_abs(carx, cary))
