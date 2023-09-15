@@ -133,8 +133,9 @@ class CarMakerEnv(gym.Env):
             car_pos = state[1:4] #x, y, yaw
             car_v = state[4] #1
             car_steer = state[5:8]
-            car_alHori = state[8]
-            car_roll = state[9]
+            car_dev = state[8:10] #2
+            car_alHori = state[10]
+            car_roll = state[11]
             sight = 5
             cone_in_sight = self.cone_arr.cone_in_sight(car_pos[0], sight) # (10, 2)
             cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight) # 20

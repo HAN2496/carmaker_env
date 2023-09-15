@@ -66,7 +66,7 @@ class CarMakerEnv(gym.Env):
         self.test_num = 0
 
         self.cone_arr = np.array([i for i in range(100, 800, 30)])
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM_env4.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
         self.cm_thread.join()
@@ -93,9 +93,9 @@ class CarMakerEnv(gym.Env):
         car_alHori = 0
         car_pos = np.array([0, 0, 0])
         car_steer = np.array([0, 0, 0])
-        collision = 0
         car_v = 0
         car_roll = 0
+        car_dev = np.array([0, 0])
         collision = 0
 
         done = False
@@ -132,23 +132,45 @@ class CarMakerEnv(gym.Env):
             time = state[0]
             car_pos = state[1:4] #x, y, yaw
             car_v = state[4] #1
-            car_dev = state[8:10] #2
             car_steer = state[5:8]
-            car_alHori = state[8]
-            car_roll = state[9]
-            cone_in_sight = self.cone_in_sight(car_pos[0], 3) # (10, 2)
-            cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight) # 20
+            car_dev = state[8:10] #2
+            car_alHori = state[10]
+            car_roll = state[11]
+            lookahead_sight = [3 * i for i in range(10)]
+            lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight, self.traj_data)
+            lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
+            cone_sight = self.cone_in_sight(car_pos[0], 3)
+            cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_sight) # 20
             collision = self.check_collsion(cones_rel)
-            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), car_dev, cones_rel.flatten()))
+            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), car_dev, lookahead_traj_rel, cones_rel.flatten())) #3 + 2 + 20 + 6
 
         # 리워드 계산
-        reward_state = np.array([car_pos[0], car_alHori, collision])
+        reward_state = np.array([car_pos[0], car_dev, collision])
         reward = self.getReward(reward_state, time)
         info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : car_pos[0], "cary" : car_pos[1],
                 "caryaw" : car_pos[2], "carv" : car_v, "AlHori" : car_alHori, "Roll": car_roll}
 
         return state, reward, done, info
 
+    def find_lookahead_traj(self, x, y, distances, data):
+        distances = np.array(distances)
+        result_points = []
+
+        min_idx = np.argmin(np.sum((data - np.array([x, y])) ** 2, axis=1))
+
+        for dist in distances:
+            lookahead_idx = min_idx
+            total_distance = 0.0
+            while total_distance < dist and lookahead_idx + 1 < len(data):
+                total_distance += np.linalg.norm(data[lookahead_idx + 1] - data[lookahead_idx])
+                lookahead_idx += 1
+
+            if lookahead_idx < len(data):
+                result_points.append(data[lookahead_idx])
+            else:
+                result_points.append(data[-1])
+
+        return result_points
     def cone_in_sight(self, carx, sight):
         return np.array([cone for cone in self.cone_arr if carx - 2.1976004311961135 <= cone[0]][:sight*2])
 
@@ -193,8 +215,8 @@ class CarMakerEnv(gym.Env):
             # 에피소드 종료시
             return 0.0
 
-        carx = state[0]
-        alHori = state[1]
+        devDist = state[0]
+        devAng = state[1]
         collision = state[2]
 
         col_reward = collision * 4000
