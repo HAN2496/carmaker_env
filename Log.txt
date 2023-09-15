@@ -2,3 +2,29 @@
 2023-09-13 15:58:40,835 - [DLC/env2_3]
 2023-09-13 15:58:40,847 - DLC/env2_3 - Training Start
 2023-09-14 22:21:52,626 - DLC/env2_3 - Training End
+[SLALOM/env4_1st]
+2023-09-15 15:13:57,139 - [SLALOM/env4_1st]
+ --> 1st try of circle cone
+2023-09-15 15:13:57,144 -  --> 1st try of circle cone
+2023-09-15 15:13:57,144 - SLALOM/env4_1st - Training Start
+2023-09-15 15:14:08,034 - SLALOM/env4_1st - Keyboard Interrupt
+2023-09-15 15:14:08,035 - SLALOM/env4_1st - Training End
+[SLALOM/env4_1st]
+2023-09-15 15:18:13,276 - [SLALOM/env4_1st]
+ --> 1st try of circle cone
+2023-09-15 15:18:13,276 -  --> 1st try of circle cone
+2023-09-15 15:18:13,276 - SLALOM/env4_1st - Training Start
+2023-09-15 15:20:23,289 - SLALOM/env4_1st - Keyboard Interrupt
+2023-09-15 15:20:23,289 - SLALOM/env4_1st - Training End
+[SLALOM/env4_1st]
+2023-09-15 15:21:12,648 - [SLALOM/env4_1st]
+ --> 1st try of circle cone
+2023-09-15 15:21:12,649 -  --> 1st try of circle cone
+2023-09-15 15:21:12,649 - SLALOM/env4_1st - Training Start
+2023-09-15 15:21:26,161 - SLALOM/env4_1st - Keyboard Interrupt
+2023-09-15 15:21:26,162 - SLALOM/env4_1st - Training End
+[SLALOM/env4_1st]
+2023-09-15 15:23:00,198 - [SLALOM/env4_1st]
+ --> 1st try of circle cone
+2023-09-15 15:23:00,198 -  --> 1st try of circle cone
+2023-09-15 15:23:00,198 - SLALOM/env4_1st - Training Start
