@@ -45,7 +45,7 @@ class CarMakerEnv(gym.Env):
         sim_action_num = env_action_num + 1
 
 
-        env_obs_num = 23
+        env_obs_num = 31
         sim_obs_num = 13
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -65,7 +65,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.cone_arr = np.array([i for i in range(100, 800, 30)])
+        self.cone_arr = np.array([[i, -5.25] for i in range(100, 800, 30)])
         self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM_env4.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
@@ -145,10 +145,10 @@ class CarMakerEnv(gym.Env):
             state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), car_dev, lookahead_traj_rel, cones_rel.flatten())) #3 + 2 + 20 + 6
 
         # 리워드 계산
-        reward_state = np.array([car_pos[0], car_dev, collision])
+        reward_state = np.array([car_pos[0], car_dev[0], car_dev[1], collision])
         reward = self.getReward(reward_state, time)
-        info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : car_pos[0], "cary" : car_pos[1],
-                "caryaw" : car_pos[2], "carv" : car_v, "AlHori" : car_alHori, "Roll": car_roll}
+        info = {"Time": time, "Steer.Ang": car_steer[0], "Steer.Vel": car_steer[1], "Steer.Acc": car_steer[2], "carx": car_pos[0], "cary": car_pos[1],
+                "caryaw": car_pos[2], "carv": car_v, "alHori": car_alHori, "Roll": car_roll}
 
         return state, reward, done, info
 
@@ -172,7 +172,7 @@ class CarMakerEnv(gym.Env):
 
         return result_points
     def cone_in_sight(self, carx, sight):
-        return np.array([cone for cone in self.cone_arr if carx - 2.1976004311961135 <= cone[0]][:sight*2])
+        return np.array([cone for cone in self.cone_arr if carx - 2.1976004311961135 <= cone[0]][:sight])
 
     def check_collsion(self, cones_rel):
         width = 1.568
@@ -215,16 +215,20 @@ class CarMakerEnv(gym.Env):
             # 에피소드 종료시
             return 0.0
 
-        devDist = state[0]
-        devAng = state[1]
-        collision = state[2]
+        carx = state[0]
+        devDist = state[1]
+        devAng = state[2]
+        collision = state[3]
 
-        col_reward = collision * 4000
+        dist_reward = abs(devDist) * 1000
+        ang_reward = abs(devAng) * 5000
 
-        e = - col_reward
+        col_reward = collision * 5000
+
+        e = - dist_reward - ang_reward - col_reward
 
         if self.test_num % 300 == 0 and self.check == 0:
-            print(f"Time: {time}, [Reward: {e}], [col: {col_reward}]")
+            print(f"[Time: {time}], [Reward: {e}], [dev : {dist_reward + ang_reward}] [col: {col_reward}]")
 
         return e
 
