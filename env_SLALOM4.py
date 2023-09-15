@@ -11,7 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-import math
+from shapely.geometry import Polygon, Point
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -65,8 +65,8 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.cone_arr = np.array([i for i in range(100, 400, 30)])
-
+        self.cone_arr = np.array([i for i in range(100, 800, 30)])
+        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
         self.cm_thread.join()
@@ -132,14 +132,14 @@ class CarMakerEnv(gym.Env):
             time = state[0]
             car_pos = state[1:4] #x, y, yaw
             car_v = state[4] #1
+            car_dev = state[8:10] #2
             car_steer = state[5:8]
             car_alHori = state[8]
             car_roll = state[9]
-            sight = 5
-            cone_in_sight = self.cone_in_sight(car_pos[0], sight) # (10, 2)
+            cone_in_sight = self.cone_in_sight(car_pos[0], 3) # (10, 2)
             cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_in_sight) # 20
-            collision = self.pass_cone_line(cones_rel)
-            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), cones_rel.flatten()))
+            collision = self.check_collsion(cones_rel)
+            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), car_dev, cones_rel.flatten()))
 
         # 리워드 계산
         reward_state = np.array([car_pos[0], car_alHori, collision])
@@ -152,7 +152,40 @@ class CarMakerEnv(gym.Env):
     def cone_in_sight(self, carx, sight):
         return np.array([cone for cone in self.cone_arr if carx - 2.1976004311961135 <= cone[0]][:sight*2])
 
+    def check_collsion(self, cones_rel):
+        width = 1.568
+        l1, l2 = 2.1976004311961135, 4.3 - 2.1976004311961135
+        cone_r = 0.2
+        filtered_cones_rel = [cone for cone in cones_rel
+                              if (-l1 - cone_r <= cone[0] <= l2 + cone_r) and (-width/2 - cone_r <= cone[1] <= width/2 + cone_r)]
 
+        if not filtered_cones_rel:
+            return 0
+
+        for conex, coney in filtered_cones_rel:
+            if (-l1 <= conex <= l2) and (-width/2 <= coney <= width/2):
+                return 1
+            car_edge = [[-l1, -width / 2], [l2, -width / 2], [l2, width / 2], [-l1, width / 2]]
+            car_line = Polygon(car_edge)
+            cone = Point((conex, coney))
+            if cone.distance(car_line) <= cone_r:
+                return 1
+
+        return 0
+
+    def to_relative_coordinates(self, carx, cary, caryaw, arr):
+        relative_coords = []
+
+        for point in arr:
+            dx = point[0] - carx
+            dy = point[1] - cary
+
+            rotated_x = dx * np.cos(-caryaw) - dy * np.sin(-caryaw)
+            rotated_y = dx * np.sin(-caryaw) + dy * np.cos(-caryaw)
+
+            relative_coords.append((rotated_x, rotated_y))
+
+        return np.array(relative_coords)
     def getReward(self, state, time):
         time = time
 

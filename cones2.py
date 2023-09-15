@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import math
+from shapely.geometry import Polygon, Point
 
 
 class Cone:
@@ -21,16 +22,16 @@ class Cone:
 
         if not filtered_cones_rel:
             return 0
+        print(filtered_cones_rel)
 
-        car_edge = [[-l1, -width / 2], [l2, -width / 2], [l2, width / 2], [-l1, width / 2]]
         for conex, coney in filtered_cones_rel:
             if (-l1 <= conex <= l2) and (-width/2 <= coney <= width/2):
-                # Cone is inside the car boundary.
                 return 1
-            for carx, cary in car_edge:
-                distance = math.sqrt((carx - conex) ** 2 + (cary - coney) ** 2)
-                if distance <= cone_r:
-                    return 1
+            car_edge = [[-l1, -width / 2], [l2, -width / 2], [l2, width / 2], [-l1, width / 2]]
+            car_line = Polygon(car_edge)
+            cone = Point((conex, coney))
+            if cone.distance(car_line) <= cone_r:
+                return 1
 
         return 0
     def to_relative_coordinates(self, carx, cary, caryaw, arr):
@@ -99,7 +100,7 @@ class Cone:
 
 if __name__ == "__main__":
     cone_abs = Cone()
-    carx, cary, caryaw = 100, -4.45, 0
+    carx, cary, caryaw = 100, -6.235, 0
     sight = 5
     print(cone_abs.cone_in_sight(carx, sight))
     cone_rel = cone_abs.to_relative_coordinates(carx, cary, caryaw, cone_abs.cone_arr)
