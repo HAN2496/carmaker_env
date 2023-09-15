@@ -93,7 +93,6 @@ class CarMakerEnv(gym.Env):
         car_alHori = 0
         car_pos = np.array([0, 0, 0])
         car_steer = np.array([0, 0, 0])
-        collision = 0
         car_v = 0
         car_roll = 0
         collision = 0
@@ -144,8 +143,8 @@ class CarMakerEnv(gym.Env):
         # 리워드 계산
         reward_state = np.array([car_pos[0], car_alHori, collision])
         reward = self.getReward(reward_state, time)
-        info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : car_pos[0], "cary" : car_pos[1],
-                "caryaw" : car_pos[2], "carv" : car_v, "AlHori" : car_alHori, "Roll": car_roll}
+        info = {"Time": time, "Steer.Ang": car_steer[0], "Steer.Vel": car_steer[1], "Steer.Acc": car_steer[2], "carx": car_pos[0], "cary": car_pos[1],
+                "caryaw": car_pos[2], "carv": car_v, "alHori": car_alHori, "Roll": car_roll}
 
         return state, reward, done, info
 
