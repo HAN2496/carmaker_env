@@ -65,7 +65,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.cone_arr = np.array([[i, -5.25] for i in range(100, 800, 30)])
+        self.cone_arr = np.array([[i, -5.25] for i in range(100, 400, 30)])
         self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM_env4.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
@@ -231,6 +231,9 @@ class CarMakerEnv(gym.Env):
             print(f"[Time: {time}], [Reward: {e}], [dev : {dist_reward + ang_reward}] [col: {col_reward}]")
 
         return e
+
+    def create_SLALOM_cone(self):
+        self.cone_arr = np.array([[i, -5.25] for i in range(100, 400, 30)])
 
 
 
