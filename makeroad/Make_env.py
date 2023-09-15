@@ -9,7 +9,9 @@ import pygame
 class MakeRoadEnv(gym.Env):
     def __init__(self):
         super(MakeRoadEnv, self).__init__()
+        self.reset_num = 0
         self.time = 0
+        self.test_num = 0
 
         self.car_width = 1.568
         self.car_length = 4.3
@@ -24,7 +26,7 @@ class MakeRoadEnv(gym.Env):
 
         env_action_num = 1
         env_obs_num = 214
-        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
+        self.action_space = spaces.Box(low=-0.15, high=0.15, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
         pygame.init()
@@ -38,6 +40,8 @@ class MakeRoadEnv(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
+        self.reset_num += 1
+        print(f'reset : {self.reset_num}')
         return self._initial_state()
 
     def close(self):
@@ -45,17 +49,21 @@ class MakeRoadEnv(gym.Env):
 
     def step(self, action):
         done = False
+        self.test_num += 1
         self.render()
 
         steering_changes = action[0]
         self.car_angle += steering_changes
-        self.car_pos[0] += np.cos(np.radians(self.car_angle)) * self.car_v * 0.01
-        self.car_pos[1] += np.sin(np.radians(self.car_angle)) * self.car_v * 0.01
+        self.car_pos[0] += np.cos(self.car_angle) * self.car_v * 0.01
+        self.car_pos[1] += np.sin(self.car_angle) * self.car_v * 0.01
         state = np.concatenate((self.car_pos, self.cone_pos.flatten()))
+        if self.test_num % 100 == 0:
+            print(f"[Time: {self.time}, Action : {action}, Ang : {self.car_angle}, Carx: {self.car_pos[0]}, Cary: {self.car_pos[1]}")
         reward = self.getReward(state)
         info = {}
 
-        if self.car_pos[1] >= self.road_length:
+        if self.car_pos[1] >= 0 or self.car_pos[0] >= self.road_length or self.car_pos[0] < 0:
+            print('here')
             done = True
 
         self.time += 0.01
@@ -77,7 +85,6 @@ class MakeRoadEnv(gym.Env):
 
         return car_x_min <= cone[0] <= car_x_max and car_y_min <= cone[1] <= car_y_max
 
-
     def render(self, mode='human'):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -88,7 +95,8 @@ class MakeRoadEnv(gym.Env):
 
         # Draw cones
         for cone in self.cone_pos:
-            pygame.draw.circle(self.screen, (255, 140, 0), (int(cone[0] * 10), int(self.road_length*10 - cone[1] * 10)), 5)
+            pygame.draw.circle(self.screen, (255, 140, 0),
+                               (int(cone[0] * 10), int(- cone[1] * 10)), 5)
 
         # Calculate the car's corner positions based on its angle and current position
         cos_angle = np.cos(np.radians(self.car_angle))
@@ -98,24 +106,19 @@ class MakeRoadEnv(gym.Env):
         half_length = self.car_length / 2
 
         corners = [
-            (self.car_pos[0] + half_length * cos_angle - half_width * sin_angle,
-             self.car_pos[1] + half_length * sin_angle + half_width * cos_angle),
-            (self.car_pos[0] + half_length * cos_angle + half_width * sin_angle,
-             self.car_pos[1] + half_length * sin_angle - half_width * cos_angle),
-            (self.car_pos[0] - half_length * cos_angle + half_width * sin_angle,
-             self.car_pos[1] - half_length * sin_angle - half_width * cos_angle),
-            (self.car_pos[0] - half_length * cos_angle - half_width * sin_angle,
-             self.car_pos[1] - half_length * sin_angle + half_width * cos_angle)
+            (10 * (self.car_pos[0] + half_length * cos_angle - half_width * sin_angle),
+             10 * (- (self.car_pos[1] + half_length * sin_angle + half_width * cos_angle))),
+            (10 * (self.car_pos[0] + half_length * cos_angle + half_width * sin_angle),
+             10 * (- (self.car_pos[1] + half_length * sin_angle - half_width * cos_angle))),
+            (10 * (self.car_pos[0] - half_length * cos_angle + half_width * sin_angle),
+             10 * (- (self.car_pos[1] - half_length * sin_angle - half_width * cos_angle))),
+            (10 * (self.car_pos[0] - half_length * cos_angle - half_width * sin_angle),
+             10 * (- (self.car_pos[1] - half_length * sin_angle + half_width * cos_angle)))
         ]
-        car_rect = pygame.Rect(int(self.car_pos[0] * 10), int(self.road_length*10 - (self.car_pos[1] + self.car_length) * 10), int(self.car_length * 10), int(self.car_width * 10))
-        pygame.draw.rect(self.screen, (0, 0, 255), car_rect)  # Blue for the car
+        car_color = (255, 0, 0)  # White for car
+        pygame.draw.polygon(self.screen, car_color, corners)
 
-#        pygame.draw.polygon(self.screen, (0, 0, 255), [(x * 10, y * 10) for x, y in corners])  # Multiplied position by 10 to match the scale
-
-        pygame.display.flip()
-        pygame.time.wait(50)
-
-
+        pygame.display.flip()  # Update the display
 
     def create_cone(self, sections):
         cones = []
@@ -141,7 +144,11 @@ class MakeRoadEnv(gym.Env):
 
         return self.create_cone(sections)
 
-if __name__ == "main":
+if __name__ == "__main__":
+    env = MakeRoadEnv()
+    model = PPO("MlpPolicy", env, verbose=1)
+    model.learn(total_timesteps=10000)
+    """
     env = MakeRoadEnv()
     model = SAC.load("model.pkl", env=env)
     obs = env.reset()
@@ -151,3 +158,4 @@ if __name__ == "main":
         action, _ = model.predict(obs)
         obs, reward, done, _ = env.step(action)
         env.render()
+    """
