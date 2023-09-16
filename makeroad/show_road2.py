@@ -1,5 +1,5 @@
 import numpy as np
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Polygon, Point, LineString
 from shapely.affinity import rotate
 import matplotlib.pyplot as plt
 import torch
