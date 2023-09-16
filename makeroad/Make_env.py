@@ -5,6 +5,7 @@ from stable_baselines3 import PPO, SAC
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import pygame
+from shapely.geometry import Polygon, Point
 
 class MakeRoadEnv(gym.Env):
     def __init__(self):
@@ -23,6 +24,8 @@ class MakeRoadEnv(gym.Env):
 
         self.road_length = 161
         self.road_width = 30
+
+        self.forbidden_area = Polygon(([0, 0], [161, 0], [161, -11.2735], []))
 
         env_action_num = 1
         env_obs_num = 214
