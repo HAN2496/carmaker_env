@@ -23,11 +23,11 @@ def plot(road, car):
     # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
-    plt.scatter(car.carx, car.cary, color='blue')  # Car's center point
+    plt.scatter(car.carx, car.cary, color='blue')
 
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.gca().invert_yaxis()  # Invert Y-axis for better visualization
+    plt.gca().invert_yaxis()
     plt.title('Car, Forbidden Areas and Cones')
     plt.legend()
     plt.grid(True)
@@ -190,7 +190,7 @@ class MakeRoadEnv(gym.Env):
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
         pygame.init()
-        self.screen = pygame.display.set_mode((self.road.road_length * 10, - self.road.road_width * 10))  # Multiplied to scale up for visibility
+        self.screen = pygame.display.set_mode((self.road.road_length * 10, - self.road.road_width * 10))
         pygame.display.set_caption("Car Road Environment")
 
     def _initial_state(self):
@@ -219,7 +219,7 @@ class MakeRoadEnv(gym.Env):
             print(f"[Time: {round(self.time, 2)}, Action : {action}, Ang : {round(self.car.caryaw, 2)}, Carx: {round(self.car.carx, 2)}, Cary: {round(self.car.cary, 2)}")
 
         if self.road.is_car_in_road(self.car) == 1:
-            done=True
+            done = True
         reward = self.getReward(state)
         info = {}
 
@@ -248,7 +248,6 @@ class MakeRoadEnv(gym.Env):
             x, y = cone.centroid.coords[0]
             pygame.draw.circle(self.screen, (255, 140, 0), (int(x * 10), int(-y * 10)), 5)
 
-        # Calculate the car's corner positions based on its angle and current position
         car_shape = self.car.shape_car(self.car.carx, self.car.cary, self.car.caryaw)
         car_color = (255, 0, 0)
         pygame.draw.polygon(self.screen, car_color, [(int(x*10), int(-y*10)) for x, y in car_shape.exterior.coords])
