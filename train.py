@@ -9,7 +9,7 @@
 """
 import sys
 
-from env_UTurn4 import CarMakerEnv
+from env_SLALOM3 import CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -62,10 +62,10 @@ def main():
     3. 위의 import에 제대로 된 env를 불러왔는지 확인할 것
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
-    env_num = 4
-    road_type = "UTurn"
-    comment = "2nd"
-    explanation = "DLC cone edited / sight 5 -> 10"
+    env_num = 3
+    road_type = "SLALOM"
+    comment = "3rd"
+    explanation = "1st, 2nd try state was wrong. Corrected"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
