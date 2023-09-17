@@ -28,3 +28,4 @@
  --> 1st try of circle cone
 2023-09-15 15:23:00,198 -  --> 1st try of circle cone
 2023-09-15 15:23:00,198 - SLALOM/env4_1st - Training Start
+2023-09-17 08:07:14,225 - SLALOM/env4_1st - Training End
