@@ -65,7 +65,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.cone_arr = np.array([[i, -5.25] for i in range(100, 400, 30)])
+        self.cone_arr = self._create_SLALOM_cone()
         self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM_env4.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
@@ -177,7 +177,7 @@ class CarMakerEnv(gym.Env):
     def check_collsion(self, cones_rel):
         width = 1.568
         l1, l2 = 2.1976004311961135, 4.3 - 2.1976004311961135
-        cone_r = 0.2
+        cone_r = 1
         filtered_cones_rel = [cone for cone in cones_rel
                               if (-l1 - cone_r <= cone[0] <= l2 + cone_r) and (-width/2 - cone_r <= cone[1] <= width/2 + cone_r)]
 
@@ -232,8 +232,10 @@ class CarMakerEnv(gym.Env):
 
         return e
 
-    def create_SLALOM_cone(self):
-        self.cone_arr = np.array([[i, -5.25] for i in range(100, 400, 30)])
+    def _create_SLALOM_cone(self):
+        first_cone_arr = [[i, -5.25] for i in range(100, 400, 30)]
+        second_cone_arr = [[i, -5.25] for i in range(600, 800, 30)]
+        return np.array(first_cone_arr + second_cone_arr)
 
 
 
