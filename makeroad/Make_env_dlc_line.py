@@ -9,20 +9,26 @@ import matplotlib.pyplot as plt
 #from utils import scale_image, blit_rotate_center
 
 def plot(road, car):
+    #plt.figure(figsize=(10, 5))
+
+    # Plot forbidden areas
     plt.plot(*road.forbbiden_area1.exterior.xy, label="Forbidden Area 1", color='red')
     plt.plot(*road.forbbiden_area2.exterior.xy, label="Forbidden Area 2", color='blue')
     plt.plot(*road.road_boundary.exterior.xy, label="ROAD BOUNDARY", color='green')
 
+    # Plot cones
     cones_x = road.cones_arr[:, 0]
     cones_y = road.cones_arr[:, 1]
     plt.scatter(cones_x, cones_y, s=10, color='orange', label="Cones")
 
+    # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
     plt.scatter(car.carx, car.cary, color='blue')
 
     plt.xlabel('X')
     plt.ylabel('Y')
+    #plt.gca().invert_yaxis()
     plt.title('Car, Forbidden Areas and Cones')
     plt.legend()
     plt.grid(True)
@@ -130,39 +136,14 @@ class Road:
 
 class Car:
     def __init__(self):
-        self.length = 4.3
         self.width = 1.568
-        self.carx = 2.5
-        self.cary = -8.0525
-        self.caryaw = 0
-        self.carv = 13.8889
+        self.car_middle_x = np.array([i * 0.01 for i in range(16100)])
+        self.car_middle_y = np.array([-8.0525 for i in range(16100)])
 
     def reset_car(self):
-        self.carx = 5
-        self.cary = -8.0525
-        self.caryaw = 0
+        self.car_middle_x = np.array([i * 0.01 for i in range(16100)])
+        self.car_middle_y = np.array([-8.0525 for i in range(16100)])
 
-    def move_car(self, angle):
-        self.caryaw += angle * 0.01
-        self.carx += np.cos(self.caryaw) * self.carv * 0.01
-        self.cary += np.sin(self.caryaw) * self.carv * 0.01
-
-    def shape_car(self, carx, cary, caryaw):
-        half_length = self.length / 2.0
-        half_width = self.width / 2.0
-
-        corners = [
-            (-half_length, -half_width),
-            (-half_length, half_width),
-            (half_length, half_width),
-            (half_length, -half_width)
-        ]
-
-        car_shape = Polygon(corners)
-        car_shape = affinity.rotate(car_shape, caryaw, origin='center', use_radians=False)
-        car_shape = affinity.translate(car_shape, carx, cary)
-
-        return car_shape
 
 class MakeRoadEnv(gym.Env):
     def __init__(self):
