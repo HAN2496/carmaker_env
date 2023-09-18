@@ -30,9 +30,7 @@ i=0
 
 try:
     while True:
-        i+=1
         # 데이터 전송
-        a = random.randrange(-1000000, 1000001)/1000000
         a = 1
         data_to_send = [a, i]
         data = struct.pack('!2d', *data_to_send)
@@ -60,5 +58,5 @@ finally:
     conn.close()
     time.sleep(1)
     df = pd.DataFrame(data=lst, columns=columns)
-    df.to_csv('datasets_traj_SLALOM.csv')
+    df.to_csv('test.csv')
     print('data saved')
