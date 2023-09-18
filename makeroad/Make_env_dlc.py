@@ -9,20 +9,26 @@ import matplotlib.pyplot as plt
 #from utils import scale_image, blit_rotate_center
 
 def plot(road, car):
+    #plt.figure(figsize=(10, 5))
+
+    # Plot forbidden areas
     plt.plot(*road.forbbiden_area1.exterior.xy, label="Forbidden Area 1", color='red')
     plt.plot(*road.forbbiden_area2.exterior.xy, label="Forbidden Area 2", color='blue')
     plt.plot(*road.road_boundary.exterior.xy, label="ROAD BOUNDARY", color='green')
 
+    # Plot cones
     cones_x = road.cones_arr[:, 0]
     cones_y = road.cones_arr[:, 1]
     plt.scatter(cones_x, cones_y, s=10, color='orange', label="Cones")
 
+    # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
     plt.scatter(car.carx, car.cary, color='blue')
 
     plt.xlabel('X')
     plt.ylabel('Y')
+    #plt.gca().invert_yaxis()
     plt.title('Car, Forbidden Areas and Cones')
     plt.legend()
     plt.grid(True)
@@ -89,10 +95,10 @@ class Road:
             {'start': 0, 'gap': 5, 'cone_dist': 1.9748, 'num': 10, 'y_offset': -8.0525},
             {'start': 50, 'gap': 3, 'cone_dist': 1.9748, 'num': 5, 'y_offset': -8.0525}, #
             {'start': 64.7, 'gap': 2.7, 'cone_dist': 5.4684, 'num': 4, 'y_offset': -6.3057},
-            {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.52, 'num': 5, 'y_offset': -4.8315}, #
-            {'start': 89, 'gap': 2.5, 'cone_dist': 5.981, 'num': 4, 'y_offset': -6.562},
-            {'start': 99, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -8.0525}, #
-            {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 20, 'y_offset': -8.0525}
+            {'start': 75.5, 'gap': 2.75, 'cone_dist': 2, 'num': 5, 'y_offset': -4.8315}, #
+            {'start': 89, 'gap': 2.5, 'cone_dist': 5.4684, 'num': 4, 'y_offset': -6.3057},
+            {'start': 99, 'gap': 3, 'cone_dist': 1.9748, 'num': 5, 'y_offset': -8.0525}, #
+            {'start': 111, 'gap': 5, 'cone_dist': 1.9748, 'num': 20, 'y_offset': -8.0525}
         ]
 
         return sections
@@ -223,10 +229,8 @@ class MakeRoadEnv(gym.Env):
         reward = 0
         if self.road.is_car_in_forbidden_area(self.car):
             reward = -10000
-        if self.road.is_car_colliding_with_cones(self.car):
+        elif self.road.is_car_colliding_with_cones(self.car):
             reward = -1000
-        if self.road.is_car_in_road(self.car):
-            reward = 10
 #        if self.test_num % 100 == 0:
 #            print(f"Reward : {reward}")
         return reward
@@ -289,8 +293,13 @@ if __name__ == "__main__":
     env = MakeRoadEnv()
     plot(env.road, env.car)
     model = SAC("MlpPolicy", env, verbose=1)
-    model.learn(total_timesteps=10000 * 500)
-    model.save("Model.pkl")
+    try:
+        model.learn(total_timesteps=10000 * 500)
+    except KeyboardInterrupt:
+        print("Learning interrupted. Will save the model now.")
+    finally:
+        model.save("Model.pkl")
+        print("Model saved")
     """
     env = MakeRoadEnv()
     model = SAC.load("model.pkl", env=env)

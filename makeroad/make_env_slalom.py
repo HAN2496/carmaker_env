@@ -8,10 +8,11 @@ from shapely import affinity
 import matplotlib.pyplot as plt
 #from utils import scale_image, blit_rotate_center
 
+XMULTIPLE, YMULTIPLE = 2, 10
+
 def plot(road, car):
-    plt.plot(*road.forbbiden_area1.exterior.xy, label="Forbidden Area 1", color='red')
-    plt.plot(*road.forbbiden_area2.exterior.xy, label="Forbidden Area 2", color='blue')
-    plt.plot(*road.road_boundary.exterior.xy, label="ROAD BOUNDARY", color='green')
+
+    plt.plot(*road.road_boundary.exterior.xy, label="Forbidden Area 1", color='red')
 
     cones_x = road.cones_arr[:, 0]
     cones_y = road.cones_arr[:, 1]
@@ -27,83 +28,28 @@ def plot(road, car):
     plt.legend()
     plt.grid(True)
     plt.axis('equal')
+    plt.ylim([5, -15])
     plt.show()
 
 class Road:
     def __init__(self):
-        self.road_length = 161
-        self.road_width = -15
-        self._forbidden_area()
-        self.cones_arr = self.create_cone_arr()
-        self.cones_shape = self.create_cone_shape()
+        self.road_length = 500
+        self.road_width = -10.5
+        self.road_boundary = self._create_road_boundary()
+        self.cones_arr, self.cones_shape = self._create_SLALOM_cone()
 
-    def _forbidden_area(self):
-        vertices1 = [
-            (0, -6.442), (62, -6.442), (62, -3.221), (99, -3.221), (99, -6.442),
-            (161, -6.442), (161, 0), (0, 0), (0, -6.442)
-        ]
-        vertices2 = [
-            (0, -9.663), (75.5, -9.663), (75.5, -6.442), (86.5, -6.442),
-            (86.5, -9.663), (161, -9.663), (161, -12.884), (0, -12.884), (0, -9.663)
-        ]
-        self.forbbiden_area1 = Polygon(vertices1)
-        self.forbbiden_area2 = Polygon(vertices2)
-        self.forbbiden_line1 = LineString(vertices1[:])
-        self.forbbiden_line2 = LineString(vertices2[:])
-        self.road_boundary = Polygon(
-            [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
-        ])
-        self.cones_boundary = Polygon(
-            [(0, -7.0651), (62, -7.0651), (62, -3.4565), (99, -3.4565), (99, -6.5525), (161, -6.5525),
-             (161, -9.5525), (86.5, -9.5525), (86.5, -6.2065), (75.5, -6.2065), (75.5, -9.0399), (0, -9.0399)
-        ])
+    def _create_road_boundary(self):
+       polygon = Polygon(
+            [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)])
+       return polygon
 
-    def create_cone_shape(self):
-        sections = self.create_DLC_cone()
-        cones = []
-        for section in sections:
-            for i in range(section['num']):  # Each section has 5 pairs
-                x_base = section['start'] + section['gap'] * i
-                y1 = section['y_offset'] - section['cone_dist'] / 2
-                y2 = section['y_offset'] + section['cone_dist'] / 2
-                cone1 = Point(x_base, y1).buffer(0.2)  # 반지름이 0.2m인 원 생성
-                cone2 = Point(x_base, y2).buffer(0.2)  # 반지름이 0.2m인 원 생성
-                cones.extend([cone1, cone2])
 
-        return np.array(cones)
-
-    def create_cone_arr(self):
-        sections = self.create_DLC_cone()
-        cones = []
-        for section in sections:
-            for i in range(section['num']):  # Each section has 5 pairs
-                x_base = section['start'] + section['gap'] * i
-                y1 = section['y_offset'] - section['cone_dist'] / 2
-                y2 = section['y_offset'] + section['cone_dist'] / 2
-                cones.extend([[x_base, y1], [x_base, y2]])
-
-        return np.array(cones)
-
-    def create_DLC_cone(self):
-        sections = [
-            {'start': 0, 'gap': 5, 'cone_dist': 1.9748, 'num': 10, 'y_offset': -8.0525},
-            {'start': 50, 'gap': 3, 'cone_dist': 1.9748, 'num': 5, 'y_offset': -8.0525}, #
-            {'start': 64.7, 'gap': 2.7, 'cone_dist': 5.4684, 'num': 4, 'y_offset': -6.3057},
-            {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.52, 'num': 5, 'y_offset': -4.8315}, #
-            {'start': 89, 'gap': 2.5, 'cone_dist': 5.981, 'num': 4, 'y_offset': -6.562},
-            {'start': 99, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -8.0525}, #
-            {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 20, 'y_offset': -8.0525}
-        ]
-
-        return sections
-
-    def is_car_in_forbidden_area(self, car):
-        car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
-
-        if car_shape.intersects(self.forbbiden_area1) or car_shape.intersects(self.forbbiden_area2):
-            return 1
-        else:
-            return 0
+    def _create_SLALOM_cone(self):
+        first_cone_arr = [[i, -5.25] for i in range(100, 400, 30)]
+        second_cone_arr = [[i, -5.25] for i in range(600, 800, 30)]
+        cones_arr = np.array(first_cone_arr + second_cone_arr)
+        cones_shape = np.array([Point(cx, cy).buffer(0.2) for cx, cy in cones_arr])
+        return cones_arr, cones_shape
 
     def is_car_colliding_with_cones(self, car):
         car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
@@ -120,26 +66,18 @@ class Road:
             return 1
         return 0
 
-    def is_car_in_cone_area(self, car):
-        car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
-        if not car_shape.intersects(self.cones_boundary):
-            return 1
-        if not self.cones_boundary.contains(car_shape):
-            return 1
-        return 0
-
 class Car:
     def __init__(self):
         self.length = 4.3
         self.width = 1.568
         self.carx = 2.5
-        self.cary = -8.0525
+        self.cary = -5.25
         self.caryaw = 0
         self.carv = 13.8889
 
     def reset_car(self):
         self.carx = 5
-        self.cary = -8.0525
+        self.cary = -5.25
         self.caryaw = 0
 
     def move_car(self, angle):
@@ -180,8 +118,8 @@ class MakeRoadEnv(gym.Env):
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
         pygame.init()
-        self.screen = pygame.display.set_mode((self.road.road_length * 10, - self.road.road_width * 10))
-        pygame.display.set_caption("Car Road Environment")
+        self.screen = pygame.display.set_mode((self.road.road_length * XMULTIPLE, - self.road.road_width * YMULTIPLE))
+        pygame.display.set_caption("Car Road Environment - SLALOM")
 
     def _initial_state(self):
         self.time = 0
@@ -212,23 +150,21 @@ class MakeRoadEnv(gym.Env):
 
         if self.road.is_car_in_road(self.car) == 1:
             done = True
-        reward = self.getReward(state)
+        reward = self.getReward()
         info = {"carx": self.car.carx, "cary": self.car.cary, "caryaw": self.car.caryaw}
 
         self.time += 0.01
 
         return state, reward, done, info
 
-    def getReward(self, state):
+    def getReward(self):
         reward = 0
-        if self.road.is_car_in_forbidden_area(self.car):
-            reward = -10000
         if self.road.is_car_colliding_with_cones(self.car):
-            reward = -1000
-        if self.road.is_car_in_road(self.car):
-            reward = 10
-#        if self.test_num % 100 == 0:
-#            print(f"Reward : {reward}")
+            reward = -2000
+        y_reward = abs(self.car.cary + 5.25) * 100
+        yaw_reward = abs(self.car.caryaw) * 200
+        reward -= y_reward
+        reward -= yaw_reward
         return reward
 
     def cone_in_sight(self, carx, sight):
@@ -257,7 +193,7 @@ class MakeRoadEnv(gym.Env):
 
         for cone in self.road.cones_shape:
             x, y = cone.centroid.coords[0]
-            pygame.draw.circle(self.screen, (255, 140, 0), (int(x * 10), int(-y * 10)), 5)
+            pygame.draw.circle(self.screen, (255, 140, 0), (int(x * XMULTIPLE), int(-y * YMULTIPLE)), 5)
 
         # Create a Surface for the car.
         car_color = (255, 0, 0)
@@ -275,8 +211,8 @@ class MakeRoadEnv(gym.Env):
         # Rotate the car corners
         rotated_corners = []
         for x, y in corners:
-            x_rot = x * np.cos(-self.car.caryaw) - y * np.sin(-self.car.caryaw) + self.car.carx * 10
-            y_rot = x * np.sin(-self.car.caryaw) + y * np.cos(-self.car.caryaw) - self.car.cary * 10
+            x_rot = x * np.cos(-self.car.caryaw) - y * np.sin(-self.car.caryaw) + self.car.carx * XMULTIPLE
+            y_rot = x * np.sin(-self.car.caryaw) + y * np.cos(-self.car.caryaw) - self.car.cary * YMULTIPLE
             rotated_corners.append((x_rot, y_rot))
 
         # Draw the car on the main screen using the rotated corners

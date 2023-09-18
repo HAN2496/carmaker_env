@@ -9,20 +9,26 @@ import matplotlib.pyplot as plt
 #from utils import scale_image, blit_rotate_center
 
 def plot(road, car):
+    #plt.figure(figsize=(10, 5))
+
+    # Plot forbidden areas
     plt.plot(*road.forbbiden_area1.exterior.xy, label="Forbidden Area 1", color='red')
     plt.plot(*road.forbbiden_area2.exterior.xy, label="Forbidden Area 2", color='blue')
     plt.plot(*road.road_boundary.exterior.xy, label="ROAD BOUNDARY", color='green')
 
+    # Plot cones
     cones_x = road.cones_arr[:, 0]
     cones_y = road.cones_arr[:, 1]
     plt.scatter(cones_x, cones_y, s=10, color='orange', label="Cones")
 
+    # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
     plt.scatter(car.carx, car.cary, color='blue')
 
     plt.xlabel('X')
     plt.ylabel('Y')
+    #plt.gca().invert_yaxis()
     plt.title('Car, Forbidden Areas and Cones')
     plt.legend()
     plt.grid(True)
@@ -81,6 +87,17 @@ class Road:
                 y1 = section['y_offset'] - section['cone_dist'] / 2
                 y2 = section['y_offset'] + section['cone_dist'] / 2
                 cones.extend([[x_base, y1], [x_base, y2]])
+
+        return np.array(cones)
+
+    def create_cone_middle(self):
+        sections = self.create_DLC_cone()
+        cones = []
+        for section in sections:
+            for i in range(section['num']):  # Each section has 5 pairs
+                x_base = section['start'] + section['gap'] * i
+                y = section['y_offset']
+                cones.extend([[x_base, y]])
 
         return np.array(cones)
 
