@@ -94,13 +94,13 @@ class Cone:
             cy = round(cy, 3)
             plt.annotate(f'({cx}, {cy})', (cx, cy), textcoords="offset points", xytext=(0,10), ha='center')
 
-        ax.set_xlim(-20,40)
-        ax.set_ylim(-10, 10)
+        ax.set_xlim(-10,10)
+        ax.set_ylim(-5, 5)
         plt.show()
 
 if __name__ == "__main__":
     cone_abs = Cone()
-    carx, cary, caryaw = 100, -6.235, 0
+    carx, cary, caryaw = 102.3, -6.234, 0
     sight = 3
     print(cone_abs.cone_in_sight(carx, sight))
     cone_rel = cone_abs.to_relative_coordinates(carx, cary, caryaw, cone_abs.cone_arr)
