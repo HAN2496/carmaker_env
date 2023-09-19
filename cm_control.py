@@ -26,7 +26,7 @@ def tcp_thread(ip, port, send_queue, receive_queue, action_num=3, state_num=1):
     print("Connection from:", addr)
 
     # 카메이커의 preparation 단계 이후 첫 데이터를 수신하게끔 하기 위해 sleep
-    time.sleep(2)
+    time.sleep(1.5)
     
     while True:
         try:            
