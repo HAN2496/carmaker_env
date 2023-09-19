@@ -1,3 +1,4 @@
 import numpy as np
-
-print(np.power(2, 3))
+import pandas as pd
+df = pd.read_csv('traj_slalom_onefifth.csv').loc[:, ["traj_tx", "traj_ty"]].values
+print(df)

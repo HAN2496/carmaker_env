@@ -209,6 +209,7 @@ class MakeRoadEnv(gym.Env):
         yaw_reward = abs(self.car.caryaw) * 400
         reward -= y_reward
         reward -= yaw_reward
+
         if self.test_num % 200 == 0:
             print(f"[Time: {round(self.time, 2)}, Reward : {reward}, Ang : {round(self.car.caryaw, 4)}, Carx: {round(self.car.carx, 2)}, Cary: {round(self.car.cary, 2)}")
 

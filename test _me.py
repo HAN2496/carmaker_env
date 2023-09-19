@@ -1,6 +1,43 @@
 import numpy as np
 
+    def shape_car(self, caryaw):
+        half_length = 4.3 / 2.0
+        half_width = 1.568 / 2.0
 
+        corners = [
+            (-half_length, -half_width),
+            (-half_length, half_width),
+            (half_length, half_width),
+            (half_length, -half_width)
+        ]
+
+        car_shape = Polygon(corners)
+        car_shape = affinity.rotate(car_shape, caryaw, origin='center', use_radians=False)
+
+        return car_shape
+    def check_collision(self, caryaw, cones_rel):
+        car = self.shape_car(caryaw)
+        np.array([Point(cx, cy).buffer(0.2) for cx, cy in cones_rel])
+        for conex, coney in cones_rel:
+            cone = Point(conex, coney).buffer(0.2)
+            if car.intersects(cone):
+                print('collsiion')
+                return 1
+        return 0
+
+    def to_relative_coordinates(self, x, y, yaw, arr):
+        relative_coords = []
+
+        for point in arr:
+            dx = point[0] - x
+            dy = point[1] - y
+
+            rotated_x = dx * np.cos(-yaw) - dy * np.sin(-yaw)
+            rotated_y = dx * np.sin(-yaw) + dy * np.cos(-yaw)
+
+            relative_coords.append((rotated_x, rotated_y))
+
+        return np.array(relative_coords)
 def create_cone(sections):
     conex = []
     coney = []
