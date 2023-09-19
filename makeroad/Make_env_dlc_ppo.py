@@ -6,9 +6,10 @@ import pygame
 from shapely.geometry import Polygon, Point, LineString
 from shapely import affinity
 import matplotlib.pyplot as plt
+#from utils import scale_image, blit_rotate_center
 
 def plot(road, car):
-    plt.figure(figsize=(10, 5))
+    #plt.figure(figsize=(10, 5))
 
     # Plot forbidden areas
     plt.plot(*road.forbbiden_area1.exterior.xy, label="Forbidden Area 1", color='red')
@@ -27,7 +28,7 @@ def plot(road, car):
 
     plt.xlabel('X')
     plt.ylabel('Y')
-    plt.gca().invert_yaxis()
+    #plt.gca().invert_yaxis()
     plt.title('Car, Forbidden Areas and Cones')
     plt.legend()
     plt.grid(True)
@@ -44,26 +45,12 @@ class Road:
 
     def _forbidden_area(self):
         vertices1 = [
-            (0, -6.442),
-            (62, -6.442),
-            (62, -3.221),
-            (99, -3.221),
-            (99, -6.442),
-            (161, -6.442),
-            (161, 0),
-            (0, 0),
-            (0, -6.442)
+            (0, -6.442), (62, -6.442), (62, -3.221), (99, -3.221), (99, -6.442),
+            (161, -6.442), (161, 0), (0, 0), (0, -6.442)
         ]
         vertices2 = [
-            (0, -9.663),
-            (75.5, -9.663),
-            (75.5, -6.442),
-            (86.5, -6.442),
-            (86.5, -9.663),
-            (161, -9.663),
-            (161, -12.884),
-            (0, -12.884),
-            (0, -9.663)
+            (0, -9.663), (75.5, -9.663), (75.5, -6.442), (86.5, -6.442),
+            (86.5, -9.663), (161, -9.663), (161, -12.884), (0, -12.884), (0, -9.663)
         ]
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
@@ -71,6 +58,10 @@ class Road:
         self.forbbiden_line2 = LineString(vertices2[:])
         self.road_boundary = Polygon(
             [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
+        ])
+        self.cones_boundary = Polygon(
+            [(0, -7.0651), (62, -7.0651), (62, -3.4565), (99, -3.4565), (99, -6.5525), (161, -6.5525),
+             (161, -9.5525), (86.5, -9.5525), (86.5, -6.2065), (75.5, -6.2065), (75.5, -9.0399), (0, -9.0399)
         ])
 
     def create_cone_shape(self):
@@ -98,6 +89,7 @@ class Road:
                 cones.extend([[x_base, y1], [x_base, y2]])
 
         return np.array(cones)
+
     def create_DLC_cone(self):
         sections = [
             {'start': 0, 'gap': 5, 'cone_dist': 1.9748, 'num': 10, 'y_offset': -8.0525},
@@ -121,20 +113,24 @@ class Road:
 
     def is_car_colliding_with_cones(self, car):
         car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
-
         for cone in self.cones_shape:
             if car_shape.intersects(cone):
                 return 1
         return 0
 
     def is_car_in_road(self, car):
-
-
         car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
-
         if not car_shape.intersects(self.road_boundary):
             return 1
         if not self.road_boundary.contains(car_shape):
+            return 1
+        return 0
+
+    def is_car_in_cone_area(self, car):
+        car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
+        if not car_shape.intersects(self.cones_boundary):
+            return 1
+        if not self.cones_boundary.contains(car_shape):
             return 1
         return 0
 
@@ -142,7 +138,7 @@ class Car:
     def __init__(self):
         self.length = 4.3
         self.width = 1.568
-        self.carx = 5
+        self.carx = 2.5
         self.cary = -8.0525
         self.caryaw = 0
         self.carv = 13.8889
@@ -185,7 +181,7 @@ class MakeRoadEnv(gym.Env):
         self.road = Road()
 
         env_action_num = 1
-        env_obs_num = 215
+        env_obs_num = 14
         self.action_space = spaces.Box(low=-1, high=1, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
@@ -200,7 +196,7 @@ class MakeRoadEnv(gym.Env):
 
     def reset(self):
         self.reset_num += 1
-        print(f'reset : {self.reset_num}')
+#        print(f'reset : {self.reset_num}')
         return self._initial_state()
 
     def close(self):
@@ -213,15 +209,17 @@ class MakeRoadEnv(gym.Env):
 
         steering_changes = action
         self.car.move_car(steering_changes[0])
-        state = np.concatenate((np.array([self.car.carx, self.car.cary, self.car.caryaw]), self.road.cones_arr.flatten()))
+        cones_sight = self.cone_in_sight(self.car.carx, 5)
+        cones_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, cones_sight)
+        state = np.concatenate((np.array([self.car.carx, self.car.cary, self.car.caryaw, self.car.carv]), cones_rel.flatten()))
 
-        if self.test_num % 100 == 0:
-            print(f"[Time: {round(self.time, 2)}, Action : {action}, Ang : {round(self.car.caryaw, 2)}, Carx: {round(self.car.carx, 2)}, Cary: {round(self.car.cary, 2)}")
+#        if self.test_num % 100 == 0:
+#            print(f"[Time: {round(self.time, 2)}, Action : {action}, Ang : {round(self.car.caryaw, 2)}, Carx: {round(self.car.carx, 2)}, Cary: {round(self.car.cary, 2)}")
 
         if self.road.is_car_in_road(self.car) == 1:
             done = True
         reward = self.getReward(state)
-        info = {}
+        info = {"carx": self.car.carx, "cary": self.car.cary, "caryaw": self.car.caryaw}
 
         self.time += 0.01
 
@@ -231,11 +229,30 @@ class MakeRoadEnv(gym.Env):
         reward = 0
         if self.road.is_car_in_forbidden_area(self.car):
             reward = -10000
-        elif self.road.is_car_colliding_with_cones(self.car):
+        if self.road.is_car_colliding_with_cones(self.car):
             reward = -1000
-        if self.test_num % 100 == 0:
-            print(f"Reward : {reward}")
+        if self.road.is_car_in_road(self.car):
+            reward = 10
+#        if self.test_num % 100 == 0:
+#            print(f"Reward : {reward}")
         return reward
+
+    def cone_in_sight(self, carx, sight):
+        return np.array([cone for cone in self.road.cones_arr if carx - 2.15 <= cone[0]][:sight])
+
+    def to_relative_coordinates(self, carx, cary, caryaw, arr):
+        relative_coords = []
+
+        for point in arr:
+            dx = point[0] - carx
+            dy = point[1] - cary
+
+            rotated_x = dx * np.cos(-caryaw) - dy * np.sin(-caryaw)
+            rotated_y = dx * np.sin(-caryaw) + dy * np.cos(-caryaw)
+
+            relative_coords.append((rotated_x, rotated_y))
+
+        return np.array(relative_coords)
 
     def render(self, mode='human'):
         for event in pygame.event.get():
@@ -250,22 +267,36 @@ class MakeRoadEnv(gym.Env):
 
         # Create a Surface for the car.
         car_color = (255, 0, 0)
-        car_surface = pygame.Surface((self.car.length*10, self.car.width*10), pygame.SRCALPHA)
-        pygame.draw.polygon(car_surface, car_color, [(x*10, -y*10) for x, y in [(0,0), (self.car.length, 0), (self.car.length, self.car.width), (0, self.car.width)]])
 
-        # Rotate the Surface.
-        rotated_car_surface = pygame.transform.rotate(car_surface, np.degrees(self.car.caryaw))
+        half_length = self.car.length * 10 / 2.0
+        half_width = self.car.width * 10 / 2.0
 
-        # Draw the rotated Surface onto the main screen.
-        self.screen.blit(rotated_car_surface, (self.car.carx*10 - rotated_car_surface.get_width() / 2, -self.car.cary*10 - rotated_car_surface.get_height() / 2))
+        corners = [
+            (-half_length, -half_width),
+            (-half_length, half_width),
+            (half_length, half_width),
+            (half_length, -half_width)
+        ]
+
+        # Rotate the car corners
+        rotated_corners = []
+        for x, y in corners:
+            x_rot = x * np.cos(-self.car.caryaw) - y * np.sin(-self.car.caryaw) + self.car.carx * 10
+            y_rot = x * np.sin(-self.car.caryaw) + y * np.cos(-self.car.caryaw) - self.car.cary * 10
+            rotated_corners.append((x_rot, y_rot))
+
+        # Draw the car on the main screen using the rotated corners
+        pygame.draw.polygon(self.screen, car_color, rotated_corners)
 
         pygame.display.flip()
+
 
 if __name__ == "__main__":
     env = MakeRoadEnv()
     plot(env.road, env.car)
-    model = SAC("MlpPolicy", env, verbose=1)
+    model = PPO("MlpPolicy", env, verbose=1)
     model.learn(total_timesteps=10000 * 500)
+    model.save("Model_PPO.pkl")
     """
     env = MakeRoadEnv()
     model = SAC.load("model.pkl", env=env)
