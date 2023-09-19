@@ -152,11 +152,7 @@ class MakeRoadEnv(gym.Env):
 
         steering_changes = action
         self.car.move_car(steering_changes[0])
-        cones_sight = self.cone_in_sight(self.car.carx, 5)
-        middles_sight = self.middle_in_sight(self.car.carx, 5)
-        cones_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, cones_sight)
-        middles_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, middles_sight)
-        state = np.concatenate((np.array([self.car.carx, self.car.cary, self.car.caryaw, self.car.carv]), cones_rel.flatten(), middles_rel.flatten()))
+        state = self.switch_state()
 
 
         if self.road.is_car_in_road(self.car) == 1:
@@ -169,9 +165,16 @@ class MakeRoadEnv(gym.Env):
         return state, reward, done, info
 
     def switch_state(self):
-        if self.car.carx <= 70 or self.car.cary >= 130:
-            pass
+        if self.car.carx <= 70 or self.car.carx >= 400:
+            lookahead_traj = [(self.car.carx + i, -5.25) for i in range(0, 10)]
+            lookahead_traj_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, lookahead_traj)
+            return np.concatenate((np.array([self.car.carx, self.car.cary, self.car.caryaw, self.car.carv]), lookahead_traj_rel.flatten()))
         else:
+            cones_sight = self.cone_in_sight(self.car.carx, 5)
+            middles_sight = self.middle_in_sight(self.car.carx, 5)
+            cones_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, cones_sight)
+            middles_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, middles_sight)
+            return np.concatenate((np.array([self.car.carx, self.car.cary, self.car.caryaw, self.car.carv]), cones_rel.flatten(), middles_rel.flatten()))
 
     def getReward(self):
         reward = 0
