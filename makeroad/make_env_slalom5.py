@@ -8,12 +8,13 @@ from shapely import affinity
 import matplotlib.pyplot as plt
 import math
 import time
-#from utils import scale_image, blit_rotate_center
+
+# from utils import scale_image, blit_rotate_center
 
 XMULTIPLE, YMULTIPLE = 2, 10
 
-def plot(road, car):
 
+def plot(road, car):
     plt.plot(*road.road_boundary.exterior.xy, label="Forbidden Area 1", color='red')
 
     cones_x = road.cones_arr[:, 0]
@@ -33,38 +34,50 @@ def plot(road, car):
     plt.axis('equal')
     plt.show()
 
+
 class Road:
     def __init__(self):
         self.road_length = 500
-        self.road_width = -15
+        self.road_width = -13
         self.road_boundary = self._create_road_boundary()
         self.cones_arr, self.cones_shape = self._create_SLALOM_cone()
-        self.middle_arr, self.middle_shape = self._create_SLALOM_middle()
+        self.cones_line = self._create_SLALOM_cone_line()
 
     def _create_road_boundary(self):
-       polygon = Polygon(
-            [(0, 5), (self.road_length, 5), (self.road_length, self.road_width), (0, self.road_width)])
-       return polygon
-
+        polygon = Polygon(
+            [(0, -0.5), (self.road_length, -0.5), (self.road_length, self.road_width), (0, self.road_width)])
+        return polygon
 
     def _create_SLALOM_cone(self):
-        first_cone_arr = [[i, -5.25] for i in range(100, 400, 30)]
-        second_cone_arr = [[i, -5.25] for i in range(600, 800, 30)]
+        first_cone_arr = []
+        for i in range(100, 400, 30):
+            if (i-100) % 60 == 0:
+                first_cone_arr.append([[i, -5.25], [i, -10.5]])
+            else:
+                first_cone_arr.append([[i, 0], [i, -5.25]])
+        second_cone_arr = [[[i, -2.625], [i, -7.875]] for i in range(600, 800, 30)]
         cones_arr = np.array(first_cone_arr + second_cone_arr)
-        cones_shape = np.array([Point(cx, cy).buffer(0.2) for cx, cy in cones_arr])
+        cones_shape = np.array(
+            [[Point(cone1[0], cone1[1]).buffer(0.2), Point(cone2[0], cone2[1]).buffer(0.2)] for cone1, cone2 in
+             cones_arr])
         return cones_arr, cones_shape
 
-    def _create_SLALOM_middle(self):
-        first_cone_arr = [[i, -5.25] for i in range(115, 400, 30)]
-        second_cone_arr = [[i, -5.25] for i in range(615, 800, 30)]
+    def _create_SLALOM_cone_line(self):
+        first_cone_arr = []
+        for i in range(100, 400, 30):
+            if (i-100) % 60 == 0:
+                first_cone_arr.append([[i, -5.25], [i, -10.5]])
+            else:
+                first_cone_arr.append([[i, 0], [i, -5.25]])
+        second_cone_arr = [[[i, -2.625], [i, -7.875]] for i in range(600, 800, 30)]
         cones_arr = np.array(first_cone_arr + second_cone_arr)
-        cones_shape = np.array([Point(cx, cy).buffer(0.2) for cx, cy in cones_arr])
-        return cones_arr, cones_shape
+        cone_line1 = np.array([LineString([cup, cdown]) for cup, cdown in cones_arr])
+        return cone_line1
 
     def is_car_colliding_with_cones(self, car):
         car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
-        for cone in self.cones_shape:
-            if car_shape.intersects(cone):
+        for cone_line in self.cones_line:
+            if car_shape.intersects(cone_line):
                 return 1
         return 0
 
@@ -76,6 +89,7 @@ class Road:
             return 1
         return 0
 
+
 class Car:
     def __init__(self):
         self.length = 4.3
@@ -86,7 +100,7 @@ class Car:
         self.carv = 13.8889
 
     def reset_car(self):
-        self.carx = 5
+        self.carx = 4
         self.cary = -5.25
         self.caryaw = 0
 
@@ -112,6 +126,7 @@ class Car:
 
         return car_shape
 
+
 class MakeRoadEnv(gym.Env):
     def __init__(self):
         super(MakeRoadEnv, self).__init__()
@@ -123,7 +138,7 @@ class MakeRoadEnv(gym.Env):
         self.road = Road()
 
         env_action_num = 1
-        env_obs_num = 24
+        env_obs_num = 23
         self.action_space = spaces.Box(low=-1, high=1, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
@@ -139,7 +154,6 @@ class MakeRoadEnv(gym.Env):
 
     def reset(self):
         self.reset_num += 1
-#        print(f'reset : {self.reset_num}')
         return self._initial_state()
 
     def close(self):
@@ -150,76 +164,44 @@ class MakeRoadEnv(gym.Env):
         self.test_num += 1
         self.render()
 
-        steering_changes = action
-        self.car.move_car(steering_changes[0])
-        state = self.switch_state()
+        steering_changes = action[0]
+        self.car.move_car(steering_changes)
+
+        cones_sight = self.cone_in_sight(self.car.carx, 5)
+        cones_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, cones_sight)
 
 
+        state = np.concatenate((np.array([self.car.cary + 5.25, self.car.caryaw, self.car.carv]), cones_rel.flatten()))
         if self.road.is_car_in_road(self.car) == 1:
             done = True
+
         reward = self.getReward()
         info = {"carx": self.car.carx, "cary": self.car.cary, "caryaw": self.car.caryaw}
-
         self.time += 0.01
 
         return state, reward, done, info
 
-    def switch_state(self):
-        if self.car.carx <= 70 or self.car.carx >= 400:
-            lookahead_traj = [(self.car.carx + i, -5.25) for i in range(0, 10)]
-            lookahead_traj_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, lookahead_traj)
-            return np.concatenate((np.array([self.car.carx, self.car.cary, self.car.caryaw, self.car.carv]), lookahead_traj_rel.flatten()))
-        else:
-            cones_sight = self.cone_in_sight(self.car.carx, 5)
-            middles_sight = self.middle_in_sight(self.car.carx, 5)
-            cones_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, cones_sight)
-            middles_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, middles_sight)
-            return np.concatenate((np.array([self.car.carx, self.car.cary, self.car.caryaw, self.car.carv]), cones_rel.flatten(), middles_rel.flatten()))
-
     def getReward(self):
-        reward = 0
+        collision = self.road.is_car_colliding_with_cones(self.car)
+        reward_collision = collision * 1000
 
-        # 가장 가까운 콘과의 거리 찾기
-        min_distance = 0
-        for cone in self.road.cones_arr:
-            distance_to_cone = np.linalg.norm(np.array([self.car.carx, self.car.cary]) - np.array(cone))
-            min_distance = min(min_distance, distance_to_cone)
+        reward_dist = abs(self.car.cary + 5.25) * 100
+        reward_ang = abs(self.car.caryaw) * 500
 
-        # 거리가 증가할수록 더 큰 벌점을 받도록 설정
-        if min_distance >= 2.65:
-            reward -= 0
-        else:
-            reward -= 10 * math.exp(min_distance - 2.65)
+        e = - reward_dist - reward_ang - reward_collision
 
-        mid_min_distance = 0
-        for mid in self.road.middle_arr:
-            distance_to_mid = np.linalg.norm(np.array([self.car.carx, self.car.cary]) - np.array(mid))
-            mid_min_distance = min(min_distance, distance_to_mid)
+        if self.test_num % 500 == 0:
+            print(
+                f"[Time: {round(self.time, 2)}, Reward : {e}, Ang : {round(self.car.caryaw, 4)}, Carx: {round(self.car.carx, 2)}, Cary: {round(self.car.cary, 2)}")
 
-        if mid_min_distance >= 5:
-            reward -=0
-        else:
-            reward -= 400 * mid_min_distance
+        if self.test_num % 100 == 0 and collision == 1:
+            print(
+                f"[Time: {round(self.time, 2)}, Reward : {e}, [Collison]")
 
-        # 콘과 충돌 시 큰 벌점 부여
-        if self.road.is_car_colliding_with_cones(self.car):
-            reward -= 2000
-
-        y_reward = abs(self.car.cary + 5.25) * 200
-        yaw_reward = abs(self.car.caryaw) * 400
-        reward -= y_reward
-        reward -= yaw_reward
-
-        if self.test_num % 200 == 0:
-            print(f"[Time: {round(self.time, 2)}, Reward : {reward}, Ang : {round(self.car.caryaw, 4)}, Carx: {round(self.car.carx, 2)}, Cary: {round(self.car.cary, 2)}")
-
-        return reward
+        return e
 
     def cone_in_sight(self, carx, sight):
-        return np.array([cone for cone in self.road.cones_arr if carx - 2.15 <= cone[0]][:sight])
-
-    def middle_in_sight(self, carx, sight):
-        return np.array([cone for cone in self.road.cones_arr if carx - 2.15 <= cone[0]][:sight])
+        return np.array([[cone1, cone2] for cone1, cone2 in self.road.cones_arr if carx - 2.15 <= cone1[0] or carx - 2.15 <= cone2[0]][:sight])
 
     def to_relative_coordinates(self, carx, cary, caryaw, arr):
         relative_coords = []
@@ -242,9 +224,10 @@ class MakeRoadEnv(gym.Env):
 
         self.screen.fill((128, 128, 128))
 
-        for cone in self.road.cones_shape:
-            x, y = cone.centroid.coords[0]
-            pygame.draw.circle(self.screen, (255, 140, 0), (int(x * XMULTIPLE), int(-y * YMULTIPLE)), 5)
+        for line in self.road.cones_line:
+            coords = list(line.coords)
+            pygame_coords = [(int(x * XMULTIPLE), int(-y * YMULTIPLE)) for x, y in coords]
+            pygame.draw.lines(self.screen, (255, 140, 0), False, pygame_coords, 5)
 
         # Create a Surface for the car.
         car_color = (255, 0, 0)
@@ -274,18 +257,6 @@ class MakeRoadEnv(gym.Env):
 
 if __name__ == "__main__":
     env = MakeRoadEnv()
-    plot(env.road, env.car)
     model = SAC("MlpPolicy", env, verbose=1)
     model.learn(total_timesteps=10000 * 500)
     model.save("Model3.pkl")
-    """
-    env = MakeRoadEnv()
-    model = SAC.load("model.pkl", env=env)
-    obs = env.reset()
-    done = False
-
-    while not done:
-        action, _ = model.predict(obs)
-        obs, reward, done, _ = env.step(action)
-        env.render()
-    """
