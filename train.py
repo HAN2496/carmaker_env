@@ -8,7 +8,7 @@
 4. 학습이 완료된 후 웨이트 파일(e.g. model.pkl)을 저장한다.
 """
 import sys
-from env_SLALOM4 import CarMakerEnv
+from env_SLALOM5 import CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -62,10 +62,10 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    env_num = 4
+    env_num = 5
     road_type = "SLALOM"
-    comment = "2nd"
-    explanation = "Cone Size Change (0.2 to 1), Cone arr change"
+    comment = "1st"
+    explanation = "Cone Size 0.2. Collision / DevDist, DevAng / lookahead_traj, lookahead_cone"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
