@@ -11,7 +11,6 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from shapely.geometry import Polygon, Point
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -37,15 +36,15 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM'):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_UTurn'):
         # Action과 State의 크기 및 형태를 정의.
+        # 예제에서는 3개의 action(brake, gas, steering angle)과 1개의 state(car.vx)를 예시로 작성
         self.check = check
-        self.road_type = "SLALOM"
+        self.road_type = "UTurn"
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-
-        env_obs_num = 31
+        env_obs_num = 27
         sim_obs_num = 13
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -65,8 +64,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.cone_arr = self._create_SLALOM_cone()
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM_env4.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_UTurn_1.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
         self.cm_thread.join()
@@ -90,13 +88,12 @@ class CarMakerEnv(gym.Env):
         action = np.append(action1, self.test_num)
         self.test_num += 1
         time = 0
+        car_dev = np.array([0, 0])
         car_alHori = 0
         car_pos = np.array([0, 0, 0])
         car_steer = np.array([0, 0, 0])
         car_v = 0
         car_roll = 0
-        car_dev = np.array([0, 0])
-        collision = 0
 
         done = False
 
@@ -130,27 +127,26 @@ class CarMakerEnv(gym.Env):
             state = np.array(state) #어레이 변환
             state = state[1:]
             time = state[0]
-            car_pos = state[1:4] #x, y, yaw
+            car_pos = state[1:4]
             car_v = state[4] #1
             car_steer = state[5:8]
             car_dev = state[8:10] #2
-            car_alHori = state[10]
+            car_alHori = state[10] #1
             car_roll = state[11]
-            lookahead_sight = [3 * i for i in range(10)]
+            lookahead_sight = [0, 3, 6, 9, 12, 15, 18, 21, 24, 27]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight, self.traj_data)
+            rl_state = np.array([car_alHori, car_pos[2], car_steer[1]]) #alHori, caryaw, steer.vel
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
-            cone_sight = self.cone_in_sight(car_pos[0], 3)
-            cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cone_sight) # 20
-            collision = self.check_collsion(cones_rel)
-            state = np.concatenate((np.array([car_steer[0], car_v, car_alHori]), car_dev, lookahead_traj_rel, cones_rel.flatten())) #3 + 2 + 20 + 6
+            state = np.concatenate((np.array([car_steer[0], car_v]), car_dev, lookahead_traj_rel, rl_state)) #4 + 20 + 3
 
         # 리워드 계산
-        reward_state = np.array([car_pos[0], car_dev[0], car_dev[1], collision])
+        reward_state = np.concatenate((np.array([car_v, car_roll, car_pos[2], car_alHori, car_pos[0]]), car_steer, car_dev))
         reward = self.getReward(reward_state, time)
         info = {"Time": time, "Steer.Ang": car_steer[0], "Steer.Vel": car_steer[1], "Steer.Acc": car_steer[2], "carx": car_pos[0], "cary": car_pos[1],
                 "caryaw": car_pos[2], "carv": car_v, "alHori": car_alHori, "Roll": car_roll}
 
         return state, reward, done, info
+
 
     def find_lookahead_traj(self, x, y, distances, data):
         distances = np.array(distances)
@@ -171,72 +167,50 @@ class CarMakerEnv(gym.Env):
                 result_points.append(data[-1])
 
         return result_points
-    def cone_in_sight(self, carx, sight):
-        return np.array([cone for cone in self.cone_arr if carx - 2.1976004311961135 <= cone[0]][:sight])
 
-    def check_collsion(self, cones_rel):
-        width = 1.568
-        l1, l2 = 2.1976004311961135, 4.3 - 2.1976004311961135
-        cone_r = 1
-        filtered_cones_rel = [cone for cone in cones_rel
-                              if (-l1 - cone_r <= cone[0] <= l2 + cone_r) and (-width/2 - cone_r <= cone[1] <= width/2 + cone_r)]
-
-        if not filtered_cones_rel:
-            return 0
-
-        for conex, coney in filtered_cones_rel:
-            if (-l1 <= conex <= l2) and (-width/2 <= coney <= width/2):
-                return 1
-            car_edge = [[-l1, -width / 2], [l2, -width / 2], [l2, width / 2], [-l1, width / 2]]
-            car_line = Polygon(car_edge)
-            cone = Point((conex, coney))
-            if cone.distance(car_line) <= cone_r:
-                return 1
-
-        return 0
-
-    def to_relative_coordinates(self, carx, cary, caryaw, arr):
+    def to_relative_coordinates(self, x, y, yaw, lookahead_points):
         relative_coords = []
 
-        for point in arr:
-            dx = point[0] - carx
-            dy = point[1] - cary
+        for point in lookahead_points:
+            dx = point[0] - x
+            dy = point[1] - y
 
-            rotated_x = dx * np.cos(-caryaw) - dy * np.sin(-caryaw)
-            rotated_y = dx * np.sin(-caryaw) + dy * np.cos(-caryaw)
+            rotated_x = dx * np.cos(-yaw) - dy * np.sin(-yaw)
+            rotated_y = dx * np.sin(-yaw) + dy * np.cos(-yaw)
 
             relative_coords.append((rotated_x, rotated_y))
 
         return np.array(relative_coords)
-    def getReward(self, state, time):
-        time = time
 
+    def getReward(self, state, time):
         if state.any() == False:
             # 에피소드 종료시
             return 0.0
+        time = time
+        carv = state[0]
+        carroll = state[1]
+        caryaw = state[2]
+        alHori = state[3]
+        carx = state[4]
+        steer_ang = state[5]
+        steer_vel = state[6]
+        steer_acc = state[7]
+        devDist = state[8]
+        devAng = state[9]
 
-        carx = state[0]
-        devDist = state[1]
-        devAng = state[2]
-        collision = state[3]
+        reward_devDist = abs(devDist) * 1000
+        reward_devAng = abs(devAng) * 5000
 
-        dist_reward = abs(devDist) * 1000
-        ang_reward = abs(devAng) * 5000
+        reward_straight = 0
+        if carx <= 85:
+            reward_straight += (abs(alHori) + abs(caryaw) + abs(steer_vel)) * 1000
 
-        col_reward = collision * 5000
-
-        e = - dist_reward - ang_reward - col_reward
+        e = - reward_devDist - reward_devAng - abs(reward_straight)
 
         if self.test_num % 300 == 0 and self.check == 0:
-            print(f"[Time: {time}], [Reward: {e}], [dev : {dist_reward + ang_reward}] [col: {col_reward}]")
+            print("[Time: {}], [tx : {}], [Reward : {}], [Dist : {}] [IPG : {}]".format(time, round(carx, 2), e, round(reward_devDist,2), round(reward_straight, 2)))
 
         return e
-
-    def _create_SLALOM_cone(self):
-        first_cone_arr = [[i, -5.25] for i in range(100, 400, 30)]
-        second_cone_arr = [[i, -5.25] for i in range(600, 800, 30)]
-        return np.array(first_cone_arr + second_cone_arr)
-
 
 
 if __name__ == "__main__":
@@ -256,6 +230,7 @@ if __name__ == "__main__":
         while not done:
             action = env.action_space.sample()  # 랜덤 액션 선택
             next_state, reward, done, info = env.step(action)
+
             next_state_lst.append(next_state)
             info_lst.append(info)
             act_lst.append(action)
@@ -263,12 +238,11 @@ if __name__ == "__main__":
 
             if done == True:
                 print("Episode Finished.")
-                df.to_csv('datafiles/SLALOM/env_test/env_action_check.csv')
+                df.to_csv(f'datafile/{env.road_type}/env_test/env_action_check.csv')
 
                 df2 = pd.DataFrame(data=next_state_lst)
-                df2.to_csv('datafiles/SLALOM/env_test/env_state_check.csv', index=False)
+                df2.to_csv(f'datafile/{env.road_type}/env_test/env_state_check.csv', index=False)
 
                 df3 = pd.DataFrame(data=info_lst)
-                df3.to_csv('datafiles/SLALOM/env_test/env_info_check.csv', index=False)
-
+                df3.to_csv(f'datafile/{env.road_type}/env_test/env_info_check.csv', index=False)
                 break
