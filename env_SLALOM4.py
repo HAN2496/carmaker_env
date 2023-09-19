@@ -219,6 +219,8 @@ class CarMakerEnv(gym.Env):
         devDist = state[1]
         devAng = state[2]
         collision = state[3]
+        if collision == 1:
+            print("COL")
 
         dist_reward = abs(devDist) * 1000
         ang_reward = abs(devAng) * 5000
