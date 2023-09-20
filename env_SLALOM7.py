@@ -49,7 +49,7 @@ class CarMakerEnv(gym.Env):
 
         env_obs_num = 24
         sim_obs_num = 13
-        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
+#        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.action_space = spaces.Box(10000)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
