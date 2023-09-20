@@ -10,3 +10,7 @@
 
 
 직진하라하고 중간에 콘 놓고 부딪히면 패널티
+--------
+1. Hierarchical reinforcement learning
+2. CNN 회전시키는거
+3. 

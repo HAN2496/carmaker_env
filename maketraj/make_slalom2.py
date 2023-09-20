@@ -10,8 +10,8 @@ ycoords = []
 
 cones = np.array([(100 + 30 * i, -5.25) for i in range(10)])
 
-straight_line1 = np.array([[x, -5.25, 0] for x in np.arange(0, 85, 0.1)])
-straight_line2 = np.array([[x, -5.25, 0] for x in np.arange(385, 500, 0.1)])
+straight_line1 = np.array([[x, -5.25] for x in np.arange(0, 85, 0.1)])
+straight_line2 = np.array([[x, -5.25] for x in np.arange(385, 500, 0.1)])
 straight_line1x = np.linspace(0, 85, int((85 - 0) / 0.01) + 1)
 xcoords.extend(straight_line1x)
 straight_line1y = np.full_like(straight_line1x, -5.25)
