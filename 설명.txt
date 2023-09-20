@@ -11,6 +11,7 @@ env2: 충돌고려
 env3: cones 제작하여 학습 -> 꺾어야 하는 부분에서 꺾이지 않음
 env4: 콘 하나만 세팅하고 중심선 리워드
 env5: env2 조금 변형. 충돌고려 방식 변경 + 데이터셋 내가 제작한걸로
+ 2nd: 데이터셋 onefifth말고 그냥으로 해봄. env6만큼 state수도 감소시킴.
 env6: trjectory 보여지는 수만 좀 바꿈. obs_num 감소시켰음
 env7: DQN으로 학습해봄.
 

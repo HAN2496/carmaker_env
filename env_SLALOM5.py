@@ -47,7 +47,7 @@ class CarMakerEnv(gym.Env):
 
         self.cones = self.create_SLALOM_cone()
 
-        env_obs_num = 34
+        env_obs_num = 24
         sim_obs_num = 13
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -138,8 +138,8 @@ class CarMakerEnv(gym.Env):
             car_dev = state[8:10] #2
             car_alHori = state[10]
             car_roll = state[11]
-            traj_sight = 10 # (10, 2) = 20개
-            cone_sight = 5 # (5, 2) = 10개
+            traj_sight = 8 # (10, 2) = 20개
+            cone_sight = 2 # (5, 2) = 10개
 
             lookahead_sight = [3 * i for i in range(traj_sight)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
