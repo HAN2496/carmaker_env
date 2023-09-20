@@ -8,8 +8,8 @@
 4. 학습이 완료된 후 웨이트 파일(e.g. model.pkl)을 저장한다.
 """
 import sys
-from env_SLALOM6 import CarMakerEnv
-from stable_baselines3 import SAC, PPO
+from env_SLALOM7 import CarMakerEnv
+from stable_baselines3 import SAC, PPO, DQN
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
 from stable_baselines3.common.vec_env import VecMonitor
@@ -62,15 +62,15 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    env_num = 6
+    env_num = 7
     road_type = "SLALOM"
     comment = "1st"
-    explanation = "5, 6 only differnece in state number"
+    explanation = "Using DQN"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
     prefix = road_type + "/" + naming
-    args = Args(prefix=prefix, alg='sac')
+    args = Args(prefix=prefix, alg='dqn')
 
     bestRewardCallback = getBestRewardCallback(args)
 
@@ -79,7 +79,7 @@ def main():
 
     input("Program Start.\n")
 
-    model = SAC('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join(f"tensorboard/{prefix}"))
+    model = DQN('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join(f"tensorboard/{prefix}"))
 #    model = PPO.load("UTurn_env22_best_model.pkl", env=env, verbos=1, tensorboard_log=os.path.join("tensorboard/{}/Additional_study".format(naming)))
 
     try:
