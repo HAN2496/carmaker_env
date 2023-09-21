@@ -67,7 +67,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/made_traj_SLALOM_onefifth.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/made_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
 
     def __del__(self):
@@ -245,9 +245,9 @@ class CarMakerEnv(gym.Env):
         e = - reward_devDist - reward_collision - reward_devAng
 
         if self.check == 0 and collision == 1:
-            print("[time : {}], [tx : {}], [COLLISION] [cary : {}]".format(round(time, 2), round(carx, 2), round(cary, 2)))
+            print(f"[COLLISION], [time : {round(time, 2)}], [Reward : {e}] [tx : {round(carx, 2)}], [cary : {round(cary, 2)}]")
         elif self.check == 0 and self.test_num % 300 == 0:
-            print("[time : {}], [tx : {}], [cary : {}]".format(round(time, 2), round(carx, 2), round(cary, 2)))
+            print(f"[time : {round(time, 2)}], [Reward : {e}] [tx : {round(carx, 2)}], [cary : {round(cary, 2)}]")
 
         return e
 
