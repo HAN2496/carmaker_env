@@ -21,6 +21,7 @@ from datetime import datetime
 
 logging.basicConfig(filename='Log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 custom_logger = logging.getLogger('customLogger')
+custom_logger.propagate = False
 handler = logging.FileHandler('Log.txt')
 formatter = logging.Formatter('%(message)s')
 handler.setFormatter(formatter)
@@ -62,8 +63,8 @@ def main():
 
     env_num = 7
     road_type = "SLALOM"
-    comment = "1st"
-    explanation = "Using DQN"
+    comment = "2nd"
+    explanation = "DQN, action num decrease(to 1000)"
 
     naming = f"env{env_num}_{comment}"
     prefix = road_type + "/" + naming

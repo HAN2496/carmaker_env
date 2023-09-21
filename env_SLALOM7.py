@@ -50,7 +50,7 @@ class CarMakerEnv(gym.Env):
         env_obs_num = 24
         sim_obs_num = 13
 #        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
-        self.action_space = spaces.Discrete(10000)
+        self.action_space = spaces.Discrete(1000)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
         # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
@@ -68,7 +68,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/made_traj_SLALOM_onefifth.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/made_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
 
     def __del__(self):
@@ -90,7 +90,7 @@ class CarMakerEnv(gym.Env):
         return self._initial_state()
 
     def step(self, action1):
-        action1 = (action1 / 5000.0) - 1.0
+        action1 = (action1 / 500.0) - 1.0
         action = np.append(action1, self.test_num)
         self.test_num += 1
         time = 0
@@ -143,7 +143,7 @@ class CarMakerEnv(gym.Env):
             traj_sight = 8 # (8, 2) = 16
             cone_sight = 2 # (2, 2) = 4
 
-            lookahead_sight = [3 * i for i in range(traj_sight)]
+            lookahead_sight = [2 * i for i in range(traj_sight)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
 
