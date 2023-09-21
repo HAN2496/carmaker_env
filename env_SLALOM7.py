@@ -50,7 +50,7 @@ class CarMakerEnv(gym.Env):
         env_obs_num = 24
         sim_obs_num = 13
 #        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
-        self.action_space = spaces.Discrete(10000)
+        self.action_space = spaces.Discrete(1000)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
         # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
@@ -90,7 +90,7 @@ class CarMakerEnv(gym.Env):
         return self._initial_state()
 
     def step(self, action1):
-        action1 = (action1 / 5000.0) - 1.0
+        action1 = (action1 / 500.0) - 1.0
         action = np.append(action1, self.test_num)
         self.test_num += 1
         time = 0
