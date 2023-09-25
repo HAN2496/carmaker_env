@@ -39,8 +39,8 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
         else:
             time.sleep(1)
 
-class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM2'):
+class Controller(gym.Env):
+    def __init__(self, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM2'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "SLALOM"
@@ -51,8 +51,7 @@ class CarMakerEnv(gym.Env):
 
         env_obs_num = 24
         sim_obs_num = 13
-#        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
-        self.action_space = spaces.Discrete(1000)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
         # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
@@ -65,6 +64,8 @@ class CarMakerEnv(gym.Env):
         self.sim_started = False
 
         # 각 Env마다 1개의 카메이커 연동 쓰레드를 사용
+        host = '127.0.0.1'
+        port = 10001
         self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
         self.cm_thread.start()
 
@@ -283,7 +284,7 @@ class CarMakerEnv(gym.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(check=0, simul_path='test_Nomove')
+    env = Controller(check=0, simul_path='test_Nomove')
     act_lst = []
     next_state_lst = []
     info_lst = []

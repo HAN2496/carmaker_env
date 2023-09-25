@@ -1,8 +1,7 @@
-"""
-강화학습에 사용할 수 있는 Gym Env 기반 카메이커 연동 클라스
-cm_control.py에 구현된 기능을 이용
-"""
-
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import torch.optim as optim
 import gym
 from gym import spaces
 import numpy as np
@@ -11,11 +10,9 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-import math
 from shapely.geometry import Polygon, Point, LineString
 from shapely import affinity
-# 카메이커 컨트롤 노드 구동을 위한 쓰레드
-# CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
+
 
 def cm_thread(host, port, action_queue, state_queue, action_num, state_num, status_queue, matlab_path, simul_path):
     cm_env = CMcontrolNode(host=host, port=port, action_queue=action_queue, state_queue=state_queue, action_num=action_num, state_num=state_num, matlab_path=matlab_path, simul_path=simul_path)
@@ -37,7 +34,9 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
         else:
             time.sleep(1)
 
-class CarMakerEnv(gym.Env):
+
+
+class Controller(gym.Env):
     def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM2'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
@@ -279,39 +278,65 @@ class CarMakerEnv(gym.Env):
         ]
         return self.create_cone(sections)
 
+
+class MetaController(nn.Module):
+    def __init__(self, state_dim, goal_dim, hidden_dim=256):
+        super(MetaController, self).__init__()
+        self.policy_net = nn.Sequential(
+            nn.Linear(state_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, goal_dim),
+            nn.Tanh()
+        )
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=1e-3)
+
+    def select_goal(self, state):
+        state = torch.FloatTensor(state).unsqueeze(0)
+        with torch.no_grad():
+            goal = self.policy_net(state)
+        return goal.numpy().flatten()
+
+    def update(self, loss):
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
+
+class HSAC:
+    def __init__(self, state_dim, goal_dim, action_dim):
+        self.meta_controller = MetaController(state_dim, goal_dim)
+        self.controller = Controller(state_dim + goal_dim, action_dim)
+
+    def train(self, env, episodes=1000):
+        for episode in range(episodes):
+            state = env.reset()
+            done = False
+            while not done:
+                env.render()
+                goal = self.meta_controller.select_goal(state)
+                action = self.controller.select_action(state, goal)
+                next_state, reward, done, _ = env.step(action)
+
+                # Here, normally, you'd add the experience to some replay buffer
+                # and sample from that buffer to update the controllers.
+
+                # Example of a simple update (not considering discount factor, target networks, etc.)
+                # You'd want to replace this with proper SAC updates
+                meta_loss = F.mse_loss(torch.FloatTensor(next_state), torch.FloatTensor(goal))
+                self.meta_controller.update(meta_loss)
+
+                controller_loss = -torch.FloatTensor([reward])  # minimizing negative reward
+                self.controller.update(controller_loss)
+
+                state = next_state
+        env.close()
+
+
 if __name__ == "__main__":
-    # 환경 테스트
-    env = CarMakerEnv(check=0, simul_path='test_Nomove')
-    act_lst = []
-    next_state_lst = []
-    info_lst = []
+    env = gym.make('Pendulum-v1')
+    state_dim = env.observation_space.shape[0]
+    action_dim = env.action_space.shape[0]
+    goal_dim = state_dim  # Assuming goal_dim is same as state_dim
 
+    agent = HSAC(state_dim, goal_dim, action_dim)
+    agent.train(env)
 
-    for i in range(1):
-        # 환경 초기화
-        state = env.reset()
-
-        # 에피소드 실행
-        done = False
-        while not done:
-            action = env.action_space.sample()  # 랜덤 액션 선택
-            if i==0:
-                act_lst.append(action)
-                df = pd.DataFrame(data=act_lst)
-            next_state, reward, done, info = env.step(action)
-
-            if i==0:
-                next_state_lst.append(next_state)
-                info_lst.append(info)
-
-            if done == True:
-                print("Episode Finished.")
-                df.to_csv('env_action_check.csv')
-
-                df2 = pd.DataFrame(data=next_state_lst)
-                df2.to_csv('env_state_check.csv', index=False)
-
-                df3 = pd.DataFrame(data=info_lst)
-                df3.to_csv('env_info_check.csv', index=False)
-
-                break
