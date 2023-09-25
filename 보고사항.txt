@@ -14,3 +14,7 @@
 1. Hierarchical reinforcement learning
 2. CNN 회전시키는거
 3. 
+
+[0925]
+1. 연구 동기를 어떤식으로 잡아가고, 목표를 어떤식으로 설정해야하는지
+2. 앞으로 방향성
