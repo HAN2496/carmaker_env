@@ -140,13 +140,13 @@ class Car:
         self.width = 1.568
         self.carx = 2.5
         self.cary = -8.0525
-        self.caryaw = 0
+        self.caryaw = 0.5
         self.carv = 13.8889
 
     def reset_car(self):
         self.carx = 5
         self.cary = -8.0525
-        self.caryaw = 0
+        self.caryaw = 0.5
 
     def move_car(self, angle):
         self.caryaw += angle * 0.01
