@@ -35,8 +35,8 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
         else:
             time.sleep(1)
 
-class LowLevelEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_DLC'):
+class CarMakerEnv(gym.Env):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_DLC', use_carmaker=True):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "DLC"
@@ -52,22 +52,23 @@ class LowLevelEnv(gym.Env):
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
-        # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
-        self.status_queue = Queue()
-        self.action_queue = Queue()
-        self.state_queue = Queue()
+        if use_carmaker == True:
+            # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
+            self.status_queue = Queue()
+            self.action_queue = Queue()
+            self.state_queue = Queue()
 
-        # 중복 명령 방지를 위한 변수
-        self.sim_initiated = False
-        self.sim_started = False
+            # 중복 명령 방지를 위한 변수
+            self.sim_initiated = False
+            self.sim_started = False
 
-        # 각 Env마다 1개의 카메이커 연동 쓰레드를 사용
-        self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
-        self.cm_thread.start()
+            # 각 Env마다 1개의 카메이커 연동 쓰레드를 사용
+            self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
+            self.cm_thread.start()
 
-        self.test_num = 0
+            self.test_num = 0
 
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+            self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
         self.cm_thread.join()
