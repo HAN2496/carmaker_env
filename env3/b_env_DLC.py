@@ -15,7 +15,7 @@ from low_env_DLC import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
-
+from cone import Road, Car
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
 
@@ -72,11 +72,11 @@ class CarMakerEnv(gym.Env):
         self.road = Road()
         self.test_num = 0
         self.traj_data = np.array([[3, -8.0525], [15, -8.0525]])
-        self.traj_data = self.make_trajectory()
+        self.car_data = np.array([2, -8.0525, 0, 13.8889])
+        self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
         self.traj_point = self.find_nearest_point(2, -8.0525, [3*i for i in range(5)])
-        self.car_before = np.array([2, -8.0525, 0, 13.8889])
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
-        self.low_level_model = SAC.load(f"model_forcheck/{self.road_type}/512399_best_model.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"models/{self.road_type}/512399_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
@@ -94,6 +94,8 @@ class CarMakerEnv(gym.Env):
             self.state_queue.queue.clear()
 
         self.sim_started = False
+        self.traj_data = np.array([[3, -8.0525], [15, -8.0525]])
+        self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
 
         return self._initial_state()
 
@@ -109,17 +111,18 @@ class CarMakerEnv(gym.Env):
         done = False
 
         time = 0
-        car_pos = np.array([0, 0, 0])
+        carx, cary, caryaw = np.array([0, 0, 0])
         car_v = 0
         car_steer = np.array([0, 0, 0])
         car_dev = np.array([0, 0])
         car_alHori = 0
         car_roll = 0
+        new_traj_point = self.make_traj_point(self.car_data[0], self.car_data[1], 0)
         sight = np.array([3 * i for i in range(5)])
 
-        traj_lowlevel_abs = self.find_nearest_point(self.car_before[0], self.car_before[1], sight)
-        traj_lowlevel_rel = self.to_relative_coordinates(self.car_before[1], self.car_before[1], self.car_before[2], traj_lowlevel_abs).flatten()
-        self.low_level_obs = np.concatenate((np.array([self.car_before[3]]), traj_lowlevel_rel))
+        traj_lowlevel_abs = self.find_nearest_point(self.car_data[0], self.car_data[1], sight)
+        traj_lowlevel_rel = self.to_relative_coordinates(self.car_data[1], self.car_data[1], self.car_data[2], traj_lowlevel_abs).flatten()
+        self.low_level_obs = np.concatenate((np.array([self.car_data[3]]), traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
         action_to_sim = np.append(steering_changes, self.test_num)
 
@@ -132,14 +135,9 @@ class CarMakerEnv(gym.Env):
             self.status_queue.put("start")
             self.sim_started = True
 
-        # Action 값 전송
-        # CarMakerEnv -> CMcontrolNode -> tcpip_thread -> simulink tcp/ip block
+        # Action 값 전송 / State 값 수신
         self.action_queue.put(action_to_sim)
-
-        # State 값 수신
-        # simulink tcp/ip block -> tcpip_thread -> CMcontrolNode -> CarMakerEnv
         state = self.state_queue.get()
-
 
         if state == False:
             # 시뮬레이션 종료
@@ -149,44 +147,42 @@ class CarMakerEnv(gym.Env):
             done = True
 
         else:
-            new_traj_point = self.make_traj_point(action[0])
-            self.traj_data = self.make_trajectory(action[0])
+            blevel_action = action[0]
             # 튜플로 넘어온 값을 numpy array로 변환
             state = np.array(state) #어레이 변환
             state = state[1:] #connect 제거
-            self.car_before = state[1:5]
+            self.car_data = state[1:5]
             time = state[0] # Time
-            carx, cary, caryaw = state[1:4]
-            car_v = state[4] #Car.v
+            carx, cary, caryaw, carv = state[1:5]
             car_steer = state[5:8] #Car.Steer.(Ang, Vel, Acc)
             car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
             car_roll = state[11]
-            new_traj_point = self.make_traj_point(action[0])
-            self.traj_data = self.make_trajectory(action[0])
+            new_traj_point = self.make_traj_point(carx, cary, blevel_action)
+            self.traj_data = self.make_trajectory(carx, cary, blevel_action)
             traj_abs = self.find_nearest_point(carx, cary, sight)
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
-            car_dev = self.calculate_dev()
-            cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > self.car.carx][:5]
-            cones_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, cones_state).flatten()
+            car_dev = self.calculate_dev(carx, cary, caryaw)
+            cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
+            cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_state).flatten()
             state = np.concatenate((traj_rel, cones_rel)) # <- Policy B의 state
+
         # 리워드 계산
-        reward_state = np.concatenate((car_dev, np.array([car_alHori]), np.array([car_pos[0]])))
-        reward = self.getReward(reward_state, time)
-        info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : car_pos[0], "cary" : car_pos[1],
-                "caryaw" : car_pos[2], "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
+        reward = self.getReward(new_traj_point)
+        info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : carx, "cary" : cary,
+                "caryaw" : caryaw, "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
         return state, reward, done, info
 
-    def make_traj_point(self, action):
-        new_traj_point = np.array([self.car.carx + 12, self.car.cary + action * 3])
+    def make_traj_point(self, carx, cary, action):
+        new_traj_point = np.array([carx + 12, cary + action * 3])
         return new_traj_point
 
-    def make_trajectory(self, action=0):
+    def make_trajectory(self, carx, cary, action=0):
         arr = self.traj_data.copy()
 
         if action != 0:
-            new_traj_point = self.make_traj_point(action)
+            new_traj_point = self.make_traj_point(carx, cary, action)
             arr = np.vstack((arr, new_traj_point))
 
         if abs(arr[-2][0] - arr[-1][0]) > 0.01:
@@ -208,19 +204,19 @@ class CarMakerEnv(gym.Env):
             points.append(filtered_data[nearest_idx])
         return points
 
-    def calculate_dev(self, car_pos):
+    def calculate_dev(self, carx, cary, caryaw):
         f = interp1d(self.traj_data[:, 0], self.traj_data[:, 1])
         xnew = np.arange(self.traj_data[0][0], self.traj_data[-1][0], 0.01)
         ynew = f(xnew)
         arr = np.array(list(zip(xnew, ynew)))
-        distances = np.sqrt(np.sum((arr - [car_pos[0], car_pos[1]]) ** 2, axis=1))
+        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
         dist_index = np.argmin(distances)
         devDist = distances[dist_index]
         if arr[dist_index][0] - arr[dist_index - 1][0] == 0:
             devAng2 = np.arctan(np.inf)
         else:
             devAng2 = np.arctan((arr[dist_index][1] - arr[dist_index - 1][1]) / (arr[dist_index][0] - arr[dist_index - 1][0]))
-        devAng = - devAng2 - car_pos[2]
+        devAng = - devAng2 - caryaw
         return devDist, devAng
 
     def to_relative_coordinates(self, carx, cary, caryaw, arr):
@@ -236,14 +232,16 @@ class CarMakerEnv(gym.Env):
             relative_coords.append((rotated_x, rotated_y))
 
         return np.array(relative_coords)
-    def getReward(self, dev, new_traj_point):
+    def getReward(self, new_traj_point):
+        car = Car()
+        car.shape_car(self.car_data[0], self.car_data[1], self.car_data[2])
         forbidden_reward, cones_reward, car_reward, ang_reward = 0, 0, 0, 0
         traj_point = Point(new_traj_point[0], new_traj_point[1])
         if self.road.forbbiden_area1.intersects(traj_point) or self.road.forbbiden_area2.intersects(traj_point):
             forbidden_reward = -10000
         if self.road.cones_boundary.intersects(traj_point):
             cones_reward = +100
-        if self.road.is_car_in_forbidden_area(self.car):
+        if self.road.is_car_in_forbidden_area(car):
             car_reward = -10000
 
         e = forbidden_reward + cones_reward + car_reward + ang_reward
