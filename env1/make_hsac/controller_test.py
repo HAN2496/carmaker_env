@@ -28,31 +28,26 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             # TCP/IP 로드 -> 카메이커 시뮬레이션 시작 -> 강화학습과 데이터를 주고 받는 loop
             cm_env.start_sim()
         elif status == "stop":
-            print('stop')
             # 시뮬레이션 종료
             cm_env.stop_sim()
         elif status == "finish":
-            print('finish')
             # 프로세스 종료
             cm_env.kill()
             break
         else:
             time.sleep(1)
 
-class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM2'):
+class Controller(gym.Env):
+    def __init__(self, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM2'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "SLALOM"
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        self.cones = self.create_SLALOM_cone()
-
-        env_obs_num = 24
+        env_obs_num = 4
         sim_obs_num = 13
-#        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
-        self.action_space = spaces.Discrete(1000)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
         # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
@@ -65,13 +60,12 @@ class CarMakerEnv(gym.Env):
         self.sim_started = False
 
         # 각 Env마다 1개의 카메이커 연동 쓰레드를 사용
+        host = '127.0.0.1'
+        port = 10001
         self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
         self.cm_thread.start()
 
         self.test_num = 0
-
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/made_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
-
 
     def __del__(self):
         self.cm_thread.join()
@@ -142,18 +136,8 @@ class CarMakerEnv(gym.Env):
             car_dev = state[8:10] #2
             car_alHori = state[10]
             car_roll = state[11]
-            traj_sight = 8 # (8, 2) = 16
-            cone_sight = 2 # (2, 2) = 4
 
-            lookahead_sight = [2 * i for i in range(traj_sight)]
-            lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
-            lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
-
-            cones_sight = self.find_cone(car_pos[0], cone_sight)
-            collision = self.check_collision(car_pos[0], car_pos[1], car_pos[2])
-            cones_sight_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cones_sight).flatten()
-
-            state = np.concatenate((car_dev, np.array([car_steer[0], car_v]), lookahead_traj_rel, cones_sight_rel))
+            state = np.concatenate((car_dev, np.array([car_steer[0], car_v])))
 
 
         # 리워드 계산
@@ -165,67 +149,6 @@ class CarMakerEnv(gym.Env):
         return state, reward, done, info
 
 
-    def find_lookahead_traj(self, x, y, distances):
-        distances = np.array(distances)
-        result_points = []
-
-        min_idx = np.argmin(np.sum((self.traj_data - np.array([x, y])) ** 2, axis=1))
-
-        for dist in distances:
-            lookahead_idx = min_idx
-            total_distance = 0.0
-            while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
-                total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
-                lookahead_idx += 1
-
-            if lookahead_idx < len(self.traj_data):
-                result_points.append(self.traj_data[lookahead_idx])
-            else:
-                result_points.append(self.traj_data[-1])
-
-        return result_points
-
-    def find_cone(self, carx, sight):
-        return np.array([cone for cone in self.cones if carx - 2.1976004311961135 <= cone[0]][:sight])
-    def shape_car(self, carx, cary, caryaw):
-        half_length = 4.3 / 2.0
-        half_width = 1.568 / 2.0
-
-        corners = [
-            (-half_length, -half_width),
-            (-half_length, half_width),
-            (half_length, half_width),
-            (half_length, -half_width)
-        ]
-
-        car_shape = Polygon(corners)
-        car_shape = affinity.rotate(car_shape, caryaw, origin='center', use_radians=False)
-        car_shape = affinity.translate(car_shape, carx, cary)
-
-        return car_shape
-    def check_collision(self, carx, cary, caryaw):
-        car = self.shape_car(carx, cary, caryaw)
-        np.array([Point(cx, cy).buffer(0.2) for cx, cy in self.cones])
-        for conex, coney in self.cones:
-            cone = Point(conex, coney).buffer(0.2)
-            if car.intersects(cone):
-                return 1
-        return 0
-
-    def to_relative_coordinates(self, x, y, yaw, arr):
-        relative_coords = []
-
-        for point in arr:
-            dx = point[0] - x
-            dy = point[1] - y
-
-            rotated_x = dx * np.cos(-yaw) - dy * np.sin(-yaw)
-            rotated_y = dx * np.sin(-yaw) + dy * np.cos(-yaw)
-
-            relative_coords.append((rotated_x, rotated_y))
-
-        return np.array(relative_coords)
-
     def getReward(self, state, time):
         time = time
 
@@ -236,54 +159,16 @@ class CarMakerEnv(gym.Env):
         carx, cary, caryaw = state[0:3]
         devDist = state[3]
         devAng = state[4]
-        collision = state[5]
 
         reward_devDist = abs(devDist) * 1000
-        reward_collision = collision * 10000
 
-        if carx <= 85 or carx >= 385:
-            reward_devAng = abs(devAng) * 5000
-        else:
-            reward_devAng = abs(devAng) * 2000
-
-        e = - reward_devDist - reward_collision - reward_devAng
-
-        if self.check == 0 and collision == 1:
-            print("[time : {}], [tx : {}], [COLLISION] [cary : {}]".format(round(time, 2), round(carx, 2), round(cary, 2)))
-        elif self.check == 0 and self.test_num % 300 == 0:
-            print("[time : {}], [tx : {}], [cary : {}]".format(round(time, 2), round(carx, 2), round(cary, 2)))
+        e = - reward_devDist
 
         return e
 
-    def create_cone(self, sections):
-        conex = []
-        coney = []
-        for section in sections:
-            for i in range(section['num']):  # Each section has 5 pairs
-                x = section['start'] + section['gap'] * i
-                y = section['y_offset']
-                conex.extend([x])
-                coney.extend([y])
-
-        data = np.array([conex, coney]).T
-        data_sorted = data[data[:, 0].argsort()]
-
-        xcoords_sorted = data_sorted[:, 0]
-        ycoords_sorted = data_sorted[:, 1]
-
-        return np.column_stack((xcoords_sorted, ycoords_sorted))
-
-    def create_SLALOM_cone(self):
-        sections = [
-            {'start': 100, 'gap': 60, 'num': 5, 'y_offset': -5.25},
-            {'start': 130, 'gap': 60, 'num': 5, 'y_offset': -5.25},
-            {'start': 600, 'gap': 10, 'num': 5, 'y_offset': -5.25}
-        ]
-        return self.create_cone(sections)
-
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(check=0, simul_path='test_Nomove')
+    env = Controller(check=0, simul_path='test_Nomove')
     act_lst = []
     next_state_lst = []
     info_lst = []
