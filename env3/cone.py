@@ -1,16 +1,7 @@
-import gym
-from gym import spaces
 import numpy as np
-from stable_baselines3 import PPO, SAC
-import pygame
 from shapely.geometry import Polygon, Point, LineString
 from shapely import affinity
 import matplotlib.pyplot as plt
-import os
-import math
-from scipy.interpolate import interp1d
-from lowlevel_env2 import LowLevelEnv
-import time
 
 def plot(road, car):
     #plt.figure(figsize=(10, 5))
