@@ -36,7 +36,7 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_DLC', use_carmaker=True):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_DLC2', use_carmaker=True):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "DLC"
@@ -90,7 +90,7 @@ class CarMakerEnv(gym.Env):
 
     def step(self, action1):
         #Simulink의 tcpiprcv와 tcpipsend를 연결
-        action = np.append(action1, self.test_num)
+        action = np.append(self.test_num, action1)
 
         self.test_num += 1
         time = 0
