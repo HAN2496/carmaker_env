@@ -11,6 +11,10 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
+from low_env_DLC import CarMakerEnv as LowLevelCarMakerEnv
+from stable_baselines3 import PPO, SAC
+from scipy.interpolate import interp1d
+from shapely.geometry import Polygon, Point, LineString
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -65,9 +69,15 @@ class CarMakerEnv(gym.Env):
         self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
         self.cm_thread.start()
 
+        self.road = Road()
         self.test_num = 0
-
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.traj_data = np.array([[3, -8.0525], [15, -8.0525]])
+        self.traj_data = self.make_trajectory()
+        self.traj_point = self.find_nearest_point(2, -8.0525, [3*i for i in range(5)])
+        self.car_before = np.array([2, -8.0525, 0, 13.8889])
+        low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
+        self.low_level_model = SAC.load(f"model_forcheck/{self.road_type}/512399_best_model.pkl", env=low_level_env)
+        self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
         self.cm_thread.join()
@@ -87,11 +97,17 @@ class CarMakerEnv(gym.Env):
 
         return self._initial_state()
 
-    def step(self, action1):
-        #Simulink의 tcpiprcv와 tcpipsend를 연결
-        action = np.append(action1, self.test_num)
 
+    def step(self, action):
+        """
+        Simulink의 tcpiprcv와 tcpipsend를 연결
+        기존 action : steering vel -> scalar
+        Policy b action : traj points -> array(list)
+        low_level_obs에 cary, carv 들어가고, car_dev랑 lookahead는 action(신규)에서 가져온 trj 정보로
+        """
         self.test_num += 1
+        done = False
+
         time = 0
         car_pos = np.array([0, 0, 0])
         car_v = 0
@@ -99,8 +115,13 @@ class CarMakerEnv(gym.Env):
         car_dev = np.array([0, 0])
         car_alHori = 0
         car_roll = 0
+        sight = np.array([3 * i for i in range(5)])
 
-        done = False
+        traj_lowlevel_abs = self.find_nearest_point(self.car_before[0], self.car_before[1], sight)
+        traj_lowlevel_rel = self.to_relative_coordinates(self.car_before[1], self.car_before[1], self.car_before[2], traj_lowlevel_abs).flatten()
+        self.low_level_obs = np.concatenate((np.array([self.car_before[3]]), traj_lowlevel_rel))
+        steering_changes = self.low_level_model.predict(self.low_level_obs)
+        action_to_sim = np.append(steering_changes, self.test_num)
 
         # 최초 실행시
         if self.sim_initiated == False:
@@ -113,7 +134,7 @@ class CarMakerEnv(gym.Env):
 
         # Action 값 전송
         # CarMakerEnv -> CMcontrolNode -> tcpip_thread -> simulink tcp/ip block
-        self.action_queue.put(action)
+        self.action_queue.put(action_to_sim)
 
         # State 값 수신
         # simulink tcp/ip block -> tcpip_thread -> CMcontrolNode -> CarMakerEnv
@@ -128,21 +149,28 @@ class CarMakerEnv(gym.Env):
             done = True
 
         else:
+            new_traj_point = self.make_traj_point(action[0])
+            self.traj_data = self.make_trajectory(action[0])
             # 튜플로 넘어온 값을 numpy array로 변환
             state = np.array(state) #어레이 변환
             state = state[1:] #connect 제거
+            self.car_before = state[1:5]
             time = state[0] # Time
-            car_pos = state[1:4] # Car.(x, y, yaw)
+            carx, cary, caryaw = state[1:4]
             car_v = state[4] #Car.v
             car_steer = state[5:8] #Car.Steer.(Ang, Vel, Acc)
             car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
             car_roll = state[11]
-            lookahead_arr = [0, 5, 10, 15]
-            lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_arr)
-            lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
-            state = np.concatenate((np.array([car_steer[0], car_v]), car_dev, np.array([car_alHori]), lookahead_traj_rel))
-
+            new_traj_point = self.make_traj_point(action[0])
+            self.traj_data = self.make_trajectory(action[0])
+            traj_abs = self.find_nearest_point(carx, cary, sight)
+            self.traj_point = traj_abs
+            traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
+            car_dev = self.calculate_dev()
+            cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > self.car.carx][:5]
+            cones_rel = self.to_relative_coordinates(self.car.carx, self.car.cary, self.car.caryaw, cones_state).flatten()
+            state = np.concatenate((traj_rel, cones_rel)) # <- Policy B의 state
         # 리워드 계산
         reward_state = np.concatenate((car_dev, np.array([car_alHori]), np.array([car_pos[0]])))
         reward = self.getReward(reward_state, time)
@@ -150,70 +178,77 @@ class CarMakerEnv(gym.Env):
                 "caryaw" : car_pos[2], "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
         return state, reward, done, info
 
-    #lookahead trajectory의 위치 반환
-    def find_lookahead_traj(self, x, y, distances):
-        distances = np.array(distances)
-        result_points = []
+    def make_traj_point(self, action):
+        new_traj_point = np.array([self.car.carx + 12, self.car.cary + action * 3])
+        return new_traj_point
 
-        min_idx = np.argmin(np.sum((self.traj_data - np.array([x, y])) ** 2, axis=1))
+    def make_trajectory(self, action=0):
+        arr = self.traj_data.copy()
 
-        for dist in distances:
-            lookahead_idx = min_idx
-            total_distance = 0.0
-            while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
-                total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
-                lookahead_idx += 1
+        if action != 0:
+            new_traj_point = self.make_traj_point(action)
+            arr = np.vstack((arr, new_traj_point))
 
-            if lookahead_idx < len(self.traj_data):
-                result_points.append(self.traj_data[lookahead_idx])
-            else:
-                result_points.append(self.traj_data[-1])
+        if abs(arr[-2][0] - arr[-1][0]) > 0.01:
+            f = interp1d(arr[-2:, 0], arr[-2:, 1])
+            xnew = np.arange(arr[-2][0], arr[-1][0], 0.01)
+            ynew = f(xnew)
+            interpolate_arr = np.column_stack((xnew, ynew))
+            new_arr = np.vstack((arr[:-1], interpolate_arr, arr[-1]))
+            return new_arr
+        else:
+            return arr
 
-        return result_points
+    def find_nearest_point(self, x0, y0, distances):
+        points = []
+        for distance in distances:
+            filtered_data = self.traj_data[self.traj_data[:, 0] > x0]
+            x_diff = np.abs(filtered_data[:, 0] - (x0 + distance))
+            nearest_idx = np.argmin(x_diff)
+            points.append(filtered_data[nearest_idx])
+        return points
 
-    #절대좌표를 상대좌표로 변환
-    def to_relative_coordinates(self, x, y, yaw, abs_coords):
+    def calculate_dev(self, car_pos):
+        f = interp1d(self.traj_data[:, 0], self.traj_data[:, 1])
+        xnew = np.arange(self.traj_data[0][0], self.traj_data[-1][0], 0.01)
+        ynew = f(xnew)
+        arr = np.array(list(zip(xnew, ynew)))
+        distances = np.sqrt(np.sum((arr - [car_pos[0], car_pos[1]]) ** 2, axis=1))
+        dist_index = np.argmin(distances)
+        devDist = distances[dist_index]
+        if arr[dist_index][0] - arr[dist_index - 1][0] == 0:
+            devAng2 = np.arctan(np.inf)
+        else:
+            devAng2 = np.arctan((arr[dist_index][1] - arr[dist_index - 1][1]) / (arr[dist_index][0] - arr[dist_index - 1][0]))
+        devAng = - devAng2 - car_pos[2]
+        return devDist, devAng
+
+    def to_relative_coordinates(self, carx, cary, caryaw, arr):
         relative_coords = []
 
-        for point in abs_coords:
-            dx = point[0] - x
-            dy = point[1] - y
+        for point in arr:
+            dx = point[0] - carx
+            dy = point[1] - cary
 
-            rotated_x = dx * np.cos(-yaw) - dy * np.sin(-yaw)
-            rotated_y = dx * np.sin(-yaw) + dy * np.cos(-yaw)
+            rotated_x = dx * np.cos(-caryaw) - dy * np.sin(-caryaw)
+            rotated_y = dx * np.sin(-caryaw) + dy * np.cos(-caryaw)
 
             relative_coords.append((rotated_x, rotated_y))
 
         return np.array(relative_coords)
+    def getReward(self, dev, new_traj_point):
+        forbidden_reward, cones_reward, car_reward, ang_reward = 0, 0, 0, 0
+        traj_point = Point(new_traj_point[0], new_traj_point[1])
+        if self.road.forbbiden_area1.intersects(traj_point) or self.road.forbbiden_area2.intersects(traj_point):
+            forbidden_reward = -10000
+        if self.road.cones_boundary.intersects(traj_point):
+            cones_reward = +100
+        if self.road.is_car_in_forbidden_area(self.car):
+            car_reward = -10000
 
-    def getReward(self, state, time):
-        time = time
-
-        if state.any() == False:
-            # 에피소드 종료시
-            return 0.0
-
-        dev_dist = abs(state[0])
-        dev_ang = abs(state[1])
-        alHori = abs(state[2])
-        car_x = state[3]
-
-        #devDist, devAng에 따른 리워드
-        reward_devDist = dev_dist * 100
-        reward_devAng = dev_ang * 500
-
-        #직선경로에서 차의 횡가속도를 0에 가깝게 만들기 위한 리워드
-        if car_x <= 50 or car_x >=111:
-            a_reward = alHori
-        else:
-            a_reward = 0
-
-        e = - reward_devDist - reward_devAng - a_reward
-
-        if self.test_num % 300 == 0 and self.check == 0:
-            print("Time: {}, Reward : [ dist : {}] [ angle : {}] [alHori : {}]".format(time, round(dev_dist,3), round(dev_ang, 3), round(a_reward, 3)))
-
+        e = forbidden_reward + cones_reward + car_reward + ang_reward
         return e
+
 
 
 if __name__ == "__main__":
