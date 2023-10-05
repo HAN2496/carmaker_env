@@ -14,7 +14,8 @@ XMULTIPLE, YMULTIPLE = 2, 10
 
 
 def plot(road, car):
-    plt.plot(*road.road_boundary.exterior.xy, label="Forbidden Area 1", color='red')
+    plt.plot(*road.road_boundary.exterior.xy, label="
+    Forbidden Area 1", color='red')
 
     cones_x = road.cones_arr[:, 0]
     cones_y = road.cones_arr[:, 1]
