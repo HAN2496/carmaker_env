@@ -46,8 +46,8 @@ class CarMakerEnv(gym.Env):
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 10
-        sim_obs_num = 13
+        env_obs_num = 16
+        sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -139,10 +139,11 @@ class CarMakerEnv(gym.Env):
             car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
             car_roll = state[11]
+            wheel_steer = state[12:]
             lookahead_arr = [3 * i for i in range(5)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_arr)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
-            state = np.concatenate((np.array([car_steer[0], car_v]), lookahead_traj_rel))
+            state = np.concatenate((np.array([car_v, car_steer[0]]), wheel_steer, lookahead_traj_rel))
 
         # 리워드 계산
         reward_state = np.concatenate((car_dev, np.array([car_alHori]), np.array([car_pos[0]])))
