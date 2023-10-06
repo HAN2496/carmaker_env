@@ -5,10 +5,14 @@ import re
 
 CONER = 0.2
 CARWIDTH, CARLENGTH = 1.8, 4
-def load_data(prefix):
+def load_data(type, comment=0):
     data = {}
-    data['info'] = pd.read_csv(f'{prefix}_info.csv')
-    data['reward'] = pd.read_csv(f'{prefix}_reward.csv').loc[:, "0"].values
+    if comment == 0:
+        data['info'] = pd.read_csv(f'{type}_info.csv')
+        data['reward'] = pd.read_csv(f'{type}_reward.csv').loc[:, "0"].values
+    else:
+        data['info'] = pd.read_csv(f'{type}_{comment}_info.csv')
+        data['reward'] = pd.read_csv(f'{type}_{comment}_reward.csv').loc[:, "0"].values
 
     extracted = {}
     df = data['info']
@@ -76,3 +80,13 @@ def calc_performance(dataset, data_dict):
     total_reward = np.sum(data_dict['reward'])
 
     return [dataset, time, initial_carv, escape_carv, roll_rate, yaw_rate, maximum_lateral_acc, total_reward]
+
+
+
+def plot_trajectory(cones, traj, ipg, rl):
+    plt.scatter(cones[:, 0], cones[:, 1], label='Cone')
+    plt.plot(traj[:, 0], traj[:, 1], label="IPG")
+    plt.plot(ipg['carx'], ipg['cary'], label="IPG")
+#    plt.plot(rl['carx'], rl['cary'], label="RL")
+    plt.legend()
+    plt.show()
