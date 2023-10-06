@@ -94,7 +94,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num += 1
         time = 0
-        state = np.zeros(16)
+        state_for_info = np.zeros(16)
 
         done = False
 
@@ -127,6 +127,7 @@ class CarMakerEnv(gym.Env):
             # 튜플로 넘어온 값을 numpy array로 변환
             state = np.array(state) #어레이 변환
             state = state[1:] #connect 제거
+            state_for_info = state
             time = state[0] # Time
             car_pos = state[1:4] # Car.(x, y, yaw)
             car_v = state[4] #Car.v
@@ -143,8 +144,8 @@ class CarMakerEnv(gym.Env):
         # 리워드 계산
         reward_state = np.concatenate((state[8:11], np.array([state[1]])))
         reward = self.getReward(reward_state, time)
-        info_idx = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
-        info = {info_idx: state for info_idx, state in zip(info_idx, state)}
+        info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
+        info = {key: value for key, value in zip(info_key, state_for_info)}
         return state, reward, done, info
 
     #lookahead trajectory의 위치 반환
