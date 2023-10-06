@@ -40,7 +40,7 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_DLC'):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_DLC2'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "DLC"
@@ -51,7 +51,7 @@ class CarMakerEnv(gym.Env):
 
         # Env의 observation 개수와 simulink observation 개수
         env_obs_num = 13
-        sim_obs_num = 13
+        sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -151,18 +151,19 @@ class CarMakerEnv(gym.Env):
             # 튜플로 넘어온 값을 numpy array로 변환
             state = np.array(state) #어레이 변환
             state = state[1:] #connect 제거
-            self.car_data = state[1:5]
             time = state[0] # Time
             carx, cary, caryaw, carv = state[1:5]
             car_steer = state[5:8] #Car.Steer.(Ang, Vel, Acc)
             car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
             car_roll = state[11]
+            wheel_steer = state[12:]
             new_traj_point = self.make_traj_point(carx, cary, blevel_action)
             self.traj_data = self.make_trajectory(carx, cary, blevel_action)
             traj_abs = self.find_nearest_point(carx, cary, sight)
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
+            self.car_data = np.concatenate(np.array([carv, car_steer[0]]), wheel_steer, traj_rel)
             car_dev = self.calculate_dev(carx, cary, caryaw)
             cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
             cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_state).flatten()
@@ -246,6 +247,12 @@ class CarMakerEnv(gym.Env):
 
         e = forbidden_reward + cones_reward + car_reward + ang_reward
         return e
+
+    def save_data_for_lowlevel(self, indexs, values):
+        datas = {}
+        for idx, index in enumerate(indexs):
+            datas[index] = values[i]
+        return datas
 
 
 
