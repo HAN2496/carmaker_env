@@ -1,6 +1,8 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+from shapely.geometry import Polygon, Point, LineString
+from shapely import affinity
 import re
 
 CONER = 0.2
@@ -84,9 +86,40 @@ def calc_performance(dataset, data_dict):
 
 
 def plot_trajectory(cones, traj, ipg, rl):
-    plt.scatter(cones[:, 0], cones[:, 1], label='Cone')
-    plt.plot(traj[:, 0], traj[:, 1], label="IPG")
-    plt.plot(ipg['carx'], ipg['cary'], label="IPG")
+    plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='red')
+    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
+    plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue')
 #    plt.plot(rl['carx'], rl['cary'], label="RL")
+    plt.axis("equal")
     plt.legend()
     plt.show()
+def shape_car(carx, cary, caryaw):
+    half_length = 2
+    half_width = 0.9
+
+    corners = [
+        (-half_length, -half_width),
+        (-half_length, half_width),
+        (half_length, half_width),
+        (half_length, -half_width)
+    ]
+
+    car_shape = Polygon(corners)
+    car_shape = affinity.rotate(car_shape, caryaw, origin='center', use_radians=True)
+    car_shape = affinity.translate(car_shape, carx, cary)
+
+    return car_shape
+
+def check_collision(cones, ipg):
+    cones_shape = [Point(conex, coney).buffer(0.2) for conex, coney in cones]
+    ipg_shape = [shape_car(carx, cary, caryaw) for carx, cary, caryaw in zip(ipg["carx"], ipg["cary"], ipg["caryaw"])]
+    collisions = []
+
+    for car in ipg_shape:
+        for cone, (conex, coney) in zip(cones_shape, cones):
+            if car.intersects(cone):
+                collision_info = (conex, coney)
+                if collision_info not in collisions:
+                    collisions.append(collision_info)
+    return collisions
+

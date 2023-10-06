@@ -30,6 +30,6 @@ labels = ['ipg', 'rl']
 compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']
 titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "Car pos X", "Car pos Y", "Reward"]
 
-plot_multiple(compare_keys, titles, labels, ipg, rl)
+#plot_multiple(compare_keys, titles, labels, ipg, rl)
 plot_trajectory(cones, traj, ipg, rl)
-
+print(check_collision(cones, ipg))
