@@ -94,12 +94,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num += 1
         time = 0
-        car_pos = np.array([0, 0, 0])
-        car_v = 0
-        car_steer = np.array([0, 0, 0])
-        car_dev = np.array([0, 0])
-        car_alHori = 0
-        car_roll = 0
+        state = np.zeros(16)
 
         done = False
 
@@ -136,9 +131,9 @@ class CarMakerEnv(gym.Env):
             car_pos = state[1:4] # Car.(x, y, yaw)
             car_v = state[4] #Car.v
             car_steer = state[5:8] #Car.Steer.(Ang, Vel, Acc)
-            car_dev = state[8:10] #Car.DevDist, Car.DevAng
-            car_alHori = state[10] #alHori
-            car_roll = state[11]
+            dev = state[8:10] #Car.DevDist, Car.DevAng
+            alHori = state[10] #alHori
+            roll = state[11]
             wheel_steer = state[12:]
             lookahead_arr = [3 * i for i in range(5)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_arr)
@@ -146,10 +141,10 @@ class CarMakerEnv(gym.Env):
             state = np.concatenate((np.array([car_v, car_steer[0]]), wheel_steer, lookahead_traj_rel))
 
         # 리워드 계산
-        reward_state = np.concatenate((car_dev, np.array([car_alHori]), np.array([car_pos[0]])))
+        reward_state = np.concatenate((state[8:11], np.array([state[1]])))
         reward = self.getReward(reward_state, time)
-        info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : car_pos[0], "cary" : car_pos[1],
-                "caryaw" : car_pos[2], "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
+        info_idx = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
+        info = {info_idx: state for info_idx, state in zip(info_idx, state)}
         return state, reward, done, info
 
     #lookahead trajectory의 위치 반환
