@@ -13,7 +13,7 @@ def str_to_float(df):
             new_df.extend(float_numbers)
     return np.array(new_df, dtype=np.float64)
 
-def load_data(prefix, road_type):
+def load_data(prefix):
     data = {}
     data['info'] = pd.read_csv(f'{prefix}_info.csv')
     data['reward'] = pd.read_csv(f'{prefix}_reward.csv').loc[:, "0"].values
@@ -44,8 +44,8 @@ def extract_data(data, prefix):
 road_types = 'DLC'
 df_traj = pd.read_csv(f'datasets_traj.csv')
 
-ipg = load_data('IPG', road_types)
-rl = load_data('RL', road_types)
+ipg = load_data('IPG')
+rl = load_data('RL')
 ipg_data = extract_data(ipg, 'ipg')
 rl_data = extract_data(rl, 'rl')
 traj_tx = df_traj.loc[:, "traj_tx"].values
@@ -55,7 +55,6 @@ data_dicts = [ipg_data, rl_data]
 
 def linear_interpolation(x1, y1, x2, y2, x):
     return y1 + ((x - x1) * (y2 - y1) / (x2 - x1))
-
 
 def get_value_or_interpolate(carx, carv, target_x):
     # Try to get the value at target_x
