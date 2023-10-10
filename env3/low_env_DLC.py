@@ -46,7 +46,7 @@ class CarMakerEnv(gym.Env):
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 16
+        env_obs_num = 12
         sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -142,7 +142,7 @@ class CarMakerEnv(gym.Env):
             lookahead_arr = [3 * i for i in range(5)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_arr)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
-            state = np.concatenate((np.array([car_v, car_steer[0]]), wheel_steer, lookahead_traj_rel))
+            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel))
 
         # 리워드 계산
         reward_state = np.concatenate((dev, np.array([alHori, car_pos[0]])))
@@ -228,17 +228,19 @@ class CarMakerEnv(gym.Env):
         #devDist, devAng에 따른 리워드
         reward_devDist = dev_dist * 1000
         reward_devAng = dev_ang * 5000
+        """
 
         #직선경로에서 차의 횡가속도를 0에 가깝게 만들기 위한 리워드
         if car_x <= 50 or car_x >=111:
             a_reward = alHori * 100
         else:
             a_reward = 0
+        """
 
-        e = - reward_devDist - reward_devAng - a_reward
+        e = - reward_devDist - reward_devAng
 
         if self.test_num % 300 == 0 and self.check == 0:
-            print("Time: {}, Reward : [ dist : {}] [ angle : {}] [alHori : {}]".format(time, round(dev_dist,3), round(dev_ang, 3), round(a_reward, 3)))
+            print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
 
         return e
 
