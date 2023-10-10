@@ -90,11 +90,14 @@ class CarMakerEnv(gym.Env):
 
     def step(self, action1):
         #Simulink의 tcpiprcv와 tcpipsend를 연결
-        action = np.append(self.test_num, action1)
+        action = np.append(action1, self.test_num)
 
         self.test_num += 1
         time = 0
         state_for_info = np.zeros(16)
+        dev = np.array([0, 0])
+        alHori = 0
+        car_pos = np.array([0, 0, 0])
 
         done = False
 
@@ -132,7 +135,7 @@ class CarMakerEnv(gym.Env):
             car_pos = state[1:4] # Car.(x, y, yaw)
             car_v = state[4] #Car.v
             car_steer = state[5:8] #Car.Steer.(Ang, Vel, Acc)
-            dev = state[8:10] #Car.DevDist, Car.DevAng
+            dev = self.calculate_dev(car_pos[0], car_pos[1], car_pos[2])
             alHori = state[10] #alHori
             roll = state[11]
             wheel_steer = state[12:]
@@ -142,7 +145,7 @@ class CarMakerEnv(gym.Env):
             state = np.concatenate((np.array([car_v, car_steer[0]]), wheel_steer, lookahead_traj_rel))
 
         # 리워드 계산
-        reward_state = np.concatenate((state[8:11], np.array([state[1]])))
+        reward_state = np.concatenate((dev, np.array([alHori, car_pos[0]])))
         reward = self.getReward(reward_state, time)
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, state_for_info)}
@@ -183,6 +186,32 @@ class CarMakerEnv(gym.Env):
             relative_coords.append((rotated_x, rotated_y))
 
         return np.array(relative_coords)
+
+    def calculate_dev(self, carx, cary, caryaw):
+        arr = np.array(self.traj_data)
+        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+        dist_index = np.argmin(distances)
+        devDist = distances[dist_index]
+
+        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
+        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
+
+        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
+        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
+
+        # 분모가 0이 될 수 있는 경우에 대한 예외처리
+        if dx1 == 0:
+            devAng1 = np.inf if dy1 > 0 else -np.inf
+        else:
+            devAng1 = dy1 / dx1
+
+        if dx2 == 0:
+            devAng2 = np.inf if dy2 > 0 else -np.inf
+        else:
+            devAng2 = dy2 / dx2
+
+        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
+        return np.array([devDist, devAng])
 
     def getReward(self, state, time):
         time = time
