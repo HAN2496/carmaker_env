@@ -86,7 +86,7 @@ class CarMakerEnv(gym.Env):
                 self.action_queue.queue.clear()
                 self.state_queue.queue.clear()
 
-        self.sim_started = False
+            self.sim_started = False
 
         return self._initial_state()
 
