@@ -16,6 +16,7 @@ from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
 from cone import Road, Car
+from pygame_b import *
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
 
@@ -71,10 +72,10 @@ class CarMakerEnvB(gym.Env):
 
         self.road = Road()
         self.test_num = 0
-        self.traj_data = np.array([[3, -8.0525], [15, -8.0525]])
-        self.car_data = np.array([2, -8.0525, 0, 13.8889])
-        self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
-        self.traj_point = self.find_nearest_point(2, -8.0525, [3*i for i in range(5)])
+        self.traj_data = np.array([[3, -10], [15, -10]])
+        self.car_data = np.array([2, -10, 0, 13.8889, 0])
+        self.traj_data = self.make_trajectory(self.traj_data[0], self.traj_data[1])
+        self.traj_point = self.find_nearest_point(2, -10, [3*i for i in range(5)])
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
 #        self.low_level_model = SAC.load(f"models/{self.road_type}/512399_best_model.pkl", env=low_level_env)
         self.low_level_model = SAC.load(f"243699_best_model.pkl", env=low_level_env)
@@ -122,8 +123,8 @@ class CarMakerEnvB(gym.Env):
         sight = np.array([3 * i for i in range(5)])
 
         traj_lowlevel_abs = self.find_nearest_point(self.car_data[0], self.car_data[1], sight)
-        traj_lowlevel_rel = self.to_relative_coordinates(self.car_data[1], self.car_data[1], self.car_data[2], traj_lowlevel_abs).flatten()
-        self.low_level_obs = np.concatenate((np.array([self.car_data[0], self.car_data[1]]), traj_lowlevel_rel))
+        traj_lowlevel_rel = self.to_relative_coordinates(self.car_data[0], self.car_data[1], self.car_data[2], traj_lowlevel_abs).flatten()
+        self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
         action_to_sim = np.append(steering_changes[0], self.test_num)
 
@@ -164,16 +165,20 @@ class CarMakerEnvB(gym.Env):
             traj_abs = self.find_nearest_point(carx, cary, sight)
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
-            self.car_data = np.concatenate((np.array([carv, car_steer[0]]), wheel_steer, traj_rel))
+            self.car_data = np.array([carx, cary, caryaw, carv, car_steer[0]])
             car_dev = self.calculate_dev(carx, cary, caryaw)
             cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
             cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_state).flatten()
             state = np.concatenate((traj_rel, cones_rel)) # <- Policy B의 state
 
         # 리워드 계산
-        reward = self.getReward(new_traj_point)
+        reward = self.getReward(new_traj_point, time)
         info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : carx, "cary" : cary,
                 "caryaw" : caryaw, "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
+
+        if self.test_num % 300 == 0:
+            self.print_result(time, reward, car_dev)
+
         return state, reward, done, info
 
     def make_traj_point(self, carx, cary, action):
@@ -207,19 +212,30 @@ class CarMakerEnvB(gym.Env):
         return points
 
     def calculate_dev(self, carx, cary, caryaw):
-        f = interp1d(self.traj_data[:, 0], self.traj_data[:, 1])
-        xnew = np.arange(self.traj_data[0][0], self.traj_data[-1][0], 0.01)
-        ynew = f(xnew)
-        arr = np.array(list(zip(xnew, ynew)))
+        arr = np.array(self.traj_data)
         distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
         dist_index = np.argmin(distances)
         devDist = distances[dist_index]
-        if arr[dist_index][0] - arr[dist_index - 1][0] == 0:
-            devAng2 = np.arctan(np.inf)
+
+        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
+        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
+
+        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
+        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
+
+        # 분모가 0이 될 수 있는 경우에 대한 예외처리
+        if dx1 == 0:
+            devAng1 = np.inf if dy1 > 0 else -np.inf
         else:
-            devAng2 = np.arctan((arr[dist_index][1] - arr[dist_index - 1][1]) / (arr[dist_index][0] - arr[dist_index - 1][0]))
-        devAng = - devAng2 - caryaw
-        return devDist, devAng
+            devAng1 = dy1 / dx1
+
+        if dx2 == 0:
+            devAng2 = np.inf if dy2 > 0 else -np.inf
+        else:
+            devAng2 = dy2 / dx2
+
+        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
+        return np.array([devDist, devAng])
 
     def to_relative_coordinates(self, carx, cary, caryaw, arr):
         relative_coords = []
@@ -234,7 +250,8 @@ class CarMakerEnvB(gym.Env):
             relative_coords.append((rotated_x, rotated_y))
 
         return np.array(relative_coords)
-    def getReward(self, new_traj_point):
+
+    def getReward(self, new_traj_point, time):
         car = Car()
         car.shape_car(self.car_data[0], self.car_data[1], self.car_data[2])
         forbidden_reward, cones_reward, car_reward, ang_reward = 0, 0, 0, 0
@@ -247,6 +264,8 @@ class CarMakerEnvB(gym.Env):
             car_reward = -10000
 
         e = forbidden_reward + cones_reward + car_reward + ang_reward
+        if self.test_num % 300 == 0 and self.check == 0:
+            print(f"[Time: {time}], ")
         return e
 
     def save_data_for_lowlevel(self, indexs, values):
@@ -255,7 +274,13 @@ class CarMakerEnvB(gym.Env):
             datas[index] = values[i]
         return datas
 
-
+    def print_result(self, time, reward, car_dev):
+        print("-" * 50)
+        print(
+            f"[Time: {round(time, 2)}] [Reward: {round(reward, 2)}] [Car dev: {round(car_dev[0], 2), round(car_dev[1], 2)}]")
+        print("[Trajectory: ]")
+        for point in self.traj_point:
+            print(f" [{point[0]:.2f}, {point[1]:.2f}]")
 
 if __name__ == "__main__":
     # 환경 테스트
@@ -265,7 +290,7 @@ if __name__ == "__main__":
     info_lst = []
 
 
-    for i in range(2):
+    for i in range(1):
         # 환경 초기화
         state = env.reset()
 
