@@ -8,7 +8,7 @@
 4. 학습이 완료된 후 웨이트 파일(e.g. model.pkl)을 저장한다.
 """
 import sys
-from low_env_DLC import LowLevelEnv
+from b_env_DLC import CarMakerEnvB
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -46,7 +46,7 @@ class Args:
 def make_env(rank, seed=0):
 
     def _init():
-        env = LowLevelEnv(host='127.0.0.1', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnvB(host='127.0.0.1', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
         env.seed(seed + rank)
 
         return env
@@ -65,8 +65,8 @@ def main():
 
     env_num = 1
     road_type = "DLC"
-    comment = "1st"
-    explanation = "for b"
+    comment = "b"
+    explanation = "first try!"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"

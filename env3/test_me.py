@@ -1,32 +1,49 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
-def cubic_interpolation(x0, y0, x1, y1):
-    a = 2 * (y0 - y1) / (x1 - x0) ** 3
-    b = -3 / 2 * a * (x1 - x0)
-    d = y0
+def to_relative_coordinates(self, x, y, yaw, abs_coords):
+    relative_coords = []
 
-    def interpolator(x):
-        return a * (x - x0) ** 3 + b * (x - x0) ** 2 + d
+    for point in abs_coords:
+        dx = point[0] - x
+        dy = point[1] - y
 
-    return interpolator
+        rotated_x = dx * np.cos(-yaw) - dy * np.sin(-yaw)
+        rotated_y = dx * np.sin(-yaw) + dy * np.cos(-yaw)
 
-def plot_cubic_interpolation(x0, y0, x1, y1):
-    f = cubic_interpolation(x0, y0, x1, y1)
-    x = np.linspace(x0, x1, 400)
-    y = [f(xi) for xi in x]
+        relative_coords.append((rotated_x, rotated_y))
 
-    plt.figure(figsize=(8, 6))
-    plt.plot(x, y, 'r-', label='Cubic Interpolation')
-    plt.scatter([x0, x1], [y0, y1], color='blue', marker='o', label='Given Points')
-    plt.title('Cubic Interpolation')
-    plt.xlabel('x')
-    plt.ylabel('y')
-    plt.legend()
-    plt.grid(True)
-    plt.show()
+    return np.array(relative_coords)
 
-# 사용 예시
-x0, y0 = 0, 1
-x1, y1 = 1, 2
-plot_cubic_interpolation(x0, y0, x1, y1)
+def calculate_dev(traj_data, carx, cary, caryaw):
+    arr = np.array(traj_data)
+    distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+    dist_index = np.argmin(distances)
+    devDist = distances[dist_index]
+
+    dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
+    dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
+
+    dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
+    dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
+
+    # 분모가 0이 될 수 있는 경우에 대한 예외처리
+    if dx1 == 0:
+        devAng1 = np.inf if dy1 > 0 else -np.inf
+    else:
+        devAng1 = dy1 / dx1
+
+    if dx2 == 0:
+        devAng2 = np.inf if dy2 > 0 else -np.inf
+    else:
+        devAng2 = dy2 / dx2
+
+    devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
+    return np.array([devDist, devAng])
+
+road_type = "DLC"
+traj_data = pd.read_csv(f"datafiles/{road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+carx, cary, caryaw = 70, -11, 0
+a = calculate_dev(traj_data, carx, cary, caryaw)
+print(f"Dist: {a[0]}, Ang: {a[1]}")

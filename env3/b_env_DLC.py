@@ -39,8 +39,8 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
         else:
             time.sleep(1)
 
-class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_DLC2'):
+class CarMakerEnvB(gym.Env):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_DLC'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "DLC"
@@ -50,7 +50,7 @@ class CarMakerEnv(gym.Env):
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 13
+        env_obs_num = 20
         sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -76,7 +76,8 @@ class CarMakerEnv(gym.Env):
         self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
         self.traj_point = self.find_nearest_point(2, -8.0525, [3*i for i in range(5)])
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
-        self.low_level_model = SAC.load(f"models/{self.road_type}/512399_best_model.pkl", env=low_level_env)
+#        self.low_level_model = SAC.load(f"models/{self.road_type}/512399_best_model.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"243699_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
@@ -122,9 +123,9 @@ class CarMakerEnv(gym.Env):
 
         traj_lowlevel_abs = self.find_nearest_point(self.car_data[0], self.car_data[1], sight)
         traj_lowlevel_rel = self.to_relative_coordinates(self.car_data[1], self.car_data[1], self.car_data[2], traj_lowlevel_abs).flatten()
-        self.low_level_obs = np.concatenate((np.array([self.car_data[3]]), traj_lowlevel_rel))
+        self.low_level_obs = np.concatenate((np.array([self.car_data[0], self.car_data[1]]), traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
-        action_to_sim = np.append(steering_changes, self.test_num)
+        action_to_sim = np.append(steering_changes[0], self.test_num)
 
         # 최초 실행시
         if self.sim_initiated == False:
@@ -163,7 +164,7 @@ class CarMakerEnv(gym.Env):
             traj_abs = self.find_nearest_point(carx, cary, sight)
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
-            self.car_data = np.concatenate(np.array([carv, car_steer[0]]), wheel_steer, traj_rel)
+            self.car_data = np.concatenate((np.array([carv, car_steer[0]]), wheel_steer, traj_rel))
             car_dev = self.calculate_dev(carx, cary, caryaw)
             cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
             cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_state).flatten()
@@ -258,7 +259,7 @@ class CarMakerEnv(gym.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(check=0)
+    env = CarMakerEnvB(check=0)
     act_lst = []
     next_state_lst = []
     info_lst = []

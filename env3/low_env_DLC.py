@@ -40,6 +40,7 @@ class CarMakerEnv(gym.Env):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "DLC"
+        self.use_carmaker = use_carmaker
         
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 1
@@ -77,14 +78,15 @@ class CarMakerEnv(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
-        # 초기화 코드
-        if self.sim_initiated == True:
-            # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
-            self.status_queue.put("stop")
-            self.action_queue.queue.clear()
-            self.state_queue.queue.clear()
+        if self.use_carmaker == True:
+            # 초기화 코드
+            if self.sim_initiated == True:
+                # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
+                self.status_queue.put("stop")
+                self.action_queue.queue.clear()
+                self.state_queue.queue.clear()
 
-        self.sim_started = False
+            self.sim_started = False
 
         return self._initial_state()
 
