@@ -11,6 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
+from cone import Road, Car
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -40,17 +41,21 @@ class CarMakerEnv(gym.Env):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "DLC"
-        
+        self.use_carmaker = use_carmaker
+        self.test_num = 0
+
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 12
+        env_obs_num = 16
         sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
+
+        self.road = Road()
 
         if use_carmaker == True:
             # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
@@ -66,7 +71,7 @@ class CarMakerEnv(gym.Env):
             self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
             self.cm_thread.start()
 
-            self.test_num = 0
+
 
             self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
@@ -77,46 +82,50 @@ class CarMakerEnv(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
-        # 초기화 코드
-        if self.sim_initiated == True:
-            # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
-            self.status_queue.put("stop")
-            self.action_queue.queue.clear()
-            self.state_queue.queue.clear()
+        if self.use_carmaker == True:
+            # 초기화 코드
+            if self.sim_initiated == True:
+                # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
+                self.status_queue.put("stop")
+                self.action_queue.queue.clear()
+                self.state_queue.queue.clear()
 
-        self.sim_started = False
+            self.sim_started = False
 
         return self._initial_state()
 
     def step(self, action1):
         #Simulink의 tcpiprcv와 tcpipsend를 연결
         action = np.append(action1, self.test_num)
+        state = np.zeros(17)
 
         self.test_num += 1
         time = 0
         state_for_info = np.zeros(16)
         dev = np.array([0, 0])
         alHori = 0
-        car_pos = np.array([0, 0, 0])
+        car_pos = np.array([2, -10, 0])
 
         done = False
 
-        # 최초 실행시
-        if self.sim_initiated == False:
-            self.sim_initiated = True
+        if self.use_carmaker == True:
 
-        # 에피소드의 첫 스텝
-        if self.sim_started == False:
-            self.status_queue.put("start")
-            self.sim_started = True
+            # 최초 실행시
+            if self.sim_initiated == False:
+                self.sim_initiated = True
 
-        # Action 값 전송
-        # CarMakerEnv -> CMcontrolNode -> tcpip_thread -> simulink tcp/ip block
-        self.action_queue.put(action)
+            # 에피소드의 첫 스텝
+            if self.sim_started == False:
+                self.status_queue.put("start")
+                self.sim_started = True
 
-        # State 값 수신
-        # simulink tcp/ip block -> tcpip_thread -> CMcontrolNode -> CarMakerEnv
-        state = self.state_queue.get()
+            # Action 값 전송
+            # CarMakerEnv -> CMcontrolNode -> tcpip_thread -> simulink tcp/ip block
+            self.action_queue.put(action)
+
+            # State 값 수신
+            # simulink tcp/ip block -> tcpip_thread -> CMcontrolNode -> CarMakerEnv
+            state = self.state_queue.get()
 
 
         if state == False:
@@ -142,10 +151,12 @@ class CarMakerEnv(gym.Env):
             lookahead_arr = [3 * i for i in range(5)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_arr)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
-            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel))
+            cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
+            cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cones_state).flatten()
+            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel, cones_rel))
 
         # 리워드 계산
-        reward_state = np.concatenate((dev, np.array([alHori, car_pos[0]])))
+        reward_state = np.concatenate((dev, np.array([alHori]), car_pos))
         reward = self.getReward(reward_state, time)
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, state_for_info)}
@@ -214,7 +225,6 @@ class CarMakerEnv(gym.Env):
         return np.array([devDist, devAng])
 
     def getReward(self, state, time):
-        time = time
 
         if state.any() == False:
             # 에피소드 종료시
@@ -223,21 +233,20 @@ class CarMakerEnv(gym.Env):
         dev_dist = abs(state[0])
         dev_ang = abs(state[1])
         alHori = abs(state[2])
-        car_x = state[3]
+        carx, cary, caryaw = state[3:]
+
+        car = Car()
+        car.shape_car(carx, cary, caryaw)
+        if self.road.is_car_in_forbidden_area(car):
+            forbidden_reward = 500
+        else:
+            forbidden_reward = 0
 
         #devDist, devAng에 따른 리워드
         reward_devDist = dev_dist * 1000
         reward_devAng = dev_ang * 5000
-        """
 
-        #직선경로에서 차의 횡가속도를 0에 가깝게 만들기 위한 리워드
-        if car_x <= 50 or car_x >=111:
-            a_reward = alHori * 100
-        else:
-            a_reward = 0
-        """
-
-        e = - reward_devDist - reward_devAng
+        e = - reward_devDist - reward_devAng - forbidden_reward
 
         if self.test_num % 300 == 0 and self.check == 0:
             print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
