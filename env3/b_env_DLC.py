@@ -88,16 +88,16 @@ class CarMakerEnvB(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
+        self.traj_data = np.array([[3, -8.0525], [15, -8.0525]])
+        self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
+
         # 초기화 코드
         if self.sim_initiated == True:
             # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
             self.status_queue.put("stop")
             self.action_queue.queue.clear()
             self.state_queue.queue.clear()
-
         self.sim_started = False
-        self.traj_data = np.array([[3, -8.0525], [15, -8.0525]])
-        self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
 
         return self._initial_state()
 

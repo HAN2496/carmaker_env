@@ -71,8 +71,6 @@ class CarMakerEnv(gym.Env):
             self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
             self.cm_thread.start()
 
-
-
             self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
@@ -108,24 +106,22 @@ class CarMakerEnv(gym.Env):
 
         done = False
 
-        if self.use_carmaker == True:
+        # 최초 실행시
+        if self.sim_initiated == False:
+            self.sim_initiated = True
 
-            # 최초 실행시
-            if self.sim_initiated == False:
-                self.sim_initiated = True
+        # 에피소드의 첫 스텝
+        if self.sim_started == False:
+            self.status_queue.put("start")
+            self.sim_started = True
 
-            # 에피소드의 첫 스텝
-            if self.sim_started == False:
-                self.status_queue.put("start")
-                self.sim_started = True
+        # Action 값 전송
+        # CarMakerEnv -> CMcontrolNode -> tcpip_thread -> simulink tcp/ip block
+        self.action_queue.put(action)
 
-            # Action 값 전송
-            # CarMakerEnv -> CMcontrolNode -> tcpip_thread -> simulink tcp/ip block
-            self.action_queue.put(action)
-
-            # State 값 수신
-            # simulink tcp/ip block -> tcpip_thread -> CMcontrolNode -> CarMakerEnv
-            state = self.state_queue.get()
+        # State 값 수신
+        # simulink tcp/ip block -> tcpip_thread -> CMcontrolNode -> CarMakerEnv
+        state = self.state_queue.get()
 
 
         if state == False:
