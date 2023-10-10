@@ -34,19 +34,19 @@ def plot(road, car):
 class Road:
     def __init__(self):
         self.road_length = 161
-        self.road_width = -15
+        self.road_width = -20
         self._forbidden_area()
         self.cones_arr = self.create_cone_arr()
         self.cones_shape = self.create_cone_shape()
 
     def _forbidden_area(self):
         vertices1 = [
-            (0, -6.442), (62, -6.442), (62, -3.221), (99, -3.221), (99, -6.442),
-            (161, -6.442), (161, 0), (0, 0), (0, -6.442)
+            (0, -8.885), (62, -8.885), (62, -5.085), (99, -5.085), (99, -8.885),
+            (161, -8.85), (161, 0), (0, 0), (0, -8.885)
         ]
         vertices2 = [
-            (0, -9.663), (75.5, -9.663), (75.5, -6.442), (86.5, -6.442),
-            (86.5, -9.663), (161, -9.663), (161, -12.884), (0, -12.884), (0, -9.663)
+            (0, -11.885), (75.5, -11.885), (75.5, -7.885), (86.5, -7.885),
+            (86.5, -11.885), (161, -11.885), (161, -20), (0, -20), (0, -11.885)
         ]
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
@@ -56,8 +56,8 @@ class Road:
             [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
         ])
         self.cones_boundary = Polygon(
-            [(0, -7.0651), (62, -7.0651), (62, -3.4565), (99, -3.4565), (99, -6.5525), (161, -6.5525),
-             (161, -9.5525), (86.5, -9.5525), (86.5, -6.2065), (75.5, -6.2065), (75.5, -9.0399), (0, -9.0399)
+            [(0, -8.885), (62, -8.885), (62, -5.085), (99, -5.085), (99, -8.885), (161, -8.885),
+             (161, -11.885), (86.5, -11.885), (86.5, -7.885), (75.5, -7.885), (75.5, -11.115), (0, -11.115)
         ])
 
     def create_cone_shape(self):
@@ -88,13 +88,13 @@ class Road:
 
     def create_DLC_cone(self):
         sections = [
-            {'start': 0, 'gap': 5, 'cone_dist': 1.9748, 'num': 10, 'y_offset': -8.0525},
-            {'start': 50, 'gap': 3, 'cone_dist': 1.9748, 'num': 5, 'y_offset': -8.0525}, #
-            {'start': 64.7, 'gap': 2.7, 'cone_dist': 5.4684, 'num': 4, 'y_offset': -6.3057},
-            {'start': 75.5, 'gap': 2.75, 'cone_dist': 2, 'num': 5, 'y_offset': -4.8315}, #
-            {'start': 89, 'gap': 2.5, 'cone_dist': 5.4684, 'num': 4, 'y_offset': -6.3057},
-            {'start': 99, 'gap': 3, 'cone_dist': 1.9748, 'num': 5, 'y_offset': -8.0525}, #
-            {'start': 111, 'gap': 5, 'cone_dist': 1.9748, 'num': 20, 'y_offset': -8.0525}
+            {'start': 0, 'gap': 5, 'cone_dist': 2.23, 'num': 10, 'y_offset': -10},
+            {'start': 50, 'gap': 3, 'cone_dist': 2.23, 'num': 5, 'y_offset': -10}, #
+            {'start': 64.7, 'gap': 2.7, 'cone_dist': 6.03, 'num': 4, 'y_offset': -8.1},
+            {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.8, 'num': 5, 'y_offset': -6.485}, #
+            {'start': 89, 'gap': 2.5, 'cone_dist': 6.8, 'num': 4, 'y_offset': -8.485},
+            {'start': 99, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -10.385}, #
+            {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 20, 'y_offset': -10.385}
         ]
 
         return sections
@@ -130,10 +130,10 @@ class Road:
 
 class Car:
     def __init__(self):
-        self.length = 4.3
-        self.width = 1.568
+        self.length = 4
+        self.width = 1.8
         self.carx = 3
-        self.cary = -8.0525
+        self.cary = -10
         self.caryaw = 0
         self.carv = 13.8889
 
