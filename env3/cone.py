@@ -139,7 +139,7 @@ class Car:
 
     def reset_car(self):
         self.carx = 3
-        self.cary = -8.0525
+        self.cary = -10
         self.caryaw = 0
 
     def move_car(self, angle):
