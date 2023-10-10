@@ -20,7 +20,7 @@ cones = np.array(cone1 + cone2 + cone3)
 
 straight_line1 = np.array([[x, -10] for x in np.linspace(0, 62, int((62 - 0) / 0.01) + 1)])
 straight_line2 = np.array([[x, -6.485] for x in np.linspace(75.5, 86.5, int((86.5 - 75.5) / 0.01) + 1)])
-straight_line3 = np.array([[x, -10.385] for x in np.linspace(99, 161, int((200 - 99) / 0.01) + 1)])
+straight_line3 = np.array([[x, -10.385] for x in np.linspace(99, 200, int((200 - 99) / 0.01) + 1)])
 
 
 def cubic_interpolation(x0, y0, x1, y1):
