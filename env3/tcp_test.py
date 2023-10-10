@@ -29,7 +29,7 @@ try:
         i+=1
         # 데이터 전송
         a = random.randrange(-1, 1)
-        data_to_send = [0, i+1]
+        data_to_send = [i+1, 0]
         data = struct.pack('!2d', *data_to_send)
 
         conn.send(data)
