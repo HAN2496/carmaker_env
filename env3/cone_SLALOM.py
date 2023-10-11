@@ -136,7 +136,7 @@ class Road:
         traj_cone_lower = np.array([traj_cone_lower[:, 0], traj_cone_lower[:, 1]]).T
         self.traj_cone_lower = traj_cone_lower[traj_cone_lower[:, 0].argsort()]
         """
-        cones = np.array([100 + 30 * i, -5.25] for i in range(13))
+        cones = np.array([100 + 30 * i, -5.25] for i in range(15))
 
         return np.array(cones)
 
@@ -169,8 +169,8 @@ class Road:
 
 class Car:
     def __init__(self, carx=3, cary=-5.25, caryaw=0, carv=13.8889):
-        self.length = 4
-        self.width = 1.8
+        self.length = 4.3
+        self.width = 1.568
         self.carx = carx
         self.cary = cary
         self.caryaw = caryaw
