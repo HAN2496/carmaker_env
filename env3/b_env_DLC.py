@@ -205,10 +205,9 @@ class CarMakerEnvB(gym.Env):
     def find_nearest_point(self, x0, y0, distances):
         points = []
         for distance in distances:
-            filtered_data = self.traj_data[self.traj_data[:, 0] > x0]
-            x_diff = np.abs(filtered_data[:, 0] - (x0 + distance))
+            x_diff = np.abs(self.traj_data[:, 0] - (x0 + distance))
             nearest_idx = np.argmin(x_diff)
-            points.append(filtered_data[nearest_idx])
+            points.append(self.traj_data[nearest_idx])
         return points
 
     def calculate_dev(self, carx, cary, caryaw):
