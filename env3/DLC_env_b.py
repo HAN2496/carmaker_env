@@ -11,7 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from DLC_env_low import CarMakerEnv as LowLevelCarMakerEnv
+from DLC_env_low2 import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
