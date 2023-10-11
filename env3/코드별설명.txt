@@ -3,5 +3,5 @@ env1: trajectory만
 env2: trajectory + state, reward에도 콘 충돌 줌
 
 [SLALOM]
-env1: 
-env2: 
+env1: trajectory만
+env2: trajectory + cone

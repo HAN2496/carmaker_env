@@ -11,11 +11,11 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from low_env_DLC2 import CarMakerEnv as LowLevelCarMakerEnv
+from env_DLC_low2 import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
-from cone import Road, Car
+from cone_DLC import Road, Car
 from pygame_b import *
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -254,14 +254,14 @@ class CarMakerEnvB(gym.Env):
 
     def getReward(self, new_traj_point, time):
         car = Car()
-        car.shape_car(self.car_data[0], self.car_data[1], self.car_data[2])
+        car_shape = car.shape_car(self.car_data[0], self.car_data[1], self.car_data[2])
         forbidden_reward, cones_reward, car_reward, ang_reward = 0, 0, 0, 0
         traj_point = Point(new_traj_point[0], new_traj_point[1])
         if self.road.forbbiden_area1.intersects(traj_point) or self.road.forbbiden_area2.intersects(traj_point):
             forbidden_reward = -10000
         if self.road.cones_boundary.intersects(traj_point):
             cones_reward = +100
-        if self.road.is_car_in_forbidden_area(car):
+        if self.road.is_car_in_forbidden_area(car_shape):
             car_reward = -10000
 
         e = forbidden_reward + cones_reward + car_reward + ang_reward
