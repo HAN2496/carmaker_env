@@ -147,9 +147,9 @@ class CarMakerEnv(gym.Env):
             lookahead_arr = [3 * i for i in range(5)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_arr)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
-            cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
-            cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cones_state).flatten()
-            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel, cones_rel))
+            lookahead_cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
+            lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_cones_abs).flatten()
+            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel, lookahead_cones_rel))
 
         # 리워드 계산
         reward_state = np.concatenate((dev, np.array([alHori]), car_pos))

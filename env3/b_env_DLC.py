@@ -124,7 +124,7 @@ class CarMakerEnvB(gym.Env):
 
         traj_lowlevel_abs = self.find_nearest_point(self.car_data[0], self.car_data[1], sight)
         traj_lowlevel_rel = self.to_relative_coordinates(self.car_data[0], self.car_data[1], self.car_data[2], traj_lowlevel_abs).flatten()
-        self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), traj_lowlevel_rel))
+        self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), self.car_data[5:], traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
         action_to_sim = np.append(steering_changes[0], self.test_num)
 
@@ -265,8 +265,6 @@ class CarMakerEnvB(gym.Env):
             car_reward = -10000
 
         e = forbidden_reward + cones_reward + car_reward + ang_reward
-        if self.test_num % 300 == 0 and self.check == 0:
-            print(f"[Time: {time}], ")
         return e
 
     def save_data_for_lowlevel(self, indexs, values):

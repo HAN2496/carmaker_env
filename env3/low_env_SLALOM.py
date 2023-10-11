@@ -13,6 +13,7 @@ import pandas as pd
 import time
 import math
 from shapely.geometry import Polygon, Point, LineString
+from cone import Road, Car
 from shapely import affinity
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -38,37 +39,41 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM2'):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM2', use_carmaker = True):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
+        self.use_carmaker = use_carmaker
         self.road_type = "SLALOM"
+        self.road = Road()
         env_action_num = 1
         sim_action_num = env_action_num + 1
+
 
         self.cones = self.create_SLALOM_cone()
 
         env_obs_num = 24
         sim_obs_num = 13
-#        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
-        self.action_space = spaces.Discrete(1000)
+        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
-        # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
-        self.status_queue = Queue()
-        self.action_queue = Queue()
-        self.state_queue = Queue()
+        if self.use_carmaker:
 
-        # 중복 명령 방지를 위한 변수
-        self.sim_initiated = False
-        self.sim_started = False
+            # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
+            self.status_queue = Queue()
+            self.action_queue = Queue()
+            self.state_queue = Queue()
 
-        # 각 Env마다 1개의 카메이커 연동 쓰레드를 사용
-        self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
-        self.cm_thread.start()
+            # 중복 명령 방지를 위한 변수
+            self.sim_initiated = False
+            self.sim_started = False
+
+            # 각 Env마다 1개의 카메이커 연동 쓰레드를 사용
+            self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
+            self.cm_thread.start()
 
         self.test_num = 0
 
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/made_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
 
     def __del__(self):
@@ -140,16 +145,17 @@ class CarMakerEnv(gym.Env):
             car_dev = state[8:10] #2
             car_alHori = state[10]
             car_roll = state[11]
-            traj_sight = 8 # (8, 2) = 16
+            wheel_steer = state[12:]
+            traj_sight = 5 # (5, 2) = 16
             cone_sight = 2 # (2, 2) = 4
 
             lookahead_sight = [2 * i for i in range(traj_sight)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
 
-            cones_sight = self.find_cone(car_pos[0], cone_sight)
-            collision = self.check_collision(car_pos[0], car_pos[1], car_pos[2])
-            cones_sight_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], cones_sight).flatten()
+            lookahead_cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
+            lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2],
+                                                               lookahead_cones_abs).flatten()
 
             state = np.concatenate((car_dev, np.array([car_steer[0], car_v]), lookahead_traj_rel, cones_sight_rel))
 
@@ -185,30 +191,6 @@ class CarMakerEnv(gym.Env):
 
     def find_cone(self, carx, sight):
         return np.array([cone for cone in self.cones if carx - 2.1976004311961135 <= cone[0]][:sight])
-    def shape_car(self, carx, cary, caryaw):
-        half_length = 4.3 / 2.0
-        half_width = 1.568 / 2.0
-
-        corners = [
-            (-half_length, -half_width),
-            (-half_length, half_width),
-            (half_length, half_width),
-            (half_length, -half_width)
-        ]
-
-        car_shape = Polygon(corners)
-        car_shape = affinity.rotate(car_shape, caryaw, origin='center', use_radians=False)
-        car_shape = affinity.translate(car_shape, carx, cary)
-
-        return car_shape
-    def check_collision(self, carx, cary, caryaw):
-        car = self.shape_car(carx, cary, caryaw)
-        np.array([Point(cx, cy).buffer(0.2) for cx, cy in self.cones])
-        for conex, coney in self.cones:
-            cone = Point(conex, coney).buffer(0.2)
-            if car.intersects(cone):
-                return 1
-        return 0
 
     def to_relative_coordinates(self, x, y, yaw, arr):
         relative_coords = []
@@ -231,25 +213,21 @@ class CarMakerEnv(gym.Env):
             # 에피소드 종료시
             return 0.0
 
+        devDist = state[0]
+        devAng = state[1]
         carx, cary, caryaw = state[0:3]
-        devDist = state[3]
-        devAng = state[4]
-        collision = state[5]
 
         reward_devDist = abs(devDist) * 1000
-        reward_collision = collision * 10000
+        reward_devAng = abs(devAng) * 5000
 
-        if carx <= 85 or carx >= 385:
-            reward_devAng = abs(devAng) * 5000
+        car = Car()
+        car.shape_car(carx, cary, caryaw)
+        if self.road.is_car_in_forbidden_area(car):
+            forbidden_reward = 3000
         else:
-            reward_devAng = abs(devAng) * 2000
+            forbidden_reward = 0
 
-        e = - reward_devDist - reward_collision - reward_devAng
-
-        if self.check == 0 and collision == 1:
-            print("[time : {}], [tx : {}], [COLLISION] [cary : {}]".format(round(time, 2), round(carx, 2), round(cary, 2)))
-        elif self.check == 0 and self.test_num % 300 == 0:
-            print("[time : {}], [tx : {}], [cary : {}]".format(round(time, 2), round(carx, 2), round(cary, 2)))
+        e = - reward_devDist - reward_devAng - forbidden_reward
 
         return e
 

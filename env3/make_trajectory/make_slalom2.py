@@ -104,3 +104,6 @@ df = pd.DataFrame({
 })
 
 df.to_csv("traj_slalom_onefifth.csv", index=False)
+
+plt.scatter(df['traj_tx'][::1000], df['traj_ty'][::1000])
+plt.show()
