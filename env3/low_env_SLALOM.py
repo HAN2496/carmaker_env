@@ -39,7 +39,7 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/PTC0910/src_cm4sl', simul_path='pythonCtrl_SLALOM2', use_carmaker = True):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_SLALOM', use_carmaker = True):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.use_carmaker = use_carmaker
@@ -220,40 +220,16 @@ class CarMakerEnv(gym.Env):
 
         car = Car()
         car.shape_car(carx, cary, caryaw)
-        if self.road.is_car_in_forbidden_area(car):
-            forbidden_reward = 6000
+        if self.road.is_car_colliding_with_cones(car):
+            collision_reward = 6000
         else:
-            forbidden_reward = 0
+            collision_reward = 0
 
-        e = - reward_devDist - reward_devAng - forbidden_reward
+        e = - reward_devDist - reward_devAng - collision_reward
 
         return e
 
-    def create_cone(self, sections):
-        conex = []
-        coney = []
-        for section in sections:
-            for i in range(section['num']):  # Each section has 5 pairs
-                x = section['start'] + section['gap'] * i
-                y = section['y_offset']
-                conex.extend([x])
-                coney.extend([y])
 
-        data = np.array([conex, coney]).T
-        data_sorted = data[data[:, 0].argsort()]
-
-        xcoords_sorted = data_sorted[:, 0]
-        ycoords_sorted = data_sorted[:, 1]
-
-        return np.column_stack((xcoords_sorted, ycoords_sorted))
-
-    def create_SLALOM_cone(self):
-        sections = [
-            {'start': 100, 'gap': 60, 'num': 5, 'y_offset': -5.25},
-            {'start': 130, 'gap': 60, 'num': 5, 'y_offset': -5.25},
-            {'start': 600, 'gap': 10, 'num': 5, 'y_offset': -5.25}
-        ]
-        return self.create_cone(sections)
 
 if __name__ == "__main__":
     # 환경 테스트
