@@ -182,7 +182,7 @@ class CarMakerEnvB(gym.Env):
 
             cones_for_lowlevel = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:2]
             cones_rel_for_lowlevel = self.to_relative_coordinates(carx, cary, caryaw, cones_for_lowlevel).flatten()
-            self.car_data = np.concatenate((np.array([carx, cary, caryaw, carv, car_steer[0]])))
+            self.car_data = np.array([carx, cary, caryaw, carv, car_steer[0]])
 
             state = np.concatenate((traj_rel, cones_rel)) # <- Policy B의 state
 
