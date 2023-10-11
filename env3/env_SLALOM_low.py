@@ -13,7 +13,7 @@ import pandas as pd
 import time
 import math
 from shapely.geometry import Polygon, Point, LineString
-from cone import Road, Car
+from cone_SLALOM import Road, Car
 from shapely import affinity
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -49,7 +49,7 @@ class CarMakerEnv(gym.Env):
         sim_action_num = env_action_num + 1
 
         env_obs_num = 16
-        sim_obs_num = 17
+        sim_obs_num = 13
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
@@ -143,11 +143,8 @@ class CarMakerEnv(gym.Env):
             dev = self.calculate_dev(car_pos[0], car_pos[1], car_pos[2])
             alHori = state[10]
             roll = state[11]
-            wheel_steer = state[12:]
-            traj_sight = 5 # (5, 2) = 16
-            cone_sight = 2 # (2, 2) = 4
-
-            lookahead_sight = [2 * i for i in range(traj_sight)]
+#            wheel_steer = state[12:]
+            lookahead_sight = [2 * i for i in range(5)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
 
@@ -164,7 +161,6 @@ class CarMakerEnv(gym.Env):
         info = {key: value for key, value in zip(info_key, state_for_info)}
 
         return state, reward, done, info
-
 
     def find_lookahead_traj(self, x, y, distances):
         distances = np.array(distances)
@@ -226,6 +222,8 @@ class CarMakerEnv(gym.Env):
 
         if self.test_num % 300 == 0 and self.check == 0:
             print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
+        if forbidden_reward != 0:
+            print("collision")
 
         return e
 
