@@ -11,12 +11,13 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from DLC_env_low2 import CarMakerEnv as LowLevelCarMakerEnv
+from DLC_env_low import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
 from DLC_cone import Road, Car
-from pygame_b import *
+import pygame
+
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
 
@@ -70,6 +71,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
         self.cm_thread.start()
 
+        self.car = Car()
         self.road = Road()
         self.test_num = 0
         self.traj_data = np.array([[3, -10], [15, -10]])
@@ -81,6 +83,10 @@ class CarMakerEnvB(gym.Env):
         self.low_level_model = SAC.load(f"1st_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
+        pygame.init()
+        self.screen = pygame.display.set_mode((self.road.road_length * 10, - self.road.road_width * 10))
+        pygame.display.set_caption("B level Environment")
+
     def __del__(self):
         self.cm_thread.join()
 
@@ -90,6 +96,7 @@ class CarMakerEnvB(gym.Env):
     def reset(self):
         self.traj_data = np.array([[3, -8.0525], [15, -8.0525]])
         self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
+        self.render()
 
         # 초기화 코드
         if self.sim_initiated == True:
@@ -124,7 +131,8 @@ class CarMakerEnvB(gym.Env):
 
         traj_lowlevel_abs = self.find_nearest_point(self.car_data[0], self.car_data[1], sight)
         traj_lowlevel_rel = self.to_relative_coordinates(self.car_data[0], self.car_data[1], self.car_data[2], traj_lowlevel_abs).flatten()
-        self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), self.car_data[5:], traj_lowlevel_rel))
+#        self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), self.car_data[5:], traj_lowlevel_rel))
+        self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
         action_to_sim = np.append(steering_changes[0], self.test_num)
 
@@ -155,6 +163,7 @@ class CarMakerEnvB(gym.Env):
             state = state[1:] #connect 제거
             time = state[0] # Time
             carx, cary, caryaw, carv = state[1:5]
+            self.car.carx, self.car.cary, self.car.caryaw, self.car.carv = carx, cary, caryaw, carv
             car_steer = state[5:8] #Car.Steer.(Ang, Vel, Acc)
             car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
@@ -166,8 +175,8 @@ class CarMakerEnvB(gym.Env):
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
             car_dev = self.calculate_dev(carx, cary, caryaw)
-            cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
-            cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_state).flatten()
+            cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
+            cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_abs).flatten()
             cones_for_lowlevel = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:2]
             cones_rel_for_lowlevel = self.to_relative_coordinates(carx, cary, caryaw, cones_for_lowlevel).flatten()
             self.car_data = np.concatenate((np.array([carx, cary, caryaw, carv, car_steer[0]]), cones_rel_for_lowlevel))
@@ -181,6 +190,7 @@ class CarMakerEnvB(gym.Env):
         if self.test_num % 300 == 0:
             self.print_result(time, reward, car_dev)
 
+        self.render()
         return state, reward, done, info
 
     def make_traj_point(self, carx, cary, action):
@@ -281,6 +291,54 @@ class CarMakerEnvB(gym.Env):
         for point in self.traj_point:
             print(f" [{point[0]:.2f}, {point[1]:.2f}]")
 
+    def render(self, mode='human'):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        self.screen.fill((128, 128, 128))
+
+        for cone in self.road.cones_shape:
+            x, y = cone.centroid.coords[0]
+            pygame.draw.circle(self.screen, (255, 140, 0), (int(x * 10), int(-y * 10)), 5)
+
+        for trajx, trajy in self.traj_point:
+            pygame.draw.circle(self.screen, (0, 128, 0), (trajx * 10, - trajy * 10), 5)
+
+        car_color = (255, 0, 0)
+
+        half_length = self.car.length * 10 / 2.0
+        half_width = self.car.width * 10 / 2.0
+
+        corners = [
+            (-half_length, -half_width),
+            (-half_length, half_width),
+            (half_length, half_width),
+            (half_length, -half_width)
+        ]
+
+        rotated_corners = []
+        for x, y in corners:
+            x_rot = x * np.cos(-self.car.caryaw) - y * np.sin(-self.car.caryaw) + self.car.carx * 10
+            y_rot = x * np.sin(-self.car.caryaw) + y * np.cos(-self.car.caryaw) - self.car.cary * 10
+            rotated_corners.append((x_rot, y_rot))
+
+        pygame.draw.polygon(self.screen, car_color, rotated_corners)
+
+        #차량 위치 렌더링
+        font = pygame.font.SysFont("arial", 20, True, True)
+        text_str = f"X: {round(self.car.carx, 1)}, Y: {round(self.car.cary, 1)}"
+        text_surface = font.render(text_str, True, (255, 255, 255))
+
+        # 텍스트 이미지의 위치 계산 (우측 하단)
+        text_x = self.road.road_length * 10 - text_surface.get_width() - 10
+        text_y = - self.road.road_width * 10 - text_surface.get_height() - 10
+
+        # 렌더링된 이미지를 화면에 그리기
+        self.screen.blit(text_surface, (text_x, text_y))
+
+        pygame.display.flip()
+
 if __name__ == "__main__":
     # 환경 테스트
     env = CarMakerEnvB(check=0)
@@ -289,7 +347,7 @@ if __name__ == "__main__":
     info_lst = []
 
 
-    for i in range(1):
+    for i in range(3):
         # 환경 초기화
         state = env.reset()
 
