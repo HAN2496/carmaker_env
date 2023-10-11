@@ -172,13 +172,13 @@ class Road:
         return 0
 
 class Car:
-    def __init__(self):
+    def __init__(self, carx=3, cary=-5.25, caryaw=0, carv=13.8889):
         self.length = 4
         self.width = 1.8
-        self.carx = 3
-        self.cary = -10
-        self.caryaw = 0
-        self.carv = 13.8889
+        self.carx = carx
+        self.cary = cary
+        self.caryaw = caryaw
+        self.carv = carv
 
     def reset_car(self):
         self.carx = 3
@@ -192,6 +192,9 @@ class Car:
         self.cary += np.sin(self.caryaw) * self.carv * 0.01
 
     def shape_car(self, carx, cary, caryaw):
+        self.carx = carx
+        self.cary = cary
+        self.caryaw = caryaw
         half_length = self.length / 2.0
         half_width = self.width / 2.0
 

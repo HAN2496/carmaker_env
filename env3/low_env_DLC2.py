@@ -235,7 +235,7 @@ class CarMakerEnv(gym.Env):
         car = Car()
         car.shape_car(carx, cary, caryaw)
         if self.road.is_car_in_forbidden_area(car):
-            forbidden_reward = 3000
+            forbidden_reward = 10000
         else:
             forbidden_reward = 0
 
@@ -247,6 +247,8 @@ class CarMakerEnv(gym.Env):
 
         if self.test_num % 300 == 0 and self.check == 0:
             print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
+        if forbidden_reward != 0:
+            print("collision")
 
         return e
 

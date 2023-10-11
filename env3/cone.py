@@ -129,7 +129,7 @@ class Road:
         return 0
 
 class Car:
-    def __init__(self):
+    def __init__(self, carx=4, cary=-10, caryaw=0, carv=13.8889):
         self.length = 4
         self.width = 1.8
         self.carx = 3
