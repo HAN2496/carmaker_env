@@ -11,7 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from cone import Road, Car
+from cone_DLC import Road, Car
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -232,9 +232,9 @@ class CarMakerEnv(gym.Env):
         alHori = abs(state[2])
         carx, cary, caryaw = state[3:]
 
-        car = Car()
-        car.shape_car(carx, cary, caryaw)
-        if self.road.is_car_in_forbidden_area(car):
+        car = Car(carx, cary, caryaw)
+        car_shape = car.shape_car(carx, cary, caryaw)
+        if self.road.is_car_in_forbidden_area(car_shape):
             forbidden_reward = 10000
         else:
             forbidden_reward = 0
