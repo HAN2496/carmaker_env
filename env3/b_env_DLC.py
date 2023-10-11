@@ -127,7 +127,6 @@ class CarMakerEnvB(gym.Env):
         self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
         action_to_sim = np.append(steering_changes[0], self.test_num)
-        action_to_sim = np.append(5, steering_changes[0])
 
         # 최초 실행시
         if self.sim_initiated == False:
