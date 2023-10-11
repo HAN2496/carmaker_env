@@ -139,8 +139,8 @@ class Road:
 
 class Car:
     def __init__(self):
-        self.length = 4
-        self.width = 1.8
+        self.length = 4.3
+        self.width = 1.568
         self.carx = 3
         self.cary = -10
         self.caryaw = 0
