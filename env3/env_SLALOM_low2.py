@@ -13,7 +13,7 @@ import pandas as pd
 import time
 import math
 from shapely.geometry import Polygon, Point, LineString
-from cone import Road, Car
+from cone_SLALOM import Road, Car
 from shapely import affinity
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -48,16 +48,12 @@ class CarMakerEnv(gym.Env):
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-
-        self.cones = self.create_SLALOM_cone()
-
-        env_obs_num = 20
-        sim_obs_num = 17
+        env_obs_num = 16
+        sim_obs_num = 13
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
         if self.use_carmaker:
-
             # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
             self.status_queue = Queue()
             self.action_queue = Queue()
@@ -99,8 +95,9 @@ class CarMakerEnv(gym.Env):
         self.test_num += 1
         state_for_info = np.zeros(16)
         time = 0
-        car_alHori = 0
-        car_pos = np.array([0, 0, 0])
+        dev = np.array([0, 0])
+        alHori = 0
+        car_pos = np.array([2, -5.25, 0])
         car_dev = np.array([0, 0])
         car_steer = np.array([0, 0, 0])
         collision = 0
@@ -143,31 +140,27 @@ class CarMakerEnv(gym.Env):
             car_pos = state[1:4] #x, y, yaw
             car_v = state[4] #1
             car_steer = state[5:8]
-            car_dev = state[8:10] #2
-            car_alHori = state[10]
-            car_roll = state[11]
-            wheel_steer = state[12:]
-            traj_sight = 5 # (5, 2) = 16
-            cone_sight = 2 # (2, 2) = 4
-
-            lookahead_sight = [2 * i for i in range(traj_sight)]
+            dev = self.calculate_dev(car_pos[0], car_pos[1], car_pos[2])
+            alHori = state[10]
+            roll = state[11]
+#            wheel_steer = state[12:]
+            lookahead_sight = [2 * i for i in range(5)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
 
-            lookahead_cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:4]
+            lookahead_cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
             lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_cones_abs).flatten()
 
             state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel, lookahead_cones_rel))
 
 
         # 리워드 계산
-        reward_state = np.concatenate((car_pos, car_dev, np.array([collision])))
+        reward_state = np.concatenate((dev, np.array([alHori]), car_pos))
         reward = self.getReward(reward_state, time)
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, state_for_info)}
 
         return state, reward, done, info
-
 
     def find_lookahead_traj(self, x, y, distances):
         distances = np.array(distances)
@@ -189,9 +182,6 @@ class CarMakerEnv(gym.Env):
 
         return result_points
 
-    def find_cone(self, carx, sight):
-        return np.array([cone for cone in self.cones if carx - 2.1976004311961135 <= cone[0]][:sight])
-
     def to_relative_coordinates(self, x, y, yaw, arr):
         relative_coords = []
 
@@ -207,55 +197,61 @@ class CarMakerEnv(gym.Env):
         return np.array(relative_coords)
 
     def getReward(self, state, time):
-        time = time
 
         if state.any() == False:
             # 에피소드 종료시
             return 0.0
 
-        devDist = state[0]
-        devAng = state[1]
-        carx, cary, caryaw = state[0:3]
+        dev_dist = abs(state[0])
+        dev_ang = abs(state[1])
+        alHori = abs(state[2])
+        carx, cary, caryaw = state[3:]
 
-        reward_devDist = abs(devDist) * 1000
-        reward_devAng = abs(devAng) * 5000
-
-        car = Car()
+        car = Car(carx, cary, caryaw)
         car_shape = car.shape_car(carx, cary, caryaw)
         if self.road.is_car_colliding_with_cones(car_shape):
-            forbidden_reward = 3000
+            forbidden_reward = 10000
         else:
             forbidden_reward = 0
 
+        #devDist, devAng에 따른 리워드
+        reward_devDist = dev_dist * 1000
+        reward_devAng = dev_ang * 5000
+
         e = - reward_devDist - reward_devAng - forbidden_reward
+
+        if self.test_num % 300 == 0 and self.check == 0:
+            print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
+        if forbidden_reward != 0:
+            print("collision")
 
         return e
 
-    def create_cone(self, sections):
-        conex = []
-        coney = []
-        for section in sections:
-            for i in range(section['num']):  # Each section has 5 pairs
-                x = section['start'] + section['gap'] * i
-                y = section['y_offset']
-                conex.extend([x])
-                coney.extend([y])
+    def calculate_dev(self, carx, cary, caryaw):
+        arr = np.array(self.traj_data)
+        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+        dist_index = np.argmin(distances)
+        devDist = distances[dist_index]
 
-        data = np.array([conex, coney]).T
-        data_sorted = data[data[:, 0].argsort()]
+        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
+        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
 
-        xcoords_sorted = data_sorted[:, 0]
-        ycoords_sorted = data_sorted[:, 1]
+        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
+        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
 
-        return np.column_stack((xcoords_sorted, ycoords_sorted))
+        # 분모가 0이 될 수 있는 경우에 대한 예외처리
+        if dx1 == 0:
+            devAng1 = np.inf if dy1 > 0 else -np.inf
+        else:
+            devAng1 = dy1 / dx1
 
-    def create_SLALOM_cone(self):
-        sections = [
-            {'start': 100, 'gap': 60, 'num': 5, 'y_offset': -5.25},
-            {'start': 130, 'gap': 60, 'num': 5, 'y_offset': -5.25},
-            {'start': 600, 'gap': 10, 'num': 5, 'y_offset': -5.25}
-        ]
-        return self.create_cone(sections)
+        if dx2 == 0:
+            devAng2 = np.inf if dy2 > 0 else -np.inf
+        else:
+            devAng2 = dy2 / dx2
+
+        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
+        return np.array([devDist, devAng])
 
 if __name__ == "__main__":
     # 환경 테스트

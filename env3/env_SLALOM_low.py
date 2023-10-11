@@ -48,7 +48,7 @@ class CarMakerEnv(gym.Env):
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        env_obs_num = 16
+        env_obs_num = 12
         sim_obs_num = 13
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -148,10 +148,7 @@ class CarMakerEnv(gym.Env):
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
 
-            lookahead_cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
-            lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_cones_abs).flatten()
-
-            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel, lookahead_cones_rel))
+            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel))
 
 
         # 리워드 계산
@@ -207,23 +204,14 @@ class CarMakerEnv(gym.Env):
         alHori = abs(state[2])
         carx, cary, caryaw = state[3:]
 
-        car = Car(carx, cary, caryaw)
-        car_shape = car.shape_car(carx, cary, caryaw)
-        if self.road.is_car_colliding_with_cones(car_shape):
-            forbidden_reward = 10000
-        else:
-            forbidden_reward = 0
-
         #devDist, devAng에 따른 리워드
         reward_devDist = dev_dist * 1000
         reward_devAng = dev_ang * 5000
 
-        e = - reward_devDist - reward_devAng - forbidden_reward
+        e = - reward_devDist - reward_devAng
 
         if self.test_num % 300 == 0 and self.check == 0:
             print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
-        if forbidden_reward != 0:
-            print("collision")
 
         return e
 
