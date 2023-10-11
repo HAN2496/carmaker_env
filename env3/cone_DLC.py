@@ -98,8 +98,7 @@ class Road:
         ]
 
         return sections
-    def is_car_in_forbidden_area(self, car):
-        car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
+    def is_car_in_forbidden_area(self, car_shape):
 
         if car_shape.intersects(self.forbbiden_area1) or car_shape.intersects(self.forbbiden_area2):
             return 1
