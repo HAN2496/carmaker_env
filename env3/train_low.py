@@ -65,8 +65,8 @@ def main():
 
     env_num = 1
     road_type = "DLC"
-    comment = "3"
-    explanation = "low env DLC2"
+    comment = "4"
+    explanation = "low env DLC2, reward changed. Collision reward increases"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
