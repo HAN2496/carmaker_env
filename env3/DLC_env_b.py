@@ -95,7 +95,7 @@ class CarMakerEnvB(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
-        self.traj_data = np.array([[3, -8.0525], [15, -8.0525]])
+        self.traj_data = np.array([[3, -10], [15, -10]])
         self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
         if self.check == 0:
             self.render()
@@ -133,7 +133,6 @@ class CarMakerEnvB(gym.Env):
 
         traj_lowlevel_abs = self.find_nearest_point(self.car_data[0], self.car_data[1], sight)
         traj_lowlevel_rel = self.to_relative_coordinates(self.car_data[0], self.car_data[1], self.car_data[2], traj_lowlevel_abs).flatten()
-#        self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), self.car_data[5:], traj_lowlevel_rel))
         self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
         action_to_sim = np.append(steering_changes[0], self.test_num)
@@ -171,6 +170,7 @@ class CarMakerEnvB(gym.Env):
             car_alHori = state[10] #alHori
             car_roll = state[11]
             wheel_steer = state[12:]
+
             new_traj_point = self.make_traj_point(carx, cary, blevel_action)
             self.traj_data = self.make_trajectory(carx, cary, blevel_action)
             traj_abs = self.find_nearest_point(carx, cary, sight)
@@ -179,9 +179,11 @@ class CarMakerEnvB(gym.Env):
             car_dev = self.calculate_dev(carx, cary, caryaw)
             cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
             cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_abs).flatten()
+
             cones_for_lowlevel = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:2]
             cones_rel_for_lowlevel = self.to_relative_coordinates(carx, cary, caryaw, cones_for_lowlevel).flatten()
-            self.car_data = np.concatenate((np.array([carx, cary, caryaw, carv, car_steer[0]]), cones_rel_for_lowlevel))
+            self.car_data = np.concatenate((np.array([carx, cary, caryaw, carv, car_steer[0]])))
+
             state = np.concatenate((traj_rel, cones_rel)) # <- Policy B의 state
 
         # 리워드 계산
