@@ -11,7 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from low_env_DLC import CarMakerEnv as LowLevelCarMakerEnv
+from low_env_DLC2 import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
@@ -165,10 +165,12 @@ class CarMakerEnvB(gym.Env):
             traj_abs = self.find_nearest_point(carx, cary, sight)
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
-            self.car_data = np.array([carx, cary, caryaw, carv, car_steer[0]])
             car_dev = self.calculate_dev(carx, cary, caryaw)
             cones_state = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
             cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_state).flatten()
+            cones_for_lowlevel = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:2]
+            cones_rel_for_lowlevel = self.to_relative_coordinates(carx, cary, caryaw, cones_for_lowlevel).flatten()
+            self.car_data = np.concatenate((np.array([carx, cary, caryaw, carv, car_steer[0]]), cones_rel_for_lowlevel))
             state = np.concatenate((traj_rel, cones_rel)) # <- Policy B의 state
 
         # 리워드 계산
