@@ -141,30 +141,26 @@ class Road:
         return np.array(cones)
 
 
-    def is_car_in_forbidden_area(self, car):
-        car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
+    def is_car_in_forbidden_area(self, car_shape):
 
         if car_shape.intersects(self.forbbiden_area1) or car_shape.intersects(self.forbbiden_area2):
             return 1
         else:
             return 0
-    def is_car_colliding_with_cones(self, car):
-        car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
+    def is_car_colliding_with_cones(self, car_shape):
         for cone in self.cones_shape:
             if car_shape.intersects(cone):
                 return 1
         return 0
 
-    def is_car_in_road(self, car):
-        car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
+    def is_car_in_road(self, car_shape):
         if not car_shape.intersects(self.road_boundary):
             return 1
         if not self.road_boundary.contains(car_shape):
             return 1
         return 0
 
-    def is_car_in_cone_area(self, car):
-        car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
+    def is_car_in_cone_area(self, car_shape):
         if not car_shape.intersects(self.cones_boundary):
             return 1
         if not self.cones_boundary.contains(car_shape):

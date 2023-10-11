@@ -221,8 +221,8 @@ class CarMakerEnv(gym.Env):
         reward_devAng = abs(devAng) * 5000
 
         car = Car()
-        car.shape_car(carx, cary, caryaw)
-        if self.road.is_car_in_forbidden_area(car):
+        car_shape = car.shape_car(carx, cary, caryaw)
+        if self.road.is_car_colliding_with_cones(car_shape):
             forbidden_reward = 3000
         else:
             forbidden_reward = 0
