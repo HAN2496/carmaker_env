@@ -51,8 +51,8 @@ class CarMakerEnv(gym.Env):
 
         self.cones = self.create_SLALOM_cone()
 
-        env_obs_num = 24
-        sim_obs_num = 13
+        env_obs_num = 20
+        sim_obs_num = 17
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
@@ -95,9 +95,9 @@ class CarMakerEnv(gym.Env):
         return self._initial_state()
 
     def step(self, action1):
-        action1 = (action1 / 500.0) - 1.0
         action = np.append(action1, self.test_num)
         self.test_num += 1
+        state_for_info = np.zeros(16)
         time = 0
         car_alHori = 0
         car_pos = np.array([0, 0, 0])
@@ -138,6 +138,7 @@ class CarMakerEnv(gym.Env):
             # 튜플로 넘어온 값을 numpy array로 변환
             state = np.array(state) #어레이 변환
             state = state[1:]
+            state_for_info = state
             time = state[0]
             car_pos = state[1:4] #x, y, yaw
             car_v = state[4] #1
@@ -153,18 +154,17 @@ class CarMakerEnv(gym.Env):
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
 
-            lookahead_cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
-            lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2],
-                                                               lookahead_cones_abs).flatten()
+            lookahead_cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:4]
+            lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_cones_abs).flatten()
 
-            state = np.concatenate((car_dev, np.array([car_steer[0], car_v]), lookahead_traj_rel, cones_sight_rel))
+            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel, lookahead_cones_rel))
 
 
         # 리워드 계산
         reward_state = np.concatenate((car_pos, car_dev, np.array([collision])))
         reward = self.getReward(reward_state, time)
-        info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : car_pos[0], "cary" : car_pos[1],
-                "caryaw" : car_pos[2], "carv" : car_v, "AlHori" : car_alHori, "Roll": car_roll}
+        info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
+        info = {key: value for key, value in zip(info_key, state_for_info)}
 
         return state, reward, done, info
 
