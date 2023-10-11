@@ -83,9 +83,10 @@ class CarMakerEnvB(gym.Env):
         self.low_level_model = SAC.load(f"1st_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
-        pygame.init()
-        self.screen = pygame.display.set_mode((self.road.road_length * 10, - self.road.road_width * 10))
-        pygame.display.set_caption("B level Environment")
+        if self.check == 0:
+            pygame.init()
+            self.screen = pygame.display.set_mode((self.road.road_length * 10, - self.road.road_width * 10))
+            pygame.display.set_caption("B level Environment")
 
     def __del__(self):
         self.cm_thread.join()
@@ -96,7 +97,8 @@ class CarMakerEnvB(gym.Env):
     def reset(self):
         self.traj_data = np.array([[3, -8.0525], [15, -8.0525]])
         self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
-        self.render()
+        if self.check == 0:
+            self.render()
 
         # 초기화 코드
         if self.sim_initiated == True:
@@ -190,7 +192,8 @@ class CarMakerEnvB(gym.Env):
         if self.test_num % 300 == 0:
             self.print_result(time, reward, car_dev)
 
-        self.render()
+        if self.check == 0:
+            self.render()
         return state, reward, done, info
 
     def make_traj_point(self, carx, cary, action):
