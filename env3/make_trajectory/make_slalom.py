@@ -10,80 +10,25 @@ ycoords = []
 
 cones = np.array([(100 + 30 * i, -5.25) for i in range(10)])
 
-straight_line1 = np.array([[x, -5.25, 0] for x in np.arange(0, 85, 0.1)])
-straight_line2 = np.array([[x, -5.25, 0] for x in np.arange(385, 500, 0.1)])
-straight_line1x = np.linspace(0, 85, int((85 - 0) / 0.01) + 1)
-xcoords.extend(straight_line1x)
-straight_line1y = np.full_like(straight_line1x, -5.25)
-ycoords.extend(straight_line1y)
+straight_line1 = np.array([[x, -5.25] for x in np.arange(0, 85, 0.1)])
+straight_line2 = np.array([[x, -5.25] for x in np.arange(385, 500, 0.1)])
 
-straight_line2x = np.linspace(385, 500, int((500 - 385) / 0.01) + 1)
-xcoords.extend(straight_line2x)
-straight_line2y = np.full_like(straight_line2x, -5.25)
-ycoords.extend(straight_line2y)
+def cubic_interpolation(x0, y0, x1, y1):
+    a = 2 * (y0 - y1) / (x1 - x0) ** 3
+    b = -3 / 2 * a * (x1 - x0)
+    d = y0
 
-for idx, (conex, coney) in enumerate(cones):
-    height = cone_r + car_width / 2
-    if idx == 0:
-        x1, x2 = conex - 15, conex
-        y1, y2 = -5.25, -5.25 + height
-        dy = [0, 0]
-        f = CubicHermiteSpline([x1, x2], [y1, y2], dy)
-        xnew = np.linspace(x1, x2, int((x2 - x1) / 0.01) + 1)
-        ynew = f(xnew)
-        xcoords.extend(xnew)
-        ycoords.extend(ynew)
+    def interpolator(x):
+        return a * (x - x0) ** 3 + b * (x - x0) ** 2 + d
 
-    elif idx == 9:
-        def cubic_interpolation(x0, y0, m0, x1, y1, m1, xs):
-            middle = (x0 + x1) / 2
-            a = np.sqrt(3) / 2 * (x1 - x0)
-            p = 3 / 2 * np.sqrt(3) / np.power(a, 3) * height
-            return np.array([p * (x - middle) * (x - a - middle) * (x + a - middle) - 5.25 for x in xs])
+    f = interpolator
+    x = np.linspace(x0, x1, int((x1 - x0) / 0.01)+1)
+    y = [f(xi) for xi in x]
 
-        x1, x2 = conex - 30, conex
-        y1, y2 = -5.25 + height, -5.25 - height
-        xnew = np.linspace(x1, x2, int((x2 - x1) / 0.01) + 1)
-        ynew = cubic_interpolation(x1, y1, 0, x2, y2, 0, xnew)
-        xcoords.extend(xnew)
-        ycoords.extend(ynew)
+    return np.array(list(zip(x, y)))
 
-        x1, x2 = conex, conex + 15
-        y1, y2 = -5.25 - height, -5.25
-        dy = [0, 0]
-        f = CubicHermiteSpline([x1, x2], [y1, y2], dy)
-        xnew = np.linspace(x1, x2, int((x2 - x1) / 0.01) + 1)
-        ynew = f(xnew)
-        xcoords.extend(xnew)
-        ycoords.extend(ynew)
-
-    elif idx % 2 == 0:
-        def cubic_interpolation(x0, y0, m0, x1, y1, m1, xs):
-            middle = (x0 + x1) / 2
-            a = np.sqrt(3) / 2 * (x1 - x0)
-            p = -3 / 2 * np.sqrt(3) / np.power(a, 3) * height
-            return np.array([p * (x - middle) * (x - a - middle) * (x + a - middle) - 5.25 for x in xs])
-
-        x1, x2 = conex - 30, conex
-        y1, y2 = -5.25 - height, -5.25 + height
-        xnew = np.linspace(x1, x2, int((x2 - x1) / 0.01) + 1)
-        ynew = cubic_interpolation(x1, y1, 0, x2, y2, 0, xnew)
-        xcoords.extend(xnew)
-        ycoords.extend(ynew)
-
-    elif idx % 2 == 1:
-        def cubic_interpolation(x0, y0, m0, x1, y1, m1, xs):
-            middle = (x0 + x1) / 2
-            a = np.sqrt(3) / 2 * (x1 - x0)
-            p = 3 / 2 * np.sqrt(3) / np.power(a, 3) * height
-            return np.array([p * (x - middle) * (x - a - middle) * (x + a - middle) - 5.25 for x in xs])
-
-        x1, x2 = conex - 30, conex
-        y1, y2 = -5.25 + height, -5.25 - height
-        xnew = np.linspace(x1, x2, int((x2 - x1) / 0.01) + 1)
-        ynew = cubic_interpolation(x1, y1, 0, x2, y2, 0, xnew)
-        xcoords.extend(xnew)
-        ycoords.extend(ynew)
+interpolate_first = cubic_interpolation(100 - 15, -5.25, 100, -5.25 + cone_r)
+interpolate_last = cubic_interpolation(370, -5.25 - cone_r, 370 + 15)
 
 plt.scatter([100 + 30 * i for i in range(10)], [-5.25 for i in range(10)], label='cones')
 plt.plot(xcoords, ycoords, '-', label='Cubic Spline Interpolation')
