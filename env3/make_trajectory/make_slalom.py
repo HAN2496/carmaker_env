@@ -4,7 +4,7 @@ from scipy.interpolate import CubicHermiteSpline
 import pandas as pd
 
 cone_r = 0.2
-car_width, car_length = 1.568, 4.
+car_width, car_length = 1.568, 4
 dist_from_axis = (car_width + 1) / 2 + cone_r
 
 cones = np.array([(100 + 30 * i, -5.25) for i in range(10)])
@@ -73,21 +73,21 @@ cone_straight_line2_lower = np.array([[x, -5.25 - dist_from_axis_at_straight] fo
 
 total_cone = np.vstack((cone_straight_line1_upper, cone_straight_line2_upper, cone_straight_line1_lower, cone_straight_line2_lower))
 
-cone_interpolate_first_upper = cubic_interpolation(100 - 15, -5.25 + dist_from_axis_at_straight, 100, -5.25 + dist_from_axis + cone_r, interval=0.001)
-cone_interpolate_last_upper = cubic_interpolation(370, -5.25 - cone_r, 370 + 15, -5.25 + dist_from_axis_at_straight, interval=0.001)
-cone_interpolate_first_lower = cubic_interpolation(100 - 15, -5.25 - dist_from_axis_at_straight, 100, -5.25 + cone_r, interval=0.001)
-cone_interpolate_last_lower = cubic_interpolation(370, -5.25 - dist_from_axis - cone_r, 370 + 15, -5.25 - dist_from_axis_at_straight, interval=0.001)
+cone_interpolate_first_upper = cubic_interpolation(100 - 15, -5.25 + dist_from_axis_at_straight, 100, -5.25 + dist_from_axis + cone_r, interval=2)
+cone_interpolate_last_upper = cubic_interpolation(370, -5.25 - cone_r, 370 + 15, -5.25 + dist_from_axis_at_straight, interval=2)
+cone_interpolate_first_lower = cubic_interpolation(100 - 15, -5.25 - dist_from_axis_at_straight, 100, -5.25 + cone_r, interval=2)
+cone_interpolate_last_lower = cubic_interpolation(370, -5.25 - dist_from_axis - cone_r, 370 + 15, -5.25 - dist_from_axis_at_straight, interval=2)
 
 total_cone = np.vstack((total_cone, cone_interpolate_first_upper, cone_interpolate_last_upper, cone_interpolate_first_lower, cone_interpolate_last_lower))
 
 for i in range(9):
     dist_from_axis = (car_width + 1) / 2 + cone_r
     if i % 2 == 0:
-        interpolated_upper = cubic_interpolation(100 + 30 * i, -5.25 + (dist_from_axis + cone_r), 100 + 30 * (i + 1), -5.25 - cone_r, interval=0.5)
-        interpolated_lower = cubic_interpolation(100 + 30 * i, -5.25 + cone_r, 100 + 30 * (i + 1), -5.25 - (dist_from_axis + cone_r), interval=0.5)
+        interpolated_upper = cubic_interpolation(100 + 30 * i, -5.25 + (dist_from_axis + cone_r), 100 + 30 * (i + 1), -5.25 - cone_r, interval=2)
+        interpolated_lower = cubic_interpolation(100 + 30 * i, -5.25 + cone_r, 100 + 30 * (i + 1), -5.25 - (dist_from_axis + cone_r), interval=2)
     else:
-        interpolated_upper = cubic_interpolation(100 + 30 * i, -5.25 - cone_r, 100 + 30 * (i + 1), -5.25 + (dist_from_axis + cone_r), interval=0.5)
-        interpolated_lower = cubic_interpolation(100 + 30 * i, -5.25 - (dist_from_axis + cone_r), 100 + 30 * (i + 1), -5.25 + cone_r, interval=0.5)
+        interpolated_upper = cubic_interpolation(100 + 30 * i, -5.25 - cone_r, 100 + 30 * (i + 1), -5.25 + (dist_from_axis + cone_r), interval=2)
+        interpolated_lower = cubic_interpolation(100 + 30 * i, -5.25 - (dist_from_axis + cone_r), 100 + 30 * (i + 1), -5.25 + cone_r, interval=2)
 
     total_cone = np.concatenate((total_cone, interpolated_upper, interpolated_lower), axis=0)
 
@@ -95,7 +95,7 @@ cone = np.array([total_cone[:, 0], total_cone[:, 1]]).T
 cone_sorted = total_cone[total_cone[:, 0].argsort()]
 
 plt.scatter([100 + 30 * i for i in range(10)], [-5.25 for i in range(10)], label='cones')
-plt.scatter(cone_sorted[:, 0], cone_sorted[:, 1], label='Cubic Spline Interpolation')
+plt.plot(cone_sorted[:, 0], cone_sorted[:, 1], label='Cubic Spline Interpolation')
 plt.legend()
 plt.grid(True)
 #plt.axis('equal')

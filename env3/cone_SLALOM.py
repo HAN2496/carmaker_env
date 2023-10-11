@@ -3,6 +3,12 @@ from shapely.geometry import Polygon, Point, LineString
 from shapely import affinity
 import matplotlib.pyplot as plt
 
+cone_r = 0.2
+car_width, car_length = 1.568, 4
+dist_from_axis = (car_width + 1) / 2 + cone_r
+
+
+
 def plot(road, car):
     #plt.figure(figsize=(10, 5))
 
@@ -33,8 +39,10 @@ def plot(road, car):
 
 class Road:
     def __init__(self):
-        self.road_length = 161
+        self.road_length = 500
         self.road_width = -20
+        self.cone_r = 0.2
+        self.car_width, car_length = 1.568, 4
         self._forbidden_area()
         self.cones_arr = self.create_cone_arr()
         self.cones_shape = self.create_cone_shape()
@@ -61,43 +69,78 @@ class Road:
         ])
 
     def create_cone_shape(self):
-        sections = self.create_DLC_cone()
         cones = []
-        for section in sections:
-            for i in range(section['num']):  # Each section has 5 pairs
-                x_base = section['start'] + section['gap'] * i
-                y1 = section['y_offset'] - section['cone_dist'] / 2
-                y2 = section['y_offset'] + section['cone_dist'] / 2
-                cone1 = Point(x_base, y1).buffer(0.2)  # 반지름이 0.2m인 원 생성
-                cone2 = Point(x_base, y2).buffer(0.2)  # 반지름이 0.2m인 원 생성
-                cones.extend([cone1, cone2])
+        for i, j in self.cones_arr:
+            cone = Point(i, j).buffer(0.2)
+            cones.extend(cone)
 
         return np.array(cones)
 
     def create_cone_arr(self):
-        sections = self.create_DLC_cone()
-        cones = []
-        for section in sections:
-            for i in range(section['num']):  # Each section has 5 pairs
-                x_base = section['start'] + section['gap'] * i
-                y1 = section['y_offset'] - section['cone_dist'] / 2
-                y2 = section['y_offset'] + section['cone_dist'] / 2
-                cones.extend([[x_base, y1], [x_base, y2]])
+        """
+        dist_from_axis = (self.car_width + 1) / 2 + self.cone_r
+        def cubic_interpolation(x0, y0, x1, y1, interval=0.01):
+            a = 2 * (y0 - y1) / (x1 - x0) ** 3
+            b = -3 / 2 * a * (x1 - x0)
+            d = y0
+
+            def interpolator(x):
+                return a * (x - x0) ** 3 + b * (x - x0) ** 2 + d
+
+            f = interpolator
+            x = np.linspace(x0, x1, int((x1 - x0) / interval)+1)
+            y = [f(xi) for xi in x]
+
+            return np.array(list(zip(x, y)))
+
+        dist_from_axis_at_straight = 1.1 * car_width + 0.25
+        dist_from_axis_at_straight = dist_from_axis_at_straight / 2
+
+        cone_straight_line1_upper = np.array([[x, -5.25 + dist_from_axis_at_straight] for x in np.arange(0, 85, 5)])
+        cone_straight_line1_lower = np.array([[x, -5.25 - dist_from_axis_at_straight] for x in np.arange(0, 85, 5)])
+        cone_straight_line2_upper = np.array([[x, -5.25 + dist_from_axis_at_straight] for x in np.arange(385, 500, 5)])
+        cone_straight_line2_lower = np.array([[x, -5.25 - dist_from_axis_at_straight] for x in np.arange(385, 500, 5)])
+
+        traj_cone_upper = np.vstack((cone_straight_line1_upper, cone_straight_line2_upper))
+        traj_cone_lower = np.vstack((cone_straight_line1_lower, cone_straight_line2_lower))
+        total_cone = np.vstack((cone_straight_line1_upper, cone_straight_line2_upper, cone_straight_line1_lower, cone_straight_line2_lower))
+
+        cone_interpolate_first_upper = cubic_interpolation(100 - 15, -5.25 + dist_from_axis_at_straight, 100, -5.25 + dist_from_axis + cone_r, interval=2)
+        cone_interpolate_last_upper = cubic_interpolation(370, -5.25 - cone_r, 370 + 15, -5.25 + dist_from_axis_at_straight, interval=2)
+        cone_interpolate_first_lower = cubic_interpolation(100 - 15, -5.25 - dist_from_axis_at_straight, 100, -5.25 + cone_r, interval=2)
+        cone_interpolate_last_lower = cubic_interpolation(370, -5.25 - dist_from_axis - cone_r, 370 + 15, -5.25 - dist_from_axis_at_straight, interval=2)
+
+        traj_cone_upper = np.vstack((traj_cone_upper, cone_interpolate_first_upper, cone_interpolate_last_upper))
+        traj_cone_lower = np.vstack((traj_cone_lower, cone_interpolate_first_lower, cone_interpolate_last_lower))
+        total_cone = np.vstack((total_cone, cone_interpolate_first_upper, cone_interpolate_last_upper, cone_interpolate_first_lower, cone_interpolate_last_lower))
+
+        for i in range(9):
+            dist_from_axis = (car_width + 1) / 2 + cone_r
+            if i % 2 == 0:
+                interpolated_upper = cubic_interpolation(100 + 30 * i, -5.25 + (dist_from_axis + cone_r), 100 + 30 * (i + 1), -5.25 - cone_r, interval=2)
+                interpolated_lower = cubic_interpolation(100 + 30 * i, -5.25 + cone_r, 100 + 30 * (i + 1), -5.25 - (dist_from_axis + cone_r), interval=2)
+            else:
+                interpolated_upper = cubic_interpolation(100 + 30 * i, -5.25 - cone_r, 100 + 30 * (i + 1), -5.25 + (dist_from_axis + cone_r), interval=2)
+                interpolated_lower = cubic_interpolation(100 + 30 * i, -5.25 - (dist_from_axis + cone_r), 100 + 30 * (i + 1), -5.25 + cone_r, interval=2)
+
+            total_cone = np.concatenate((total_cone, interpolated_upper, interpolated_lower), axis=0)
+            traj_cone_upper = np.concatenate((traj_cone_upper, interpolated_upper), axis=0)
+            traj_cone_lower = np.concatenate((traj_cone_lower, interpolated_lower), axis=0)
+
+        cone = np.array([total_cone[:, 0], total_cone[:, 1]]).T
+        cone_sorted = total_cone[total_cone[:, 0].argsort()]
+
+        traj_cone_upper = np.array([traj_cone_upper[:, 0], traj_cone_upper[:, 1]]).T
+        self.traj_cone_upper = traj_cone_upper[traj_cone_upper[:, 0].argsort()]
+
+        traj_cone_lower = np.array([traj_cone_lower[:, 0], traj_cone_lower[:, 1]]).T
+        self.traj_cone_lower = traj_cone_lower[traj_cone_lower[:, 0].argsort()]
+        """
+        cones = np.array([100 + 30 * i, -5.25] for i in range(13))
 
         return np.array(cones)
 
-    def create_DLC_cone(self):
-        sections = [
-            {'start': 0, 'gap': 5, 'cone_dist': 2.23, 'num': 10, 'y_offset': -10},
-            {'start': 50, 'gap': 3, 'cone_dist': 2.23, 'num': 5, 'y_offset': -10}, #
-            {'start': 64.7, 'gap': 2.7, 'cone_dist': 6.03, 'num': 4, 'y_offset': -8.1},
-            {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.8, 'num': 5, 'y_offset': -6.485}, #
-            {'start': 89, 'gap': 2.5, 'cone_dist': 6.8, 'num': 4, 'y_offset': -8.485},
-            {'start': 99, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -10.385}, #
-            {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 20, 'y_offset': -10.385}
-        ]
 
-        return sections
     def is_car_in_forbidden_area(self, car):
         car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
 

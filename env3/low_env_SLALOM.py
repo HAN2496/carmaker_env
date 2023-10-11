@@ -147,17 +147,15 @@ class CarMakerEnv(gym.Env):
             car_roll = state[11]
             wheel_steer = state[12:]
             traj_sight = 5 # (5, 2) = 16
-            cone_sight = 2 # (2, 2) = 4
 
             lookahead_sight = [2 * i for i in range(traj_sight)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
 
             lookahead_cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
-            lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2],
-                                                               lookahead_cones_abs).flatten()
+            lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_cones_abs).flatten()
 
-            state = np.concatenate((car_dev, np.array([car_steer[0], car_v]), lookahead_traj_rel, cones_sight_rel))
+            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel, lookahead_cones_rel))
 
 
         # 리워드 계산
@@ -223,7 +221,7 @@ class CarMakerEnv(gym.Env):
         car = Car()
         car.shape_car(carx, cary, caryaw)
         if self.road.is_car_in_forbidden_area(car):
-            forbidden_reward = 3000
+            forbidden_reward = 6000
         else:
             forbidden_reward = 0
 
