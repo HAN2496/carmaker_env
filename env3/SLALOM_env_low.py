@@ -97,7 +97,7 @@ class CarMakerEnv(gym.Env):
         time = 0
         dev = np.array([0, 0])
         alHori = 0
-        car_pos = np.array([2, -5.25, 0])
+        car_pos = np.array([2, -10, 0])
         car_dev = np.array([0, 0])
         car_steer = np.array([0, 0, 0])
         collision = 0

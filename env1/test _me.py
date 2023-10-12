@@ -1,9 +1,8 @@
 import numpy as np
 
 
-a = np.array([0, 0])
+a = np.array([[0, 0], [1,2]])
 b = np.array([3, 4])
 
-traj_reward = np.linalg.norm(b-a)
-
-print(traj_reward)
+c = np.sqrt(np.sum((a - b) **2, axis=1))
+print(c)
