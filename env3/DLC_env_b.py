@@ -82,6 +82,7 @@ class CarMakerEnvB(gym.Env):
 #        self.low_level_model = SAC.load(f"models/{self.road_type}/512399_best_model.pkl", env=low_level_env)
         self.low_level_model = SAC.load(f"1st_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
+        self.before_traj_point = np.array([15, -10])
 
         if self.check == 0:
             pygame.init()
@@ -191,6 +192,8 @@ class CarMakerEnvB(gym.Env):
         info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : carx, "cary" : cary,
                 "caryaw" : caryaw, "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
 
+        self.before_traj_point = new_traj_point
+
         if self.test_num % 300 == 0:
             self.print_result(time, reward, car_dev)
 
@@ -278,8 +281,9 @@ class CarMakerEnvB(gym.Env):
             cones_reward = +100
         if self.road.is_car_in_forbidden_area(car_shape):
             car_reward = -10000
+        traj_reward = - np.sqrt(np.sum((new_traj_point - self.before_traj_point) **2, axis=1)) * 1000
 
-        e = forbidden_reward + cones_reward + car_reward + ang_reward
+        e = forbidden_reward + cones_reward + car_reward + ang_reward + traj_reward
         return e
 
     def save_data_for_lowlevel(self, indexs, values):
