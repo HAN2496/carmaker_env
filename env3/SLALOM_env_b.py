@@ -15,7 +15,7 @@ from DLC_env_low import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
-from DLC_cone import Road, Car
+from SLALOM_cone import Road, Car
 import pygame
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
@@ -42,11 +42,11 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnvB(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_DLC'):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_SLALOM'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "DLC"
-        
+
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 1
         sim_action_num = env_action_num + 1
@@ -236,15 +236,24 @@ class CarMakerEnvB(gym.Env):
         dist_index = np.argmin(distances)
         devDist = distances[dist_index]
 
-        dx = arr[dist_index][0] - arr[dist_index - 1][0]
-        dy = arr[dist_index][1] - arr[dist_index - 1][1]
+        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
+        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
+
+        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
+        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
 
         # 분모가 0이 될 수 있는 경우에 대한 예외처리
-        if dx == 0:
-            devAng = np.inf if dy > 0 else -np.inf
+        if dx1 == 0:
+            devAng1 = np.inf if dy1 > 0 else -np.inf
         else:
-            devAng = dy / dx
+            devAng1 = dy1 / dx1
 
+        if dx2 == 0:
+            devAng2 = np.inf if dy2 > 0 else -np.inf
+        else:
+            devAng2 = dy2 / dx2
+
+        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
         return np.array([devDist, devAng])
 
     def to_relative_coordinates(self, carx, cary, caryaw, arr):
@@ -262,17 +271,23 @@ class CarMakerEnvB(gym.Env):
         return np.array(relative_coords)
 
     def getReward(self, new_traj_point, time):
+        cone_r = 0.2
+        car_width, car_length = 1.568, 4
+        dist_from_axis = (car_width + 1) / 2 + cone_r
         car = Car()
         car_shape = car.shape_car(self.car_data[0], self.car_data[1], self.car_data[2])
         forbidden_reward, cones_reward, car_reward, ang_reward = 0, 0, 0, 0
         traj_point = Point(new_traj_point[0], new_traj_point[1])
         if self.road.forbbiden_area1.intersects(traj_point) or self.road.forbbiden_area2.intersects(traj_point):
             forbidden_reward = -10000
-        if self.road.cones_boundary.intersects(traj_point):
-            cones_reward = +100
         if self.road.is_car_in_forbidden_area(car_shape):
             car_reward = -10000
+        distances = np.sqrt(np.sum((self.road.cones_arr - [self.car_data[0], self.car_data[1]]) ** 2, axis=1))
+
         traj_reward = - np.linalg.norm((new_traj_point - self.before_traj_point)) * 1000
+        dist_index = np.argmin(distances)
+        dist = distances[dist_index]
+        dist_reward = (dist + dist_from_axis)
 
         e = forbidden_reward + cones_reward + car_reward + ang_reward + traj_reward
         return e

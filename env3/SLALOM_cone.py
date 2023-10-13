@@ -42,32 +42,19 @@ class Road:
         self.road_length = 500
         self.road_width = -20
         self.cone_r = 0.2
-        self.car_width, car_length = 1.568, 4
+        self.car_width, self.car_length = 1.568, 4.3
         self._forbidden_area()
         self.cones_arr = self.create_cone_arr()
         self.cones_shape = self.create_cone_shape()
 
     def _forbidden_area(self):
-        vertices1 = [
-            (0, -8.885), (62, -8.885), (62, -5.085), (99, -5.085), (99, -8.885),
-            (161, -8.85), (161, 0), (0, 0), (0, -8.885)
-        ]
-        vertices2 = [
-            (0, -11.885), (75.5, -11.885), (75.5, -7.885), (86.5, -7.885),
-            (86.5, -11.885), (161, -11.885), (161, -20), (0, -20), (0, -11.885)
-        ]
+        vertices1 = [(0, 0), (500, 0), (500, -5), (0, -5), (0, 0)]
+        vertices2 = [(0, -15), (500, -15), (500, -20), (0, -20), (0, -15)]
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
-        self.forbbiden_line1 = LineString(vertices1[:])
-        self.forbbiden_line2 = LineString(vertices2[:])
         self.road_boundary = Polygon(
             [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
         ])
-        self.cones_boundary = Polygon(
-            [(0, -8.885), (62, -8.885), (62, -5.085), (99, -5.085), (99, -8.885), (161, -8.885),
-             (161, -11.885), (86.5, -11.885), (86.5, -7.885), (75.5, -7.885), (75.5, -11.115), (0, -11.115)
-        ])
-
     def create_cone_shape(self):
         cones = []
         for i, j in self.cones_arr:
@@ -77,8 +64,8 @@ class Road:
         return np.array(cones)
 
     def create_cone_arr(self):
-        road_cones = np.array([[100 + 30 * i, -5.25] for i in range(10)])
-        further_cones = np.array([[800 + 30 * i, -5.25] for i in range(5)])
+        road_cones = np.array([[100 + 30 * i, -10] for i in range(10)])
+        further_cones = np.array([[800 + 30 * i, -10] for i in range(5)])
         cones = np.concatenate((road_cones, further_cones), axis=0)
         return cones
 
