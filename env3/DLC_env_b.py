@@ -52,7 +52,7 @@ class CarMakerEnvB(gym.Env):
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 24
+        env_obs_num = 22
         sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -179,7 +179,7 @@ class CarMakerEnvB(gym.Env):
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
             car_dev = self.calculate_dev(carx, cary, caryaw)
-            cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
+            cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:4]
             cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_abs).flatten()
 
             cones_for_lowlevel = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:2]

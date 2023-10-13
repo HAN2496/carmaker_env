@@ -36,25 +36,28 @@ def plot(road, car):
     plt.grid(True)
     plt.axis('equal')
     plt.show()
+def is_car_in_forbidden_area(car_shape, road):
+    if car_shape.intersects(road.forbbiden_area1) or car_shape.intersects(road.forbbiden_area2):
+        return 1
+    else:
+        return 0
+def is_car_colliding_with_cones(car_shape, cone):
+    for cone in cone.cones_shape:
+        if car_shape.intersects(cone):
+            return 1
+    return 0
 
-class Road:
+def is_car_in_road(self, car_shape):
+    if not car_shape.intersects(self.road_boundary):
+        return 1
+    if not self.road_boundary.contains(car_shape):
+        return 1
+    return 0
+class Cone:
     def __init__(self):
-        self.road_length = 500
-        self.road_width = -20
         self.cone_r = 0.2
-        self.car_width, self.car_length = 1.568, 4.3
-        self._forbidden_area()
         self.cones_arr = self.create_cone_arr()
         self.cones_shape = self.create_cone_shape()
-
-    def _forbidden_area(self):
-        vertices1 = [(0, 0), (500, 0), (500, -5), (0, -5), (0, 0)]
-        vertices2 = [(0, -15), (500, -15), (500, -20), (0, -20), (0, -15)]
-        self.forbbiden_area1 = Polygon(vertices1)
-        self.forbbiden_area2 = Polygon(vertices2)
-        self.road_boundary = Polygon(
-            [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
-        ])
     def create_cone_shape(self):
         cones = []
         for i, j in self.cones_arr:
@@ -69,15 +72,29 @@ class Road:
         cones = np.concatenate((road_cones, further_cones), axis=0)
         return cones
 
+class Road:
+    def __init__(self):
+        self.road_length = 500
+        self.road_width = -20
+        self.cone = Cone()
+        self.car = Car()
+        self._forbidden_area()
+    def _forbidden_area(self):
+        vertices1 = [(0, 0), (500, 0), (500, -5), (0, -5), (0, 0)]
+        vertices2 = [(0, -15), (500, -15), (500, -20), (0, -20), (0, -15)]
+        self.forbbiden_area1 = Polygon(vertices1)
+        self.forbbiden_area2 = Polygon(vertices2)
+        self.road_boundary = Polygon(
+            [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
+        ])
 
     def is_car_in_forbidden_area(self, car_shape):
-
         if car_shape.intersects(self.forbbiden_area1) or car_shape.intersects(self.forbbiden_area2):
             return 1
         else:
             return 0
     def is_car_colliding_with_cones(self, car_shape):
-        for cone in self.cones_shape:
+        for cone in self.cone.cones_shape:
             if car_shape.intersects(cone):
                 return 1
         return 0
@@ -89,15 +106,8 @@ class Road:
             return 1
         return 0
 
-    def is_car_in_cone_area(self, car_shape):
-        if not car_shape.intersects(self.cones_boundary):
-            return 1
-        if not self.cones_boundary.contains(car_shape):
-            return 1
-        return 0
-
 class Car:
-    def __init__(self, carx=3, cary=-5.25, caryaw=0, carv=13.8889):
+    def __init__(self, carx=3, cary=-10, caryaw=0, carv=13.8889):
         self.length = 4.3
         self.width = 1.568
         self.carx = carx
