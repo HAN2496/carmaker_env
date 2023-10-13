@@ -52,7 +52,7 @@ class CarMakerEnvB(gym.Env):
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 20
+        env_obs_num = 24
         sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -174,6 +174,7 @@ class CarMakerEnvB(gym.Env):
 
             new_traj_point = self.make_traj_point(carx, cary, blevel_action)
             self.traj_data = self.make_trajectory(carx, cary, blevel_action)
+            traj_point = self.to_relative_coordinates(carx, cary, caryaw, np.vstack((self.before_traj_point, new_traj_point))).flatten()
             traj_abs = self.find_nearest_point(carx, cary, sight)
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
@@ -185,7 +186,7 @@ class CarMakerEnvB(gym.Env):
             cones_rel_for_lowlevel = self.to_relative_coordinates(carx, cary, caryaw, cones_for_lowlevel).flatten()
             self.car_data = np.array([carx, cary, caryaw, carv, car_steer[0]])
 
-            state = np.concatenate((traj_rel, cones_rel)) # <- Policy B의 state
+            state = np.concatenate((traj_point, traj_rel, cones_rel)) # <- Policy B의 state
 
         # 리워드 계산
         reward = self.getReward(new_traj_point, time)
