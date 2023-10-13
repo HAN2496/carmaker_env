@@ -15,7 +15,7 @@ from DLC_env_low import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
-from SLALOM_cone import Road, Car
+from SLALOM_cone import Road, Car, Cone
 import pygame
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
@@ -52,7 +52,7 @@ class CarMakerEnvB(gym.Env):
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 20
+        env_obs_num = 24
         sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -73,6 +73,7 @@ class CarMakerEnvB(gym.Env):
 
         self.car = Car()
         self.road = Road()
+        self.cone = Cone()
         self.test_num = 0
         self.traj_data = np.array([[3, -10], [15, -10]])
         self.car_data = np.array([2, -10, 0, 13.8889, 0])
@@ -173,19 +174,20 @@ class CarMakerEnvB(gym.Env):
             wheel_steer = state[12:]
 
             new_traj_point = self.make_traj_point(carx, cary, blevel_action)
+            traj_point = self.to_relative_coordinates(carx, cary, caryaw, np.vstack((self.before_traj_point, new_traj_point))).flatten()
             self.traj_data = self.make_trajectory(carx, cary, blevel_action)
             traj_abs = self.find_nearest_point(carx, cary, sight)
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
             car_dev = self.calculate_dev(carx, cary, caryaw)
-            cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:5]
+            cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:4]
             cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_abs).flatten()
 
-            cones_for_lowlevel = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:2]
+            cones_for_lowlevel = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:2]
             cones_rel_for_lowlevel = self.to_relative_coordinates(carx, cary, caryaw, cones_for_lowlevel).flatten()
             self.car_data = np.array([carx, cary, caryaw, carv, car_steer[0]])
 
-            state = np.concatenate((traj_rel, cones_rel)) # <- Policy B의 state
+            state = np.concatenate((carx, cary, traj_point, traj_rel, cones_rel)) # <- Policy B의 state
 
         # 리워드 계산
         reward = self.getReward(new_traj_point, time)
@@ -278,18 +280,34 @@ class CarMakerEnvB(gym.Env):
         car_shape = car.shape_car(self.car_data[0], self.car_data[1], self.car_data[2])
         forbidden_reward, cones_reward, car_reward, ang_reward = 0, 0, 0, 0
         traj_point = Point(new_traj_point[0], new_traj_point[1])
+
+        #금지영역에 들어갈 경우 큰 벌점
         if self.road.forbbiden_area1.intersects(traj_point) or self.road.forbbiden_area2.intersects(traj_point):
-            forbidden_reward = -10000
+            forbidden_reward = -5000
         if self.road.is_car_in_forbidden_area(car_shape):
-            car_reward = -10000
-        distances = np.sqrt(np.sum((self.road.cones_arr - [self.car_data[0], self.car_data[1]]) ** 2, axis=1))
+            car_reward = -5000
 
+        cone_distances = np.sqrt(np.sum((self.cone.cones_arr - [self.car_data[0], self.car_data[1]]) ** 2, axis=1))
+        dist_index = np.argmin(cone_distances)
+        cone_dist = cone_distances[dist_index]
+
+        cones_middle = np.array([[85 + 30 * i, -10] for i in range(10)])
+        middle_distances = np.sqrt(np.sum((cones_middle - [self.car_data[0], self.car_data[1]]) ** 2, axis=1))
+        dist_index = np.argmin(middle_distances)
+        middle_dist = middle_distances[dist_index]
+        #콘과 적당한 거리를 유지하지 못할 경우 벌점
+        if 85 <= self.car_data[0] <= 385:
+            dist_reward = - abs(cone_dist - dist_from_axis) * 100
+            middle_reward = abs(middle_dist - 15) * 100
+        # 중간축인 -10보다 멀어지면 벌점
+        else:
+            distance_from_axis = new_traj_point[1] + 10
+            dist_reward = - abs(distance_from_axis) * 100
+
+        #콘의 변화량이 너무 클 경우 벌점
         traj_reward = - np.linalg.norm((new_traj_point - self.before_traj_point)) * 1000
-        dist_index = np.argmin(distances)
-        dist = distances[dist_index]
-        dist_reward = (dist + dist_from_axis)
 
-        e = forbidden_reward + cones_reward + car_reward + ang_reward + traj_reward
+        e = forbidden_reward  + car_reward  + traj_reward
         return e
 
     def save_data_for_lowlevel(self, indexs, values):
@@ -313,7 +331,7 @@ class CarMakerEnvB(gym.Env):
 
         self.screen.fill((128, 128, 128))
 
-        for cone in self.road.cones_shape:
+        for cone in self.cone.cones_shape:
             x, y = cone.centroid.coords[0]
             pygame.draw.circle(self.screen, (255, 140, 0), (int(x * 10), int(-y * 10)), 5)
 
