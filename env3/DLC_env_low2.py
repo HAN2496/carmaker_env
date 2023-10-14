@@ -235,7 +235,7 @@ class CarMakerEnv(gym.Env):
         car = Car(carx, cary, caryaw)
         car_shape = car.shape_car(carx, cary, caryaw)
         if self.road.is_car_in_forbidden_area(car_shape):
-            forbidden_reward = 10000
+            forbidden_reward = 2000
         else:
             forbidden_reward = 0
 
