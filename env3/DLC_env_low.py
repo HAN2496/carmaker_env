@@ -229,7 +229,7 @@ class CarMakerEnv(gym.Env):
 
         #devDist, devAng에 따른 리워드
         reward_devDist = dev_dist * 1000
-        reward_devAng = dev_ang * 5000
+        reward_devAng = dev_ang * 1000
         """
 
         #직선경로에서 차의 횡가속도를 0에 가깝게 만들기 위한 리워드
