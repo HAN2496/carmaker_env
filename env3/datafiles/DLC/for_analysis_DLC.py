@@ -6,7 +6,7 @@ from shapely import affinity
 import re
 
 CONER = 0.2
-CARWIDTH, CARLENGTH = 1.8, 4
+CARWIDTH, CARLENGTH = 1.568, 4.3
 def load_data(type, comment=0):
     data = {}
     if comment == 0:
@@ -87,15 +87,16 @@ def calc_performance(dataset, data_dict):
 
 def plot_trajectory(cones, traj, ipg, rl):
     plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='red')
-    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
+#    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
     plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue')
-#    plt.plot(rl['carx'], rl['cary'], label="RL")
-    plt.axis("equal")
+    plt.plot(rl['carx'], rl['cary'], label="RL")
+#    plt.axis("equal")
     plt.legend()
     plt.show()
+
 def shape_car(carx, cary, caryaw):
-    half_length = 2
-    half_width = 0.9
+    half_length = CARLENGTH / 2
+    half_width = CARWIDTH / 2
 
     corners = [
         (-half_length, -half_width),
