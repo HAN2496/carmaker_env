@@ -13,15 +13,14 @@ from stable_baselines3 import SAC
 
 if __name__ == '__main__':
     road_type = "DLC"
-    env_num = "2"
-    data_name = 'RL'
-    comment = "env2"
+    data_name = 'IPG'
+    comment = "env1"
     prefix = data_name + "_" + comment
 
 
-    env = CarMakerEnv(host='127.0.0.1', port=9999)
+    env = CarMakerEnv(host='127.0.0.1', simul_path='IPG_DLC', port=9999)
 #    model = SAC.load(f"best_model/DLC_env2_best_model.pkl", env=env)
-    model = SAC.load(f"best_model/env1_4_last.pkl", env=env)
+    model = SAC.load(f"best_model/DLC_env1_best_model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()
