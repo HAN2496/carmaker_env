@@ -9,8 +9,8 @@ CARWIDTH, CARLENGTH = 1.568, 4.3
 def make_dlc_cone(start, interval, width, num):
     arr = []
     for i in range(num):
-        arr.append([start[0] + i * interval, start[1] + width / 2])
-        arr.append([start[0] + i * interval, start[1] - width / 2])
+        arr.append([start[0] + i * interval, start[1] + width / 2 + CONER])
+        arr.append([start[0] + i * interval, start[1] - width / 2 - CONER])
     return arr
 
 cone1 = make_dlc_cone([50, -10], 3, 2.23, 5)
