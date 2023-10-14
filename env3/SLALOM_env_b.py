@@ -17,6 +17,7 @@ from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
 from SLALOM_cone import Road, Car, Cone
 import pygame
+from data import Data
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -47,13 +48,17 @@ class CarMakerEnvB(gym.Env):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "SLALOM"
+        self.test_num = 0
+        self.data = Data(check=check)
+        self.road = Road()
+        self.cone = Cone()
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 26
+        env_obs_num = self.data.state_size()
         sim_obs_num = 13
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -72,24 +77,10 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
         self.cm_thread.start()
 
-        self.car = Car()
-        self.road = Road()
-        self.cone = Cone()
-        self.test_num = 0
-        self.traj_data = np.array([[2.1976, -10], [11, -10]])
-        self.car_data = np.array([2.1976, -10, 0, 13.8889, 0])
-        self.traj_data = self.make_trajectory(self.traj_data[0], self.traj_data[1])
-        self.traj_point = self.find_nearest_point(2, -10, [2*i for i in range(5)])
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
-#        self.low_level_model = SAC.load(f"models/{self.road_type}/512399_best_model.pkl", env=low_level_env)
         self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
-        self.before_traj_point = np.array([11, -10])
 
-        if self.check == 0:
-            pygame.init()
-            self.screen = pygame.display.set_mode((self.road.road_length * XSIZE, - self.road.road_width * YSIZE))
-            pygame.display.set_caption("B level Environment")
 
     def __del__(self):
         self.cm_thread.join()
@@ -98,11 +89,7 @@ class CarMakerEnvB(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
-        self.traj_data = np.array([[3, -10], [11, -10]])
-        self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
-        if self.check == 0:
-            self.render()
-
+        self.data._init()
         # 초기화 코드
         if self.sim_initiated == True:
             # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
@@ -124,19 +111,12 @@ class CarMakerEnvB(gym.Env):
         self.test_num += 1
         done = False
 
-        time = 0
-        carx, cary, caryaw = np.array([0, 0, 0])
-        car_v = 0
-        car_steer = np.array([0, 0, 0])
-        car_dev = np.array([0, 0])
-        car_alHori = 0
-        car_roll = 0
-        new_traj_point = self.make_traj_point(self.car_data[0], self.car_data[1], 0)
-        sight = np.array([3 * i for i in range(5)])
+        reward_argument = self.data._init_reward_argument()
+        info = self.data._init_info()
 
-        traj_lowlevel_abs = self.find_nearest_point(self.car_data[0], self.car_data[1], sight)
-        traj_lowlevel_rel = self.to_relative_coordinates(self.car_data[0], self.car_data[1], self.car_data[2], traj_lowlevel_abs).flatten()
-        self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), traj_lowlevel_rel))
+        traj_lowlevel_abs = self.data.find_traj_points(self.data.carx)
+        traj_lowlevel_rel = self.data.to_relative_coordinates(traj_lowlevel_abs).flatten()
+        self.low_level_obs = np.concatenate((np.array([self.data.carv, self.data.steerAng]), traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
         action_to_sim = np.append(steering_changes[0], self.test_num)
 
@@ -161,221 +141,70 @@ class CarMakerEnvB(gym.Env):
             done = True
 
         else:
-            blevel_action = action[0]
-            # 튜플로 넘어온 값을 numpy array로 변환
             state = np.array(state) #어레이 변환
-            state = state[1:] #connect 제거
-            time = state[0] # Time
-            carx, cary, caryaw, carv = state[1:5]
-            self.car.carx, self.car.cary, self.car.caryaw, self.car.carv = carx, cary, caryaw, carv
-            car_steer = state[5:8] #Car.Steer.(Ang, Vel, Acc)
-            car_dev = state[8:10] #Car.DevDist, Car.DevAng
-            car_alHori = state[10] #alHori
-            car_roll = state[11]
-
-            new_traj_point = self.make_traj_point(carx, cary, blevel_action)
-            traj_point = self.to_relative_coordinates(carx, cary, caryaw, np.vstack((self.before_traj_point, new_traj_point))).flatten()
-            self.traj_data = self.make_trajectory(carx, cary, blevel_action)
-            traj_abs = self.find_nearest_point(carx, cary, sight)
-            self.traj_point = traj_abs
-            traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
-            car_dev = self.calculate_dev(carx, cary, caryaw)
-            cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:4]
-            cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_abs).flatten()
-
-            middle_abs = self.cone.middles_arr[self.cone.middles_arr[:, 0] > carx][:2]
-            middle_rel = self.to_relative_coordinates(carx, cary, caryaw, middle_abs).flatten()
-
-            cones_for_lowlevel = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:2]
-            cones_rel_for_lowlevel = self.to_relative_coordinates(carx, cary, caryaw, cones_for_lowlevel).flatten()
-            self.car_data = np.array([carx, cary, caryaw, carv, car_steer[0]])
-
-            state = np.concatenate((traj_point, traj_rel, cones_rel, middle_rel)) # <- Policy B의 state
+            state, reward_argument, info = self.data.manage_state(state, action)
 
         # 리워드 계산
-        reward = self.getReward(new_traj_point, time)
-        info = {"Time" : time, "Steer.Ang" : car_steer[0], "Steer.Vel" : car_steer[1], "Steer.Acc" : car_steer[2], "carx" : carx, "cary" : cary,
-                "caryaw" : caryaw, "carv" : car_v, "alHori" : car_alHori, "Roll": car_roll}
-
-        self.before_traj_point = new_traj_point
-
-        if self.test_num % 300 == 0:
-            self.print_result(time, reward, car_dev)
+        reward = self.getReward(reward_argument, time)
+        info = info
 
         if self.check == 0:
-            self.render()
+            self.data.render()
+
         return state, reward, done, info
 
-    def make_traj_point(self, carx, cary, action):
-        new_traj_point = np.array([carx + 8, cary + action * 3])
-        return new_traj_point
-
-    def make_trajectory(self, carx, cary, action=0):
-        arr = self.traj_data.copy()
-
-        if action != 0:
-            new_traj_point = self.make_traj_point(carx, cary, action)
-            arr = np.vstack((arr, new_traj_point))
-
-        if abs(arr[-2][0] - arr[-1][0]) > 0.01:
-            f = interp1d(arr[-2:, 0], arr[-2:, 1])
-            xnew = np.arange(arr[-2][0], arr[-1][0], 0.01)
-            ynew = f(xnew)
-            interpolate_arr = np.column_stack((xnew, ynew))
-            new_arr = np.vstack((arr[:-1], interpolate_arr, arr[-1]))
-            return new_arr
-        else:
-            return arr
-
-    def find_nearest_point(self, x0, y0, distances):
-        points = []
-        for distance in distances:
-            x_diff = np.abs(self.traj_data[:, 0] - (x0 + distance))
-            nearest_idx = np.argmin(x_diff)
-            points.append(self.traj_data[nearest_idx])
-        return points
-
-    def calculate_dev(self, carx, cary, caryaw):
-        arr = np.array(self.traj_data)
-        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
-        dist_index = np.argmin(distances)
-        devDist = distances[dist_index]
-
-        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
-        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
-
-        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
-        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
-
-        # 분모가 0이 될 수 있는 경우에 대한 예외처리
-        if dx1 == 0:
-            devAng1 = np.inf if dy1 > 0 else -np.inf
-        else:
-            devAng1 = dy1 / dx1
-
-        if dx2 == 0:
-            devAng2 = np.inf if dy2 > 0 else -np.inf
-        else:
-            devAng2 = dy2 / dx2
-
-        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
-        return np.array([devDist, devAng])
-
-    def to_relative_coordinates(self, carx, cary, caryaw, arr):
-        relative_coords = []
-
-        for point in arr:
-            dx = point[0] - carx
-            dy = point[1] - cary
-
-            rotated_x = dx * np.cos(-caryaw) - dy * np.sin(-caryaw)
-            rotated_y = dx * np.sin(-caryaw) + dy * np.cos(-caryaw)
-
-            relative_coords.append((rotated_x, rotated_y))
-
-        return np.array(relative_coords)
-
-    def getReward(self, new_traj_point, time):
+    def getReward(self, traj, time):
+        traj_point_new, traj_point_before = traj["new"], traj["before"]
+        traj_point_shape = Point(traj_point_new[0], traj_point_new[1])
         cone_r = 0.2
         car_width, car_length = 1.568, 4
         dist_from_axis = (car_width + 1) / 2 + cone_r
         car = Car()
-        car_shape = car.shape_car(self.car_data[0], self.car_data[1], self.car_data[2])
-        forbidden_reward, cones_reward, car_reward, ang_reward = 0, 0, 0, 0
-        traj_point = Point(new_traj_point[0], new_traj_point[1])
+        car_shape = car.shape_car(self.data.carx, self.data.cary, self.data.caryaw)
 
-        #금지영역에 들어갈 경우 큰 벌점
-        if self.road.forbbiden_area1.intersects(traj_point) or self.road.forbbiden_area2.intersects(traj_point):
+        #trajectory와 차가 금지영역에 들어갈 경우 큰 벌점
+        if self.road.forbbiden_area1.intersects(traj_point_shape) or self.road.forbbiden_area2.intersects(traj_point_shape):
             forbidden_reward = -5000
+        else:
+            forbidden_reward = 0
+
         if self.road.is_car_in_forbidden_area(car_shape):
             car_reward = -5000
+        else:
+            car_reward = 0
 
-        cone_distances = np.sqrt(np.sum((self.cone.cones_arr - [self.car_data[0], self.car_data[1]]) ** 2, axis=1))
+        if self.cone.cones_shape.intersects(car_shape):
+            cone_reward = -3000
+        else:
+            cone_reward = 0
+
+        cone_distances = np.sqrt(np.sum((self.cone.cones_arr - [self.data.carx, self.data.cary]) ** 2, axis=1))
         dist_index = np.argmin(cone_distances)
         cone_dist = cone_distances[dist_index]
 
-        cones_middle = np.array([[85 + 30 * i, -10] for i in range(10)])
-        middle_distances = np.sqrt(np.sum((cones_middle - [self.car_data[0], self.car_data[1]]) ** 2, axis=1))
+        middle_distances = np.sqrt(np.sum((self.cone.middles_arr - [self.data.carx, self.data.cary]) ** 2, axis=1))
         dist_index = np.argmin(middle_distances)
         middle_dist = middle_distances[dist_index]
+
         #콘과 적당한 거리를 유지하지 못할 경우 벌점
-        if 85 <= self.car_data[0] <= 385:
+        if 85 <= self.data.carx <= 385:
             dist_reward = - abs(cone_dist - dist_from_axis) * 100
             middle_reward = abs(middle_dist - 15) * 100
         # 중간축인 -10보다 멀어지면 벌점
         else:
-            distance_from_axis = new_traj_point[1] + 10
+            distance_from_axis = traj_point_new[1] + 10
             dist_reward = - abs(distance_from_axis) * 100
             middle_reward = 0
 
-        #콘의 변화량이 너무 클 경우 벌점
-        traj_reward = - np.linalg.norm((new_traj_point - self.before_traj_point)) * 1000
+        distance_from_axis = traj_point_new[1] + 10
+        axis_reward = abs(distance_from_axis) * 100
 
-        e = forbidden_reward  + car_reward  + traj_reward + dist_reward + middle_reward
+        #콘의 변화량이 너무 클 경우 벌점
+        traj_reward = - np.linalg.norm((traj_point_new - traj_point_before)) * 1000
+
+        e = forbidden_reward + car_reward + traj_reward + cone_reward + axis_reward
         return e
 
-    def save_data_for_lowlevel(self, indexs, values):
-        datas = {}
-        for idx, index in enumerate(indexs):
-            datas[index] = values[i]
-        return datas
-
-    def print_result(self, time, reward, car_dev):
-        print("-" * 50)
-        print(
-            f"[Time: {round(time, 2)}] [Reward: {round(reward, 2)}] [Car dev: {round(car_dev[0], 2), round(car_dev[1], 2)}]")
-        print("[Trajectory: ]")
-        for point in self.traj_point:
-            print(f" [{point[0]:.2f}, {point[1]:.2f}]")
-
-    def render(self, mode='human'):
-        XSIZE, YSIZE = 2, 10
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-
-        self.screen.fill((128, 128, 128))
-
-        for cone in self.cone.cones_shape:
-            x, y = cone.centroid.coords[0]
-            pygame.draw.circle(self.screen, (255, 140, 0), (int(x * XSIZE), int(-y * YSIZE)), 5)
-
-        for trajx, trajy in self.traj_point:
-            pygame.draw.circle(self.screen, (0, 128, 0), (trajx * XSIZE, - trajy * YSIZE), 5)
-
-        car_color = (255, 0, 0)
-
-        half_length = self.car.length * XSIZE / 2.0
-        half_width = self.car.width * YSIZE / 2.0
-
-        corners = [
-            (-half_length, -half_width),
-            (-half_length, half_width),
-            (half_length, half_width),
-            (half_length, -half_width)
-        ]
-
-        rotated_corners = []
-        for x, y in corners:
-            x_rot = x * np.cos(-self.car.caryaw) - y * np.sin(-self.car.caryaw) + self.car.carx * XSIZE
-            y_rot = x * np.sin(-self.car.caryaw) + y * np.cos(-self.car.caryaw) - self.car.cary * YSIZE
-            rotated_corners.append((x_rot, y_rot))
-
-        pygame.draw.polygon(self.screen, car_color, rotated_corners)
-
-        #차량 위치 렌더링
-        font = pygame.font.SysFont("arial", 20, True, True)
-        text_str = f"X: {round(self.car.carx, 1)}, Y: {round(self.car.cary, 1)}"
-        text_surface = font.render(text_str, True, (255, 255, 255))
-
-        # 텍스트 이미지의 위치 계산 (우측 하단)
-        text_x = self.road.road_length * XSIZE - text_surface.get_width() - XSIZE
-        text_y = - self.road.road_width * YSIZE - text_surface.get_height() - YSIZE
-
-        # 렌더링된 이미지를 화면에 그리기
-        self.screen.blit(text_surface, (text_x, text_y))
-
-        pygame.display.flip()
 
 if __name__ == "__main__":
     # 환경 테스트
