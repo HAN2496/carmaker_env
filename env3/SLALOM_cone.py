@@ -57,6 +57,7 @@ class Cone:
     def __init__(self):
         self.cone_r = 0.2
         self.cones_arr = self.create_cone_arr()
+        self.middles_arr = self.create_middle_arr()
         self.cones_shape = self.create_cone_shape()
     def create_cone_shape(self):
         cones = []
@@ -72,6 +73,9 @@ class Cone:
         cones = np.concatenate((road_cones, further_cones), axis=0)
         return cones
 
+    def create_middle_arr(self):
+        middle = np.array([[85 + 30 * i, -10] for i in range(10)])
+        return middle
 class Road:
     def __init__(self):
         self.road_length = 500

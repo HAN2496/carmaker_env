@@ -21,6 +21,7 @@ import pygame
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
 
+XSIZE, YSIZE = 2, 10
 def cm_thread(host, port, action_queue, state_queue, action_num, state_num, status_queue, matlab_path, simul_path):
     cm_env = CMcontrolNode(host=host, port=port, action_queue=action_queue, state_queue=state_queue, action_num=action_num, state_num=state_num, matlab_path=matlab_path, simul_path=simul_path)
 
@@ -45,15 +46,15 @@ class CarMakerEnvB(gym.Env):
     def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_SLALOM'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
-        self.road_type = "DLC"
+        self.road_type = "SLALOM"
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 24
-        sim_obs_num = 17
+        env_obs_num = 26
+        sim_obs_num = 13
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -75,19 +76,19 @@ class CarMakerEnvB(gym.Env):
         self.road = Road()
         self.cone = Cone()
         self.test_num = 0
-        self.traj_data = np.array([[3, -10], [15, -10]])
-        self.car_data = np.array([2, -10, 0, 13.8889, 0])
+        self.traj_data = np.array([[2.1976, -10], [11, -10]])
+        self.car_data = np.array([2.1976, -10, 0, 13.8889, 0])
         self.traj_data = self.make_trajectory(self.traj_data[0], self.traj_data[1])
-        self.traj_point = self.find_nearest_point(2, -10, [3*i for i in range(5)])
+        self.traj_point = self.find_nearest_point(2, -10, [2*i for i in range(5)])
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
 #        self.low_level_model = SAC.load(f"models/{self.road_type}/512399_best_model.pkl", env=low_level_env)
-        self.low_level_model = SAC.load(f"1st_best_model.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
-        self.before_traj_point = np.array([15, -10])
+        self.before_traj_point = np.array([11, -10])
 
         if self.check == 0:
             pygame.init()
-            self.screen = pygame.display.set_mode((self.road.road_length * 10, - self.road.road_width * 10))
+            self.screen = pygame.display.set_mode((self.road.road_length * XSIZE, - self.road.road_width * YSIZE))
             pygame.display.set_caption("B level Environment")
 
     def __del__(self):
@@ -97,7 +98,7 @@ class CarMakerEnvB(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
-        self.traj_data = np.array([[3, -10], [15, -10]])
+        self.traj_data = np.array([[3, -10], [11, -10]])
         self.traj_data = self.make_trajectory(self.car_data[0], self.car_data[1])
         if self.check == 0:
             self.render()
@@ -171,7 +172,6 @@ class CarMakerEnvB(gym.Env):
             car_dev = state[8:10] #Car.DevDist, Car.DevAng
             car_alHori = state[10] #alHori
             car_roll = state[11]
-            wheel_steer = state[12:]
 
             new_traj_point = self.make_traj_point(carx, cary, blevel_action)
             traj_point = self.to_relative_coordinates(carx, cary, caryaw, np.vstack((self.before_traj_point, new_traj_point))).flatten()
@@ -183,11 +183,14 @@ class CarMakerEnvB(gym.Env):
             cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:4]
             cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_abs).flatten()
 
+            middle_abs = self.cone.middles_arr[self.cone.middles_arr[:, 0] > carx][:2]
+            middle_rel = self.to_relative_coordinates(carx, cary, caryaw, middle_abs).flatten()
+
             cones_for_lowlevel = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:2]
             cones_rel_for_lowlevel = self.to_relative_coordinates(carx, cary, caryaw, cones_for_lowlevel).flatten()
             self.car_data = np.array([carx, cary, caryaw, carv, car_steer[0]])
 
-            state = np.concatenate((carx, cary, traj_point, traj_rel, cones_rel)) # <- Policy B의 state
+            state = np.concatenate((traj_point, traj_rel, cones_rel, middle_rel)) # <- Policy B의 state
 
         # 리워드 계산
         reward = self.getReward(new_traj_point, time)
@@ -204,7 +207,7 @@ class CarMakerEnvB(gym.Env):
         return state, reward, done, info
 
     def make_traj_point(self, carx, cary, action):
-        new_traj_point = np.array([carx + 12, cary + action * 3])
+        new_traj_point = np.array([carx + 8, cary + action * 3])
         return new_traj_point
 
     def make_trajectory(self, carx, cary, action=0):
@@ -303,11 +306,12 @@ class CarMakerEnvB(gym.Env):
         else:
             distance_from_axis = new_traj_point[1] + 10
             dist_reward = - abs(distance_from_axis) * 100
+            middle_reward = 0
 
         #콘의 변화량이 너무 클 경우 벌점
         traj_reward = - np.linalg.norm((new_traj_point - self.before_traj_point)) * 1000
 
-        e = forbidden_reward  + car_reward  + traj_reward
+        e = forbidden_reward  + car_reward  + traj_reward + dist_reward + middle_reward
         return e
 
     def save_data_for_lowlevel(self, indexs, values):
@@ -325,6 +329,7 @@ class CarMakerEnvB(gym.Env):
             print(f" [{point[0]:.2f}, {point[1]:.2f}]")
 
     def render(self, mode='human'):
+        XSIZE, YSIZE = 2, 10
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -333,15 +338,15 @@ class CarMakerEnvB(gym.Env):
 
         for cone in self.cone.cones_shape:
             x, y = cone.centroid.coords[0]
-            pygame.draw.circle(self.screen, (255, 140, 0), (int(x * 10), int(-y * 10)), 5)
+            pygame.draw.circle(self.screen, (255, 140, 0), (int(x * XSIZE), int(-y * YSIZE)), 5)
 
         for trajx, trajy in self.traj_point:
-            pygame.draw.circle(self.screen, (0, 128, 0), (trajx * 10, - trajy * 10), 5)
+            pygame.draw.circle(self.screen, (0, 128, 0), (trajx * XSIZE, - trajy * YSIZE), 5)
 
         car_color = (255, 0, 0)
 
-        half_length = self.car.length * 10 / 2.0
-        half_width = self.car.width * 10 / 2.0
+        half_length = self.car.length * XSIZE / 2.0
+        half_width = self.car.width * YSIZE / 2.0
 
         corners = [
             (-half_length, -half_width),
@@ -352,8 +357,8 @@ class CarMakerEnvB(gym.Env):
 
         rotated_corners = []
         for x, y in corners:
-            x_rot = x * np.cos(-self.car.caryaw) - y * np.sin(-self.car.caryaw) + self.car.carx * 10
-            y_rot = x * np.sin(-self.car.caryaw) + y * np.cos(-self.car.caryaw) - self.car.cary * 10
+            x_rot = x * np.cos(-self.car.caryaw) - y * np.sin(-self.car.caryaw) + self.car.carx * XSIZE
+            y_rot = x * np.sin(-self.car.caryaw) + y * np.cos(-self.car.caryaw) - self.car.cary * YSIZE
             rotated_corners.append((x_rot, y_rot))
 
         pygame.draw.polygon(self.screen, car_color, rotated_corners)
@@ -364,8 +369,8 @@ class CarMakerEnvB(gym.Env):
         text_surface = font.render(text_str, True, (255, 255, 255))
 
         # 텍스트 이미지의 위치 계산 (우측 하단)
-        text_x = self.road.road_length * 10 - text_surface.get_width() - 10
-        text_y = - self.road.road_width * 10 - text_surface.get_height() - 10
+        text_x = self.road.road_length * XSIZE - text_surface.get_width() - XSIZE
+        text_y = - self.road.road_width * YSIZE - text_surface.get_height() - YSIZE
 
         # 렌더링된 이미지를 화면에 그리기
         self.screen.blit(text_surface, (text_x, text_y))

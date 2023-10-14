@@ -5,23 +5,23 @@
 3. 테스트를 수행한다.
 """
 
-from DLC_env_b import CarMakerEnvB
+from SLALOM_env_low import CarMakerEnv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from stable_baselines3 import SAC
 
 if __name__ == '__main__':
-    road_type = "DLC"
+    road_type = "SLALOM"
     env_num = "1"
-    data_name = 'RL'
-    comment = "test"
+    data_name = 'IPG'
+    comment = "env1"
     prefix = data_name + comment
 
 
-    env = CarMakerEnvB(host='127.0.0.1', port=9999)
+    env = CarMakerEnv(host='127.0.0.1', simul_path='IPG_DLC', port=9999)
 #    model = SAC.load(f"models/{road_type}/491899_best_model.pkl", env=env)
-    model = SAC.load(f"models/DLC/env1_b/491899_best_model.pkl", env=env)
+    model = SAC.load(f"best_model/SLALOM_env1_best_model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()
