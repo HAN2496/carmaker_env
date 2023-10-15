@@ -195,10 +195,12 @@ class CarMakerEnvB(gym.Env):
             middle_reward = 0
 
         distance_from_axis = traj_point_new[1] + 10
-        axis_reward = abs(distance_from_axis) * 100
+        axis_reward = - abs(distance_from_axis) * 100
 
         #콘의 변화량이 너무 클 경우 벌점
         traj_reward = - np.linalg.norm((traj_point_new - traj_point_before)) * 1000
+
+        print(f"Forbidden: {forbidden_reward}, Car: {car_reward}, Traj: {traj_reward}, Cone: {cone_reward}, Axis: {axis_reward}")
 
         e = forbidden_reward + car_reward + traj_reward + cone_reward + axis_reward
         return e
