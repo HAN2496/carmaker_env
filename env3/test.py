@@ -5,7 +5,7 @@
 3. 테스트를 수행한다.
 """
 
-from SLALOM_env_b import CarMakerEnvB
+from SLALOM_env_low import CarMakerEnv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -18,9 +18,9 @@ if __name__ == '__main__':
     prefix = data_name + "_" + comment
 
 
-    env = CarMakerEnvB(host='127.0.0.1', port=9999)
+    env = CarMakerEnv(host='127.0.0.1', port=9999)
 #    model = SAC.load(f"best_model/DLC_env2_best_model.pkl", env=env)
-    model = SAC.load(f"models/SLALOM/env1_b/27199_best_model.pkl", env=env)
+    model = SAC.load(f"models/SLALOM/env1_1/checkpoints/1999999_Check_model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()
