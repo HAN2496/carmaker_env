@@ -173,10 +173,8 @@ class CarMakerEnvB(gym.Env):
         else:
             car_reward = 0
 
-        if self.cone.cones_shape.intersects(car_shape):
-            cone_reward = -3000
-        else:
-            cone_reward = 0
+        cone_reward = - self.is_car_colliding(self.cone.cones_shape, car_shape) * 3000
+
 
         cone_distances = np.sqrt(np.sum((self.cone.cones_arr - [self.data.carx, self.data.cary]) ** 2, axis=1))
         dist_index = np.argmin(cone_distances)
@@ -204,6 +202,12 @@ class CarMakerEnvB(gym.Env):
 
         e = forbidden_reward + car_reward + traj_reward + cone_reward + axis_reward
         return e
+
+    def is_car_colliding(self, shape, car_shape):
+        for things in shape:
+            if car_shape.intersects(things):
+                return 1
+        return 0
 
 
 if __name__ == "__main__":
