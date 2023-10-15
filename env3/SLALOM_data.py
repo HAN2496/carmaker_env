@@ -51,7 +51,7 @@ class Data:
         self.alHori, self.roll = arr[11:13]
 
     def make_traj_point(self, action):
-        new_traj_point = np.array([self.carx + 8, self.cary + action * 3])
+        new_traj_point = np.array([self.carx + 8, self.cary + action * 2])
         return new_traj_point
 
     def make_trajectory(self, action):
@@ -114,7 +114,7 @@ class Data:
         blevel_action = action[0]
         self.put_simul_data(arr)
 
-        traj_point_new = self.make_traj_point(self.carx)
+        traj_point_new = self.make_traj_point(blevel_action)
         self.traj_data = self.make_trajectory(blevel_action)
 
         traj_point_for_state = self.to_relative_coordinates(np.vstack((self.traj_point_before, traj_point_new))).flatten()

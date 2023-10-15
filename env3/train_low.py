@@ -63,9 +63,9 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    env_num = 1
+    env_num = 1154
     road_type = "DLC"
-    comment = "2nd"
+    comment = "test"
     explanation = "Reward change. devAng gain 5000 to 1000"
 
     num_proc = 2
