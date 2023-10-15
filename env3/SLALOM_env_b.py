@@ -175,7 +175,6 @@ class CarMakerEnvB(gym.Env):
 
         cone_reward = - self.is_car_colliding(self.cone.cones_shape, car_shape) * 3000
 
-
         cone_distances = np.sqrt(np.sum((self.cone.cones_arr - [self.data.carx, self.data.cary]) ** 2, axis=1))
         dist_index = np.argmin(cone_distances)
         cone_dist = cone_distances[dist_index]
@@ -200,7 +199,8 @@ class CarMakerEnvB(gym.Env):
         #콘의 변화량이 너무 클 경우 벌점
         traj_reward = - np.linalg.norm((traj_point_new - traj_point_before)) * 1000
 
-        print(f"Forbidden: {forbidden_reward}, Car: {car_reward}, Traj: {traj_reward}, Cone: {cone_reward}, Axis: {axis_reward}")
+        if self.test_num % 300 == 0:
+            print(f"Forbidden: {forbidden_reward}, Car: {car_reward}, Traj: {traj_reward}, Cone: {cone_reward}, Axis: {axis_reward}")
 
         e = forbidden_reward + car_reward + traj_reward + cone_reward + axis_reward
         return e
