@@ -11,7 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from DLC_env_low import CarMakerEnv as LowLevelCarMakerEnv
+from SLALOM_env_low import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
@@ -156,11 +156,11 @@ class CarMakerEnvB(gym.Env):
         caryaw = reward_argument['caryaw']
         traj_shape = Point(traj[0], traj[1])
 
-        forbidden_reward = - self.is_traj_in_forbidden_area(traj_shape) * 5000
+        forbidden_reward = - self.is_traj_in_forbidden_area(traj_shape) * 50000
 
         cone_reward = - self.is_traj_in_cone(traj_shape) * 5000
 
-        axis_reward = - abs(traj[1] + 10) * 100
+        axis_reward = - abs(traj[1] + 10) * 1000
         yaw_reward = abs(caryaw) * 300
         e = forbidden_reward + cone_reward + axis_reward + yaw_reward
         if self.test_num % 100 == 0:

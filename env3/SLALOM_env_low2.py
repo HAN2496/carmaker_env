@@ -45,6 +45,7 @@ class CarMakerEnv(gym.Env):
         self.use_carmaker = use_carmaker
         self.road_type = "SLALOM"
         self.road = Road()
+        self.cone = Cone()
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
@@ -148,7 +149,7 @@ class CarMakerEnv(gym.Env):
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
 
-            lookahead_cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
+            lookahead_cones_abs = self.cone.cones_arr[self.road.cones_arr[:, 0] > car_pos[0]][:2]
             lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_cones_abs).flatten()
 
             state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel, lookahead_cones_rel))
