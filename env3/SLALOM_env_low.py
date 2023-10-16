@@ -68,7 +68,6 @@ class CarMakerEnv(gym.Env):
             self.cm_thread.start()
 
         self.test_num = 0
-
         self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
 
@@ -79,14 +78,15 @@ class CarMakerEnv(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
-        # 초기화 코드
-        if self.sim_initiated == True:
-            # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
-            self.status_queue.put("stop")
-            self.action_queue.queue.clear()
-            self.state_queue.queue.clear()
+        if self.use_carmaker == True:
+            # 초기화 코드
+            if self.sim_initiated == True:
+                # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
+                self.status_queue.put("stop")
+                self.action_queue.queue.clear()
+                self.state_queue.queue.clear()
 
-        self.sim_started = False
+            self.sim_started = False
 
         return self._initial_state()
 
