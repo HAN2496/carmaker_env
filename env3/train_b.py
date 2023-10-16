@@ -65,7 +65,7 @@ def main():
 
     env_num = 1
     road_type = "SLALOM"
-    comment = "b"
+    comment = "b2"
     explanation = "second try!"
 
     num_proc = 2

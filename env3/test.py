@@ -19,8 +19,8 @@ if __name__ == '__main__':
 
 
     env = CarMakerEnv(host='127.0.0.1', port=9999)
-#    model = SAC.load(f"best_model/DLC_env2_best_model.pkl", env=env)
-    model = SAC.load(f"models/SLALOM/env1_1/checkpoints/1999999_Check_model.pkl", env=env)
+    model = SAC.load(f"best_model/SLALOM_env1_best_model_compatible.pkl", env=env)
+#    model = SAC.load(f"41599_best_model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()

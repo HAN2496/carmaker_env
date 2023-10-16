@@ -79,7 +79,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.start()
 
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
-        self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model_compatible.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
@@ -181,7 +181,7 @@ class CarMakerEnvB(gym.Env):
         middle_distances = np.sqrt(np.sum((self.cone.middles_arr - [self.data.carx, self.data.cary]) ** 2, axis=1))
         dist_index = np.argmin(middle_distances)
         middle_dist = middle_distances[dist_index]
-
+        """
         #콘과 적당한 거리를 유지하지 못할 경우 벌점
         if 85 <= self.data.carx <= 385:
             dist_reward = - abs(cone_dist - dist_from_axis) * 100
@@ -191,17 +191,17 @@ class CarMakerEnvB(gym.Env):
             distance_from_axis = traj_point_new[1] + 10
             dist_reward = - 15 * 100
             middle_reward = 15 * 100
-
+        """
         distance_from_axis = traj_point_new[1] + 10
         axis_reward = - abs(distance_from_axis) * 50
 
         #콘의 변화량이 너무 클 경우 벌점
-        traj_reward = - np.linalg.norm((traj_point_new - traj_point_before)) * 1000
+        traj_reward = - abs(traj_point_new[1] - traj_point_before[1]) * 1000
 
         if self.test_num % 300 == 0:
             print(f"Forbidden: {forbidden_reward}, Car: {car_reward}, Traj: {traj_reward}, Cone: {cone_reward}, Axis: {axis_reward}")
 
-        e = forbidden_reward + car_reward + traj_reward + cone_reward + axis_reward + dist_reward + middle_reward
+        e = forbidden_reward + car_reward + traj_reward + cone_reward + axis_reward
         return e
 
     def is_car_colliding(self, shape, car_shape):
