@@ -115,7 +115,7 @@ class Data:
         self.put_simul_data(arr)
 
         traj_point_new = self.make_traj_point(blevel_action)
-        traj_point_new_rel = self.to_relative_coordinates(traj_point_new).flatten()
+        traj_point_new_rel = self.to_relative_coordinates([traj_point_new]).flatten()
         self.traj_point = traj_point_new
         self.traj_data = self.make_trajectory(blevel_action)
 
