@@ -3,7 +3,7 @@ from SLALOM_cone2 import Road, Car, Cone
 import pygame
 from scipy.interpolate import interp1d
 
-XSIZE, YSIZE = 2, 10
+XSIZE, YSIZE = 2, 5
 
 class Data:
     def __init__(self, point_interval=2, point_num=5, check=1, show=True):
@@ -115,6 +115,7 @@ class Data:
         self.put_simul_data(arr)
 
         traj_point_new = self.make_traj_point(blevel_action)
+        self.traj_point = traj_point_new
         self.traj_data = self.make_trajectory(blevel_action)
 
         #새로생긴 point가 데이터 중간에 생성되었을수도 있으므로. 뺑뺑돌면 가능은 하겠다.
@@ -147,7 +148,6 @@ class Data:
         return {key: value for key, value in zip(info_key, np.zeros(14))}
 
     def render(self, mode='human'):
-        XSIZE, YSIZE = 2, 10
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -182,8 +182,8 @@ class Data:
         pygame.draw.polygon(self.screen, car_color, rotated_corners)
 
         #차량 위치 렌더링
-        font = pygame.font.SysFont("arial", 20, True, True)
-        text_str = f"X: {round(self.carx, 1)}, Y: {round(self.cary, 1)}"
+        font = pygame.font.SysFont("arial", 15, True, True)
+        text_str = f"Traj : ({round(self.traj_point[0], 1)}, {round(self.traj_point[1], 1)})"
         text_surface = font.render(text_str, True, (255, 255, 255))
 
         # 텍스트 이미지의 위치 계산 (우측 하단)

@@ -22,7 +22,6 @@ from SLALOM_data2 import Data
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
 
-XSIZE, YSIZE = 2, 10
 def cm_thread(host, port, action_queue, state_queue, action_num, state_num, status_queue, matlab_path, simul_path):
     cm_env = CMcontrolNode(host=host, port=port, action_queue=action_queue, state_queue=state_queue, action_num=action_num, state_num=state_num, matlab_path=matlab_path, simul_path=simul_path)
 
@@ -80,7 +79,6 @@ class CarMakerEnvB(gym.Env):
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
         self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model_compatible.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
-
 
     def __del__(self):
         self.cm_thread.join()
@@ -166,6 +164,8 @@ class CarMakerEnvB(gym.Env):
         axis_reward = - abs(traj[1] + 10) * 100
         yaw_reward = abs(caryaw) * 300
         e = forbidden_reward + cone_reward + axis_reward + yaw_reward
+        if self.test_num % 100 == 0:
+            print(f"[traj: {traj}] [forbidden: {forbidden_reward}] [cone: {cone_reward}] [Axis: {axis_reward}]")
         return e
 
     def is_traj_in_cone(self, traj_shape):
