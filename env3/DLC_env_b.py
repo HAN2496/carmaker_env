@@ -273,8 +273,8 @@ class CarMakerEnvB(gym.Env):
             cones_reward = +100
         if self.road.is_car_in_forbidden_area(car_shape):
             car_reward = -10000
-        traj_reward = - np.linalg.norm((new_traj_point - self.before_traj_point)) * 1000
 
+        traj_reward = abs(new_traj_point[1] + 10) * 100
         e = forbidden_reward + cones_reward + car_reward + ang_reward + traj_reward
         return e
 
