@@ -23,6 +23,7 @@ from SLALOM_data import Data
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
 
 XSIZE, YSIZE = 2, 10
+
 def cm_thread(host, port, action_queue, state_queue, action_num, state_num, status_queue, matlab_path, simul_path):
     cm_env = CMcontrolNode(host=host, port=port, action_queue=action_queue, state_queue=state_queue, action_num=action_num, state_num=state_num, matlab_path=matlab_path, simul_path=simul_path)
 
@@ -81,7 +82,6 @@ class CarMakerEnvB(gym.Env):
         self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
-
     def __del__(self):
         self.cm_thread.join()
 
@@ -99,7 +99,6 @@ class CarMakerEnvB(gym.Env):
         self.sim_started = False
 
         return self._initial_state()
-
 
     def step(self, action):
         """
@@ -158,7 +157,7 @@ class CarMakerEnvB(gym.Env):
         traj_point_shape = Point(traj_point_new[0], traj_point_new[1])
         cone_r = 0.2
         car_width, car_length = 1.568, 4
-        dist_from_axis = (car_width + 1) / 2 + cone_r
+        dist_from_axis = (car_width + 1) / 2 + cone_r + 2
         car = Car()
         car_shape = car.shape_car(self.data.carx, self.data.cary, self.data.caryaw)
 
@@ -190,11 +189,11 @@ class CarMakerEnvB(gym.Env):
         # 중간축인 -10보다 멀어지면 벌점
         else:
             distance_from_axis = traj_point_new[1] + 10
-            dist_reward = - abs(distance_from_axis) * 100
-            middle_reward = 0
+            dist_reward = - 15 * 100
+            middle_reward = 15 * 100
 
         distance_from_axis = traj_point_new[1] + 10
-        axis_reward = - abs(distance_from_axis) * 100
+        axis_reward = - abs(distance_from_axis) * 50
 
         #콘의 변화량이 너무 클 경우 벌점
         traj_reward = - np.linalg.norm((traj_point_new - traj_point_before)) * 1000
@@ -202,7 +201,7 @@ class CarMakerEnvB(gym.Env):
         if self.test_num % 300 == 0:
             print(f"Forbidden: {forbidden_reward}, Car: {car_reward}, Traj: {traj_reward}, Cone: {cone_reward}, Axis: {axis_reward}")
 
-        e = forbidden_reward + car_reward + traj_reward + cone_reward + axis_reward
+        e = forbidden_reward + car_reward + traj_reward + cone_reward + axis_reward + dist_reward + middle_reward
         return e
 
     def is_car_colliding(self, shape, car_shape):
