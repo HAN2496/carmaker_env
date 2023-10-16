@@ -58,13 +58,16 @@ class Data:
         arr = self.traj_data.copy()
 
         new_traj_point = self.make_traj_point(action)
+        print('make traj arr, 61')
         arr = np.vstack((arr, new_traj_point))
 
         if abs(arr[-2][0] - arr[-1][0]) > 0.01:
             f = interp1d(arr[-2:, 0], arr[-2:, 1])
             xnew = np.arange(arr[-2][0], arr[-1][0], 0.01)
             ynew = f(xnew)
+            print('make traj interpolate_arr, 68')
             interpolate_arr = np.column_stack((xnew, ynew))
+            print('make traj new_arr, 70')
             new_arr = np.vstack((arr[:-1], interpolate_arr, arr[-1]))
             return new_arr
         else:
@@ -117,6 +120,7 @@ class Data:
         traj_point_new = self.make_traj_point(blevel_action)
         self.traj_data = self.make_trajectory(blevel_action)
 
+        print('manage state')
         traj_point_for_state = self.to_relative_coordinates(np.vstack((self.traj_point_before, traj_point_new))).flatten()
 
         #새로생긴 point가 데이터 중간에 생성되었을수도 있으므로. 뺑뺑돌면 가능은 하겠다.
