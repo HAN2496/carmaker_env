@@ -15,9 +15,9 @@ from DLC_env_low import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
-from SLALOM_cone import Road, Car, Cone
+from SLALOM_cone2 import Road, Car, Cone
 import pygame
-from data import Data
+from SLALOM_data2 import Data
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -153,50 +153,24 @@ class CarMakerEnvB(gym.Env):
 
         return state, reward, done, info
 
-    def getReward(self, traj, time):
-        traj_point_new, traj_point_before = traj["new"], traj["before"]
-        traj_point_shape = Point(traj_point_new[0], traj_point_new[1])
-        cone_r = 0.2
-        car_width, car_length = 1.568, 4
-        dist_from_axis = (car_width + 1) / 2 + cone_r
-        car = Car()
-        car_shape = car.shape_car(self.data.carx, self.data.cary, self.data.caryaw)
+    def getReward(self, reward_argument, time):
+        traj = reward_argument['traj']
+        caryaw = reward_argument['caryaw']
+        traj_shape = Point(traj[0], traj[1])
 
-        #trajectory와 차가 금지영역에 들어갈 경우 큰 벌점
-        if self.road.forbbiden_area1.intersects(traj_point_shape) or self.road.forbbiden_area2.intersects(traj_point_shape):
-            forbidden_reward = -5000
-        else:
-            forbidden_reward = 0
+        forbidden_area = [self.road.forbbiden_area1, self.road.forbbiden_area2, self.cone.cones_shape]
+        forbidden_reward = - self.is_traj_colliding(forbidden_area, traj_shape) * 5000
 
-        if self.road.is_car_in_forbidden_area(car_shape):
-            car_reward = -5000
-        else:
-            car_reward = 0
-
-        cone_distances = np.sqrt(np.sum((self.cone.cones_arr - [self.data.carx, self.data.cary]) ** 2, axis=1))
-        dist_index = np.argmin(cone_distances)
-        cone_dist = cone_distances[dist_index]
-
-        middle_distances = np.sqrt(np.sum((self.cone.middles_arr - [self.data.carx, self.data.cary]) ** 2, axis=1))
-        dist_index = np.argmin(middle_distances)
-        middle_dist = middle_distances[dist_index]
-
-        #콘과 적당한 거리를 유지하지 못할 경우 벌점
-        if 85 <= self.data.carx <= 385:
-            dist_reward = - abs(cone_dist - dist_from_axis) * 100
-            middle_reward = abs(middle_dist - 15) * 100
-        # 중간축인 -10보다 멀어지면 벌점
-        else:
-            distance_from_axis = traj_point_new[1] + 10
-            dist_reward = - abs(distance_from_axis) * 100
-            middle_reward = 0
-
-        #콘의 변화량이 너무 클 경우 벌점
-        traj_reward = - np.linalg.norm((traj_point_new - traj_point_before)) * 1000
-
-        e = forbidden_reward + car_reward + traj_reward + dist_reward + middle_reward
+        axis_reward = - abs(traj[1] + 10) * 100
+        yaw_reward = abs(caryaw) * 300
+        e = forbidden_reward + axis_reward + yaw_reward
         return e
 
+    def is_traj_colliding(self, shape, traj_shape):
+        for things in shape:
+            if traj_shape.intersects(things):
+                return 1
+        return 0
 
 if __name__ == "__main__":
     # 환경 테스트

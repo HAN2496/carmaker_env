@@ -108,16 +108,12 @@ class CarMakerEnvB(gym.Env):
         low_level_obs에 cary, carv 들어가고, car_dev랑 lookahead는 action(신규)에서 가져온 trj 정보로
         """
         self.test_num += 1
+        self.sim_time_step +=1
         done = False
 
         reward_argument = self.data._init_reward_argument()
         info = self.data._init_info()
 
-        traj_lowlevel_abs = self.data.find_traj_points(self.data.carx)
-        traj_lowlevel_rel = self.data.to_relative_coordinates(traj_lowlevel_abs).flatten()
-        self.low_level_obs = np.concatenate((np.array([self.data.carv, self.data.steerAng]), traj_lowlevel_rel))
-        steering_changes = self.low_level_model.predict(self.low_level_obs)
-        action_to_sim = np.append(steering_changes[0], self.test_num)
 
         # 최초 실행시
         if self.sim_initiated == False:
@@ -129,8 +125,15 @@ class CarMakerEnvB(gym.Env):
             self.sim_started = True
 
         # Action 값 전송 / State 값 수신
-        self.action_queue.put(action_to_sim)
-        state = self.state_queue.get()
+        for i in range(10):
+            traj_lowlevel_abs = self.data.find_traj_points(self.data.carx)
+            traj_lowlevel_rel = self.data.to_relative_coordinates(traj_lowlevel_abs).flatten()
+            self.low_level_obs = np.concatenate((np.array([self.data.carv, self.data.steerAng]), traj_lowlevel_rel))
+            steering_changes = self.low_level_model.predict(self.low_level_obs)
+            action_to_sim = np.append(steering_changes[0], self.test_num)
+
+            self.action_queue.put(action_to_sim)
+            state = self.state_queue.get()
 
         if state == False:
             # 시뮬레이션 종료

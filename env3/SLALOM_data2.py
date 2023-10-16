@@ -1,5 +1,5 @@
 import numpy as np
-from SLALOM_cone import Road, Car, Cone
+from SLALOM_cone2 import Road, Car, Cone
 import pygame
 from scipy.interpolate import interp1d
 
@@ -117,27 +117,20 @@ class Data:
         traj_point_new = self.make_traj_point(blevel_action)
         self.traj_data = self.make_trajectory(blevel_action)
 
-        print('manage state')
-        print(f'traj_point_before: {self.traj_point_before}')
-        print(f'traj_point_new: {traj_point_new}')
-        traj_point_for_state = self.to_relative_coordinates(np.vstack((self.traj_point_before, traj_point_new))).flatten()
-
         #새로생긴 point가 데이터 중간에 생성되었을수도 있으므로. 뺑뺑돌면 가능은 하겠다.
         self.traj_points = self.find_traj_points(self.carx)
         traj_rel = self.to_relative_coordinates(self.traj_points).flatten()
 
-        cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:4]
+        cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:3]
         cones_rel = self.to_relative_coordinates(cones_abs).flatten()
 
         middle_abs = self.cone.middles_arr[self.cone.middles_arr[:, 0] > self.carx][:2]
         middle_rel = self.to_relative_coordinates(middle_abs).flatten()
 
-        state = np.concatenate((traj_point_for_state, traj_rel, cones_rel, middle_rel)) # <- Policy B의 state
-        reward_argument = {"new": traj_point_new, "before": self.traj_point_before}
+        state = np.concatenate((self.caryaw, traj_rel, cones_rel)) # <- Policy B의 state
+        reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, arr[1:])}
-
-        self.traj_point_before = traj_point_new
 
         return state, reward_argument, info
 
