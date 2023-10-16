@@ -58,7 +58,7 @@ class CarMakerEnvB(gym.Env):
 
         # Env의 observation 개수와 simulink observation 개수
         env_obs_num = self.data.state_size()
-        sim_obs_num = 13q
+        sim_obs_num = 13
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
