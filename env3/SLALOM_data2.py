@@ -140,7 +140,7 @@ class Data:
         return array.size
 
     def _init_reward_argument(self):
-        return {"new": self.traj_point, "before": self.traj_point_before}
+        return {"traj": self.traj_point, "caryaw": 0}
 
     def _init_info(self):
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
