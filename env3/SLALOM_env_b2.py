@@ -156,7 +156,6 @@ class CarMakerEnvB(gym.Env):
         caryaw = reward_argument['caryaw']
         traj_shape = Point(traj[0], traj[1])
 
-        forbidden_area = [self.road.forbbiden_area1, self.road.forbbiden_area2, self.cone.cones_shape]
         forbidden_reward = - self.is_traj_in_forbidden_area(traj_shape) * 5000
 
         cone_reward = - self.is_traj_in_cone(traj_shape) * 5000
