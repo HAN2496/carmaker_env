@@ -159,17 +159,26 @@ class CarMakerEnvB(gym.Env):
         traj_shape = Point(traj[0], traj[1])
 
         forbidden_area = [self.road.forbbiden_area1, self.road.forbbiden_area2, self.cone.cones_shape]
-        forbidden_reward = - self.is_traj_colliding(forbidden_area, traj_shape) * 5000
+        forbidden_reward = - self.is_traj_in_forbidden_area(traj_shape) * 5000
+
+        cone_reward = - self.is_traj_in_cone(traj_shape) * 5000
 
         axis_reward = - abs(traj[1] + 10) * 100
         yaw_reward = abs(caryaw) * 300
-        e = forbidden_reward + axis_reward + yaw_reward
+        e = forbidden_reward + cone_reward + axis_reward + yaw_reward
         return e
 
-    def is_traj_colliding(self, shape, traj_shape):
-        for things in shape:
-            if traj_shape.intersects(things):
+    def is_traj_in_cone(self, traj_shape):
+        for cone in self.cone.cones_shape:
+            if traj_shape.intersects(cone):
                 return 1
+        return 0
+
+    def is_traj_in_forbidden_area(self, traj_shape):
+        if self.road.forbbiden_area1.intersects(traj_shape):
+            return 1
+        if self.road.forbbiden_area2.intersects(traj_shape):
+            return 1
         return 0
 
 if __name__ == "__main__":
