@@ -78,7 +78,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.start()
 
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
-        self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model_compatible.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
 
