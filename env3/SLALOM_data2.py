@@ -129,7 +129,7 @@ class Data:
         middle_abs = self.cone.middles_arr[self.cone.middles_arr[:, 0] > self.carx][:2]
         middle_rel = self.to_relative_coordinates(middle_abs).flatten()
 
-        state = np.concatenate((np.array([self.caryaw, traj_point_new[1] + 10]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
+        state = np.concatenate((np.array([self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
         reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, arr[1:])}
