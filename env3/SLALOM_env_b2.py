@@ -154,13 +154,14 @@ class CarMakerEnvB(gym.Env):
     def getReward(self, reward_argument, time):
         traj = reward_argument['traj']
         caryaw = reward_argument['caryaw']
+        carx = reward_argument['carx']
         traj_shape = Point(traj[0], traj[1])
 
         cone_reward = - self.is_traj_in_cone(traj_shape) * 200
 
         forbidden_reward = - self.is_traj_in_forbidden(traj_shape) * 500
 
-        x_reward = - abs(traj[0] - 8) * 1000
+        x_reward = - abs(traj[0] - carx - 8) * 1000
         y_reward = - abs(traj[1] + 10) * 30000
         e = cone_reward + x_reward + y_reward + forbidden_reward
 
