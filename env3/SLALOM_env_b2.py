@@ -84,6 +84,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.join()
 
     def _initial_state(self):
+        self.test_num = 0
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
@@ -140,6 +141,7 @@ class CarMakerEnvB(gym.Env):
 
         else:
             state = np.array(state) #어레이 변환
+            self.data = self.data.put_simul_data(state)
             state, reward_argument, info = self.data.manage_state(state, action)
 
         # 리워드 계산
