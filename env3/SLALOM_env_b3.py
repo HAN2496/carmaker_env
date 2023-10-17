@@ -160,7 +160,7 @@ class CarMakerEnvB(gym.Env):
 
         cone_reward = - self.is_traj_in_cone(traj_shape) * 200
 
-        x_reward = - abs(traj[0] - 8) * 500
+        x_reward = - abs(traj[0] - 8) * 300
         y_reward = - abs(traj[1] + 10) * 1000
 #        yaw_reward = abs(caryaw) * 3000
         e = forbidden_reward + cone_reward + x_reward + y_reward
