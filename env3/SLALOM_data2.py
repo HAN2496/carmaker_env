@@ -51,7 +51,7 @@ class Data:
         self.alHori, self.roll = arr[11:13]
 
     def make_traj_point(self, action):
-        theta = action * 0
+        theta = action * 0.1
         new_traj_point = np.array([self.carx + 8 * np.cos(theta),
                                    self.cary + 8 * np.sin(theta)])
         return new_traj_point
@@ -154,7 +154,7 @@ class Data:
         return array.size
 
     def _init_reward_argument(self):
-        return {"traj": self.traj_point, "caryaw": 0}
+        return {"traj": self.traj_point, "caryaw": 0, "carx": self.carx}
 
     def _init_info(self):
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
@@ -167,9 +167,12 @@ class Data:
 
         self.screen.fill((128, 128, 128))
 
-        for cone in self.cone.cones_shape:
+        for idx, cone in enumerate(self.cone.cones_shape):
             x, y = cone.centroid.coords[0]
             pygame.draw.circle(self.screen, (255, 140, 0), (int(x * XSIZE), int(-y * YSIZE)), 5)
+            sign = (idx % 2) * 2
+            point1, point2 = (x * XSIZE, 10 * YSIZE), (x * XSIZE, sign * 10 * YSIZE)
+            pygame.draw.line(self.screen, (255, 255, 255), point1, point2, 3)
 
         for trajx, trajy in self.traj_points:
             pygame.draw.circle(self.screen, (0, 128, 0), (trajx * XSIZE, - trajy * YSIZE), 5)
