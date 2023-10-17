@@ -51,7 +51,9 @@ class Data:
         self.alHori, self.roll = arr[11:13]
 
     def make_traj_point(self, action):
-        new_traj_point = np.array([self.carx + 8, self.cary + action * 2])
+        theta = action * 0.1
+        new_traj_point = np.array([self.carx + 8 * np.cos(self.caryaw + theta),
+                                   self.cary + 8 * np.sin(self.caryaw + theta)])
         return new_traj_point
 
     def make_trajectory(self, action):
@@ -129,7 +131,7 @@ class Data:
         middle_abs = self.cone.middles_arr[self.cone.middles_arr[:, 0] > self.carx][:2]
         middle_rel = self.to_relative_coordinates(middle_abs).flatten()
 
-        state = np.concatenate((np.array([self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
+        state = np.concatenate((np.array([self.carx, self.cary, self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
         reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, arr[1:])}
