@@ -152,7 +152,7 @@ class Data:
               f"[Traj: {np.round(traj_point_new, 2)}] [Cone: {np.round(cones_abs, 2)}]")
         """
 
-        state = np.concatenate((np.array([self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
+        state = np.concatenate((np.array([self.caryaw]), traj_rel, cones_rel)) # <- Policy B의 state
 
         reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw, "carx": self.carx}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])

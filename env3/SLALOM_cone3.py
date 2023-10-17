@@ -12,9 +12,8 @@ dist_from_axis = (car_width + 1) / 2 + cone_r
 def plot(road, cone, car):
     #plt.figure(figsize=(10, 5))
 
-    for cone in cone.cones_forbidden_shape:
-        plt.plot(*cone.exterior.xy, color='green')
-
+    for cone in cone.cones_arr:
+        plt.scatter(cone[0], cone[1], color='green')
 
     # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
