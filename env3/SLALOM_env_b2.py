@@ -141,7 +141,6 @@ class CarMakerEnvB(gym.Env):
 
         else:
             state = np.array(state) #어레이 변환
-            self.data = self.data.put_simul_data(state)
             state, reward_argument, info = self.data.manage_state(state, action)
 
         # 리워드 계산
