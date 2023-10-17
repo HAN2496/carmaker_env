@@ -1,5 +1,5 @@
 import numpy as np
-from SLALOM_cone2 import Road, Car, Cone
+from SLALOM_cone3 import Road, Car, Cone
 import pygame
 from scipy.interpolate import interp1d
 
@@ -36,7 +36,7 @@ class Data:
 
         self.traj_point = np.array([self.carx + self.point_interval * (self.point_num - 1), self.cary])
         self.traj_point_before = self.traj_point
-        self.traj_points = self.find_traj_points(self.carx)
+        self.traj_points = self.find_traj_points()
 
         if self.check == 0:
             self.render()
@@ -51,9 +51,10 @@ class Data:
         self.alHori, self.roll = arr[11:13]
 
     def make_traj_point(self, action):
-        theta = action * 0.1
-        new_traj_point = np.array([self.carx + 8 * np.cos(self.caryaw + theta),
-                                   self.cary + 8 * np.sin(self.caryaw + theta)])
+        theta = action * 0.01 + self.caryaw
+        theta = 0
+        new_traj_point = np.array([self.carx + 8 * np.cos(theta),
+                                   self.cary + 8 * np.sin(theta)])
         return new_traj_point
 
     def make_trajectory(self, action):
@@ -72,14 +73,27 @@ class Data:
         else:
             return arr
 
-    def find_traj_points(self, x0):
-        points = []
-        for i in range(self.point_num):
-            distance = i * self.point_interval
-            x_diff = np.abs(self.traj_data[:, 0] - (x0 + distance))
-            nearest_idx = np.argmin(x_diff)
-            points.append(self.traj_data[nearest_idx])
-        return np.array(points)
+    def find_traj_points(self):
+        distances = np.array([self.point_interval * i for i in range(self.point_num - 1)])
+        result_points = []
+
+        min_idx = np.argmin(np.sum((self.traj_data - np.array([self.carx, self.cary])) ** 2, axis=1))
+
+        for dist in distances:
+            lookahead_idx = min_idx
+            total_distance = 0.0
+            while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
+                total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
+                lookahead_idx += 1
+
+            if lookahead_idx < len(self.traj_data):
+                result_points.append(self.traj_data[lookahead_idx])
+            else:
+                result_points.append(self.traj_data[-1])
+
+        result_points.append(self.traj_point)
+
+        return result_points
 
     def calculate_dev(self):
         arr = np.array(self.traj_data)
@@ -122,19 +136,22 @@ class Data:
         self.traj_data = self.make_trajectory(blevel_action)
 
         #새로생긴 point가 데이터 중간에 생성되었을수도 있으므로. 뺑뺑돌면 가능은 하겠다.
-        self.traj_points = self.find_traj_points(self.carx)
+        self.traj_points = self.find_traj_points()
         traj_rel = self.to_relative_coordinates(self.traj_points).flatten()
 
-        cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:3]
+        cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
         cones_rel = self.to_relative_coordinates(cones_abs).flatten()
-
-        middle_abs = self.cone.middles_arr[self.cone.middles_arr[:, 0] > self.carx][:2]
-        middle_rel = self.to_relative_coordinates(middle_abs).flatten()
+        """
+        print(f"[{self.carx, self.cary}] [Yaw: {round(self.caryaw, 2)}]"
+              f"[Traj: {np.round(traj_point_new, 2)}] [Cone: {np.round(cones_abs, 2)}]")
+        """
 
         state = np.concatenate((np.array([self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
-        reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw}
+
+        reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw, "carx": self.carx}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, arr[1:])}
+
 
         return state, reward_argument, info
 
@@ -144,7 +161,7 @@ class Data:
         return array.size
 
     def _init_reward_argument(self):
-        return {"traj": self.traj_point, "caryaw": 0}
+        return {"traj": self.traj_point, "caryaw": 0, "carx": self.carx}
 
     def _init_info(self):
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
@@ -157,9 +174,16 @@ class Data:
 
         self.screen.fill((128, 128, 128))
 
-        for cone in self.cone.cones_shape:
+
+        before_cone = (0, 0)
+        for idx, cone in enumerate(self.cone.cones_shape):
             x, y = cone.centroid.coords[0]
             pygame.draw.circle(self.screen, (255, 140, 0), (int(x * XSIZE), int(-y * YSIZE)), 5)
+            if idx % 2 == 1:
+                recent_cone = (x * XSIZE, -y * YSIZE)
+                pygame.draw.line(self.screen, (255, 255, 255), before_cone, recent_cone, 3)
+            else:
+                before_cone = (x * XSIZE, -y * YSIZE)
 
         for trajx, trajy in self.traj_points:
             pygame.draw.circle(self.screen, (0, 128, 0), (trajx * XSIZE, - trajy * YSIZE), 5)
