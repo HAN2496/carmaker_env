@@ -13,7 +13,7 @@ import pandas as pd
 import time
 import math
 from shapely.geometry import Polygon, Point, LineString
-from SLALOM_cone2 import Road, Car
+from SLALOM_cone2 import Road, Car, Cone
 from shapely import affinity
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -68,9 +68,9 @@ class CarMakerEnv(gym.Env):
             self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
             self.cm_thread.start()
 
-        self.test_num = 0
+            self.test_num = 0
 
-        self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
+            self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_SLALOM.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
 
     def __del__(self):

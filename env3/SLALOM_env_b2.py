@@ -77,7 +77,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.start()
 
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
-        self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model_compatible.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
@@ -112,7 +112,7 @@ class CarMakerEnvB(gym.Env):
         reward_argument = self.data._init_reward_argument()
         info = self.data._init_info()
 
-        traj_lowlevel_abs = self.data.find_traj_points(self.data.carx)
+        traj_lowlevel_abs = self.data.find_traj_points()
         traj_lowlevel_rel = self.data.to_relative_coordinates(traj_lowlevel_abs).flatten()
         self.low_level_obs = np.concatenate((np.array([self.data.carv, self.data.steerAng]), traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
@@ -158,13 +158,14 @@ class CarMakerEnvB(gym.Env):
 
         cone_reward = - self.is_traj_in_cone(traj_shape) * 200
 
+        forbidden_reward = - self.is_traj_in_forbidden(traj_shape) * 500
 
+        x_reward = - abs(traj[0] - 8) * 1000
+        y_reward = - abs(traj[1] + 10) * 30000
+        e = cone_reward + x_reward + y_reward + forbidden_reward
 
-        x_reward = - abs(traj[0] - 8) * 30000
-        y_reward = - abs(traj[1] + 10) * 1000
-        e = cone_reward + x_reward + y_reward
         if self.test_num % 100 == 0:
-            print(f"[traj: {traj}] [cone: {cone_reward}] [x r: {x_reward}] [y r: {y_reward}]")
+            print(f"[traj: {traj}] [forbidden: {forbidden_reward}] [cone: {cone_reward}] [x r: {x_reward}] [y r: {y_reward}]")
         return e
 
     def is_traj_in_cone(self, traj_shape):
@@ -173,7 +174,13 @@ class CarMakerEnvB(gym.Env):
                 return 1
         return 0
 
-
+    def is_traj_in_forbidden(self, traj_shape):
+        if self.road.forbbiden_area1.intersects(traj_shape) or self.road.forbbiden_area2.intersects(traj_shape):
+            return 1
+        for cone in self.cone.cones_forbidden_shape:
+            if traj_shape.intersects(cone):
+                return 1
+        return 0
 
 if __name__ == "__main__":
     # 환경 테스트

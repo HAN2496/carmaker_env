@@ -9,19 +9,12 @@ dist_from_axis = (car_width + 1) / 2 + cone_r
 
 
 
-def plot(road, car):
+def plot(road, cone, car):
     #plt.figure(figsize=(10, 5))
 
     # Plot forbidden areas
-    plt.plot(*road.cones_boundary.exterior.xy, label="Cone Boundary", color='red')
-#    plt.plot(*road.forbbiden_area1.exterior.xy, label="Forbidden Area 1", color='red')
-#    plt.plot(*road.forbbiden_area2.exterior.xy, label="Forbidden Area 2", color='blue')
-    plt.plot(*road.road_boundary.exterior.xy, label="ROAD BOUNDARY", color='green')
-
-    # Plot cones
-    cones_x = road.cones_arr[:, 0]
-    cones_y = road.cones_arr[:, 1]
-    plt.scatter(cones_x, cones_y, s=10, color='orange', label="Cones")
+    for cone in cone.cones_shape:
+        plt.plot(*cone.exterior.xy, color='red')
 
     # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
@@ -36,6 +29,7 @@ def plot(road, car):
     plt.grid(True)
     plt.axis('equal')
     plt.show()
+
 def is_car_in_forbidden_area(car_shape, road):
     if car_shape.intersects(road.forbbiden_area1) or car_shape.intersects(road.forbbiden_area2):
         return 1
@@ -58,14 +52,24 @@ class Cone:
         self.cone_r = 0.2
         self.cones_arr = self.create_cone_arr()
         self.cones_shape = self.create_cone_shape()
-        self.middles_arr = self.create_middle_arr()
-        self.middles_shape = self.create_middle_shape()
+        self.cones_forbidden_shape = self.create_cone_forbidden_shape()
+
     def create_cone_shape(self):
         cones = []
-        dist_from_axis = (car_width + 1) / 2 + cone_r + 1
         for i, j in self.cones_arr:
-            cone = Point(i, j).buffer(dist_from_axis)
+            cone = Point(i, j).buffer(0.2)
             cones.append(cone)
+
+        return np.array(cones)
+    def create_cone_forbidden_shape(self):
+        cones = []
+        dist_from_axis = (car_width + 1) / 2 + cone_r + 1
+        for idx, (i, j) in enumerate(self.cones_arr):
+            sign = ((idx-1) % 2) * 2
+            vertices = [(i - 10, -10), (i + 10, -10), (i + 10, - sign * 10), (i - 10, - sign * 10), (i - 10, -10)]
+            cone_area = Polygon(vertices)
+            cone = Point(i, j).buffer(dist_from_axis)
+            cones.append(cone_area)
 
         return np.array(cones)
 
@@ -75,17 +79,6 @@ class Cone:
         cones = np.concatenate((road_cones, further_cones), axis=0)
         return cones
 
-    def create_middle_arr(self):
-        middle = np.array([[85 + 30 * i, -10] for i in range(10)])
-        return middle
-
-    def create_middle_shape(self):
-        cones = []
-        for i, j in self.middles_arr:
-            cone = Point(i, j).buffer(0.2)
-            cones.append(cone)
-
-        return np.array(cones)
 class Road:
     def __init__(self):
         self.road_length = 500
@@ -159,3 +152,9 @@ class Car:
         car_shape = affinity.translate(car_shape, carx, cary)
 
         return car_shape
+
+if __name__ == "__main__":
+    cone = Cone()
+    road = Road()
+    car = Car()
+    plot(road, cone, car)
