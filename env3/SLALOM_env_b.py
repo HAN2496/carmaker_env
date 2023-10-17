@@ -15,9 +15,9 @@ from DLC_env_low import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
-from SLALOM_cone import Road, Car, Cone
+from SLALOM_cone2 import Road, Car, Cone
 import pygame
-from SLALOM_data import Data
+from SLALOM_data2 import Data
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -108,11 +108,11 @@ class CarMakerEnvB(gym.Env):
         low_level_obs에 cary, carv 들어가고, car_dev랑 lookahead는 action(신규)에서 가져온 trj 정보로
         """
         self.test_num += 1
-        self.sim_time_step +=1
         done = False
 
         reward_argument = self.data._init_reward_argument()
         info = self.data._init_info()
+        state = np.zeros(self.data.state_size())
 
 
         # 최초 실행시
@@ -126,7 +126,7 @@ class CarMakerEnvB(gym.Env):
 
         # Action 값 전송 / State 값 수신
         for i in range(10):
-            traj_lowlevel_abs = self.data.find_traj_points(self.data.carx)
+            traj_lowlevel_abs = self.data.find_traj_points()
             traj_lowlevel_rel = self.data.to_relative_coordinates(traj_lowlevel_abs).flatten()
             self.low_level_obs = np.concatenate((np.array([self.data.carv, self.data.steerAng]), traj_lowlevel_rel))
             steering_changes = self.low_level_model.predict(self.low_level_obs)
@@ -135,16 +135,15 @@ class CarMakerEnvB(gym.Env):
             self.action_queue.put(action_to_sim)
             state = self.state_queue.get()
 
-        if state == False:
-            # 시뮬레이션 종료
-            # 혹은 여기 (끝날때마다)
-            # CMcontrolNode에서 TCP/IP 통신이 종료되면(시뮬레이션이 끝날 경우) False 값을 리턴하도록 정의됨
-            state = self._initial_state()
-            done = True
+            if state == False:
+                # 시뮬레이션 종료
+                # 혹은 여기 (끝날때마다)
+                # CMcontrolNode에서 TCP/IP 통신이 종료되면(시뮬레이션이 끝날 경우) False 값을 리턴하도록 정의됨
+                state = self._initial_state()
+                done = True
 
-        else:
-            state = np.array(state) #어레이 변환
-            state, reward_argument, info = self.data.manage_state(state, action)
+        state = np.array(state) #어레이 변환
+        state, reward_argument, info = self.data.manage_state(state, action)
 
         # 리워드 계산
         reward = self.getReward(reward_argument, time)
@@ -155,61 +154,34 @@ class CarMakerEnvB(gym.Env):
 
         return state, reward, done, info
 
-    def getReward(self, traj, time):
-        traj_point_new, traj_point_before = traj["new"], traj["before"]
-        traj_point_shape = Point(traj_point_new[0], traj_point_new[1])
-        cone_r = 0.2
-        car_width, car_length = 1.568, 4
-        dist_from_axis = (car_width + 1) / 2 + cone_r + 2
-        car = Car()
-        car_shape = car.shape_car(self.data.carx, self.data.cary, self.data.caryaw)
+    def getReward(self, reward_argument, time):
+        traj = reward_argument['traj']
+        caryaw = reward_argument['caryaw']
+        carx = reward_argument['carx']
+        traj_shape = Point(traj[0], traj[1])
 
-        #trajectory와 차가 금지영역에 들어갈 경우 큰 벌점
-        if self.road.forbbiden_area1.intersects(traj_point_shape) or self.road.forbbiden_area2.intersects(traj_point_shape):
-            forbidden_reward = -5000
-        else:
-            forbidden_reward = 0
+        cone_reward = - self.is_traj_in_cone(traj_shape) * 200
 
-        if self.road.is_car_in_forbidden_area(car_shape):
-            car_reward = -5000
-        else:
-            car_reward = 0
+        forbidden_reward = - self.is_traj_in_forbidden(traj_shape) * 500
 
-        cone_reward = - self.is_car_colliding(self.cone.cones_shape, car_shape) * 3000
+        x_reward = - abs(traj[0] - carx - 8) * 500
+        y_reward = - abs(traj[1] + 10) * 3000
+        e = cone_reward + x_reward + y_reward + forbidden_reward
 
-        cone_distances = np.sqrt(np.sum((self.cone.cones_arr - [self.data.carx, self.data.cary]) ** 2, axis=1))
-        dist_index = np.argmin(cone_distances)
-        cone_dist = cone_distances[dist_index]
-
-        middle_distances = np.sqrt(np.sum((self.cone.middles_arr - [self.data.carx, self.data.cary]) ** 2, axis=1))
-        dist_index = np.argmin(middle_distances)
-        middle_dist = middle_distances[dist_index]
-        """
-        #콘과 적당한 거리를 유지하지 못할 경우 벌점
-        if 85 <= self.data.carx <= 385:
-            dist_reward = - abs(cone_dist - dist_from_axis) * 100
-            middle_reward = abs(middle_dist - 15) * 100
-        # 중간축인 -10보다 멀어지면 벌점
-        else:
-            distance_from_axis = traj_point_new[1] + 10
-            dist_reward = - 15 * 100
-            middle_reward = 15 * 100
-        """
-        distance_from_axis = traj_point_new[1] + 10
-        axis_reward = - abs(distance_from_axis) * 50
-
-        #콘의 변화량이 너무 클 경우 벌점
-        traj_reward = - abs(traj_point_new[1] - traj_point_before[1]) * 1000
-
-        if self.test_num % 300 == 0:
-            print(f"Forbidden: {forbidden_reward}, Car: {car_reward}, Traj: {traj_reward}, Cone: {cone_reward}, Axis: {axis_reward}")
-
-        e = forbidden_reward + car_reward + traj_reward + cone_reward + axis_reward
+        if self.test_num % 100 == 0:
+            print(f"[traj: {traj}] [forbidden: {forbidden_reward}] [cone: {cone_reward}] [x r: {x_reward}] [y r: {y_reward}]")
         return e
+    def is_traj_in_cone(self, traj_shape):
+        for cone in self.cone.cones_shape:
+            if traj_shape.intersects(cone):
+                return 1
+        return 0
 
-    def is_car_colliding(self, shape, car_shape):
-        for things in shape:
-            if car_shape.intersects(things):
+    def is_traj_in_forbidden(self, traj_shape):
+        if self.road.forbbiden_area1.intersects(traj_shape) or self.road.forbbiden_area2.intersects(traj_shape):
+            return 1
+        for cone in self.cone.cones_forbidden_shape:
+            if traj_shape.intersects(cone):
                 return 1
         return 0
 
