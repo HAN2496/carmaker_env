@@ -163,12 +163,12 @@ class CarMakerEnvB(gym.Env):
         forbidden_reward = - self.is_traj_in_forbidden(traj_shape) * 500
 
         x_reward = - abs(traj[0] - carx - 8) * 500
-        y_reward = - abs(traj[1] + 10) * 3000
+        y_reward = - abs(traj[1] + 10) * 300
+        x_reward= 0
         e = cone_reward + x_reward + y_reward + forbidden_reward
-        """
+
         if self.test_num % 100 == 0:
             print(f"[traj: {traj}] [forbidden: {forbidden_reward}] [cone: {cone_reward}] [x r: {x_reward}] [y r: {y_reward}]")
-        """
         return e
 
     def is_traj_in_cone(self, traj_shape):
@@ -193,7 +193,7 @@ if __name__ == "__main__":
     info_lst = []
 
 
-    for i in range(3):
+    for i in range(1):
         # 환경 초기화
         state = env.reset()
 
