@@ -142,7 +142,7 @@ class Data:
         cones_rel = self.to_relative_coordinates(cones_abs).flatten()
 
         state = np.concatenate((np.array([self.carx, self.cary, self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
-        reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw}
+        reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw, "carx": self.carx}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, arr[1:])}
 
