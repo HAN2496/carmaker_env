@@ -51,8 +51,9 @@ class Data:
         self.alHori, self.roll = arr[11:13]
 
     def make_traj_point(self, action):
-        new_traj_point = np.array([self.carx + 8 * np.cos(self.caryaw) - 2 * action * np.sin(self.caryaw),
-                                   self.cary + 8 * np.sin(self.caryaw) + 2 * action * np.cos(self.caryaw)])
+        theta = action * 0.1
+        new_traj_point = np.array([self.carx + 8 * np.cos(self.caryaw + theta),
+                                   self.cary + 8 * np.sin(self.caryaw + theta)])
         return new_traj_point
 
     def make_trajectory(self, action):
