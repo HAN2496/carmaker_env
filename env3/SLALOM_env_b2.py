@@ -161,8 +161,8 @@ class CarMakerEnvB(gym.Env):
 
         forbidden_reward = - self.is_traj_in_forbidden(traj_shape) * 500
 
-        x_reward = - abs(traj[0] - carx - 8) * 1000
-        y_reward = - abs(traj[1] + 10) * 30000
+        x_reward = - abs(traj[0] - carx - 8) * 500
+        y_reward = - abs(traj[1] + 10) * 3000
         e = cone_reward + x_reward + y_reward + forbidden_reward
 
         if self.test_num % 100 == 0:

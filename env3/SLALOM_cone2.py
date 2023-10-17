@@ -56,19 +56,18 @@ class Cone:
 
     def create_cone_shape(self):
         cones = []
+        dist_from_axis = (car_width + 1) / 2 + cone_r + 1
         for i, j in self.cones_arr:
-            cone = Point(i, j).buffer(0.2)
+            cone = Point(i, j).buffer(dist_from_axis)
             cones.append(cone)
 
         return np.array(cones)
     def create_cone_forbidden_shape(self):
         cones = []
-        dist_from_axis = (car_width + 1) / 2 + cone_r + 1
         for idx, (i, j) in enumerate(self.cones_arr):
             sign = ((idx-1) % 2) * 2
             vertices = [(i - 10, -10), (i + 10, -10), (i + 10, - sign * 10), (i - 10, - sign * 10), (i - 10, -10)]
             cone_area = Polygon(vertices)
-            cone = Point(i, j).buffer(dist_from_axis)
             cones.append(cone_area)
 
         return np.array(cones)
