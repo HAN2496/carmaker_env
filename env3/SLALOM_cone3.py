@@ -12,7 +12,7 @@ dist_from_axis = (car_width + 1) / 2 + cone_r
 def plot(road, cone, car):
     #plt.figure(figsize=(10, 5))
 
-    for cone in cone.cones_shape:
+    for cone in cone.cones_forbidden_shape:
         plt.plot(*cone.exterior.xy, color='green')
 
 
@@ -66,7 +66,7 @@ class Cone:
         cones = []
         for i in range(10):
             sign = ((i-1) % 2) * 2
-            dist = 1
+            dist = 10
             x0, x1 = 30 * i - dist + 100, 30 * i + dist + 100
             vertices = [(x0, -10), (x1, -10), (x1, - sign * 10), (x0, - sign * 10), (x0, -10)]
             cone_area = Polygon(vertices)
@@ -76,14 +76,14 @@ class Cone:
 
     def create_cone_arr(self):
         cones = []
-        before_cones = np.array([[30 * int(i / 2) + 10, -10 + ((i % 2) - 0.5) * 2 * 5] for i in range(6)])
+        before_cones = np.array([[30 * int(i / 2) + 10, -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(6)])
         for i in range(10):
             sign = (i % 2) * 2
             cone1 = np.array([100 + 30 * i, - 10])
             cone2 = np.array([100 + 30 * i, -sign * 10])
             cones.append(cone1)
             cones.append(cone2)
-        further_cones = np.array([[800 + 30 * int(i / 2), -10 + ((i % 2) - 0.5) * 2 * 5] for i in range(10)])
+        further_cones = np.array([[800 + 30 * int(i / 2), -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(10)])
         cones = np.concatenate((before_cones, cones, further_cones), axis=0)
         return cones
 
