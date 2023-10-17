@@ -156,15 +156,15 @@ class CarMakerEnvB(gym.Env):
         caryaw = reward_argument['caryaw']
         traj_shape = Point(traj[0], traj[1])
 
-        forbidden_reward = - self.is_traj_in_forbidden_area(traj_shape) * 50000
+        cone_reward = - self.is_traj_in_cone(traj_shape) * 200
 
-        cone_reward = - self.is_traj_in_cone(traj_shape) * 5000
 
-        axis_reward = - abs(traj[1] + 10) * 1000
-        yaw_reward = abs(caryaw) * 300
-        e = forbidden_reward + cone_reward + axis_reward + yaw_reward
+
+        x_reward = - abs(traj[0] - 8) * 30000
+        y_reward = - abs(traj[1] + 10) * 1000
+        e = cone_reward + x_reward + y_reward
         if self.test_num % 100 == 0:
-            print(f"[traj: {traj}] [forbidden: {forbidden_reward}] [cone: {cone_reward}] [Axis: {axis_reward}]")
+            print(f"[traj: {traj}] [cone: {cone_reward}] [x r: {x_reward}] [y r: {y_reward}]")
         return e
 
     def is_traj_in_cone(self, traj_shape):
@@ -173,12 +173,7 @@ class CarMakerEnvB(gym.Env):
                 return 1
         return 0
 
-    def is_traj_in_forbidden_area(self, traj_shape):
-        if self.road.forbbiden_area1.intersects(traj_shape):
-            return 1
-        if self.road.forbbiden_area2.intersects(traj_shape):
-            return 1
-        return 0
+
 
 if __name__ == "__main__":
     # 환경 테스트
