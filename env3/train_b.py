@@ -68,7 +68,7 @@ def main():
     comment = "b"
     explanation = "simplify reward"
 
-    num_proc = 2
+    num_proc = 1
     naming = f"env{env_num}_{comment}"
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')
