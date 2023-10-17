@@ -51,8 +51,7 @@ class Data:
         self.alHori, self.roll = arr[11:13]
 
     def make_traj_point(self, action):
-        theta = action * 0.01 + self.caryaw
-        theta = 0
+        theta = action * 0.05
         new_traj_point = np.array([self.carx + 8 * np.cos(theta),
                                    self.cary + 8 * np.sin(theta)])
         return new_traj_point
@@ -62,6 +61,7 @@ class Data:
 
         new_traj_point = self.make_traj_point(action)
         arr = np.vstack((arr, new_traj_point))
+        arr = arr[arr[:, 0].argsort()]
 
         if abs(arr[-2][0] - arr[-1][0]) > 0.01:
             f = interp1d(arr[-2:, 0], arr[-2:, 1])
@@ -75,25 +75,20 @@ class Data:
 
     def find_traj_points(self):
         distances = np.array([self.point_interval * i for i in range(self.point_num - 1)])
-        result_points = []
 
-        min_idx = np.argmin(np.sum((self.traj_data - np.array([self.carx, self.cary])) ** 2, axis=1))
+        forward_points = self.traj_data[self.traj_data[:, 0] > self.carx]  # assuming forward means a larger 'x' value
 
+        data_dist = np.sqrt(np.sum((forward_points - [self.carx, self.cary]) ** 2, axis=1))
+
+        nearest_points = []
         for dist in distances:
-            lookahead_idx = min_idx
-            total_distance = 0.0
-            while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
-                total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
-                lookahead_idx += 1
+            abs_diff = np.abs(data_dist - dist)
+            idx = np.argmin(abs_diff)
+            nearest_points.append(forward_points[idx])
 
-            if lookahead_idx < len(self.traj_data):
-                result_points.append(self.traj_data[lookahead_idx])
-            else:
-                result_points.append(self.traj_data[-1])
+        nearest_points.append(self.traj_point)
 
-        result_points.append(self.traj_point)
-
-        return result_points
+        return np.array(nearest_points)
 
     def calculate_dev(self):
         arr = np.array(self.traj_data)
@@ -126,6 +121,16 @@ class Data:
 
         return np.array(relative_coords)
 
+    def print_arr(self, arr, traj_new):
+        print("--"*50)
+        print(f"(x: {round(self.carx, 2)}, y: {round(self.cary, 2)})")
+        print(f"(new traj x: {round(traj_new[0], 2)}, new traj y: {round(traj_new[1], 2)})")
+        for idx, (i, j) in enumerate(arr):
+            if idx % 5 == 0:
+                print(f"({round(i, 2)}, {round(j, 2)})", end=" ")
+            if idx % 80 == 0:
+                print("/")
+
     def manage_state(self, arr, action):
         blevel_action = action[0]
         self.put_simul_data(arr)
@@ -137,6 +142,7 @@ class Data:
 
         #새로생긴 point가 데이터 중간에 생성되었을수도 있으므로. 뺑뺑돌면 가능은 하겠다.
         self.traj_points = self.find_traj_points()
+        lengths = [round(np.sqrt((i-self.carx) ** 2 + (j - self.cary) ** 2), 3) for i, j in self.traj_points]
         traj_rel = self.to_relative_coordinates(self.traj_points).flatten()
 
         cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
