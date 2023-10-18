@@ -17,7 +17,6 @@ def plot(road, cone, car):
 
     plt.plot(*road.forbbiden_area1.exterior.xy)
     plt.plot(*road.forbbiden_area2.exterior.xy)
-    print(cone.cones_forbidden_shape)
     # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
@@ -98,8 +97,10 @@ class Road:
         self.car = Car()
         self._forbidden_area()
     def _forbidden_area(self):
-        vertices1 = [(0, 15), (500, 15), (500, -7), (0, -7), (0, 15)]
-        vertices2 = [(0, -13), (500, -13), (500, -35), (0, -35), (0, -13)]
+        vertices1 = [[100 + 30 * i, -10 * (i % 2)] for i in range(10)]
+        vertices1 = np.array(vertices1 + [[385, -7], [510, -7], [510, 15], [0, 15], [0, -7], [85, -7], [100, 0]])
+        vertices2 = [[100 + 30 * i, -10 * (i % 2 + 1)] for i in range(10)]
+        vertices2 = np.array(vertices2 + [[385, -13], [510, -13], [510, -35], [0, -35], [0, -13], [85, -13], [100, -10]])
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
         self.road_boundary = Polygon(
