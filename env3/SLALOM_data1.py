@@ -1,5 +1,5 @@
 import numpy as np
-from SLALOM_cone3 import Road, Car, Cone
+from SLALOM_cone1 import Road, Car, Cone
 import pygame
 from scipy.interpolate import interp1d
 
@@ -148,7 +148,7 @@ class Data:
         cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
         cones_rel = self.to_relative_coordinates(cones_abs).flatten()
 
-        state = np.concatenate((steering_changes, np.array([self.steerAng, self.steerVel, self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
+        state = np.concatenate((steering_changes, np.array([self.steerAng, self.steerVel, self.caryaw, self.cary + 10]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
 
         reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw, "carx": self.carx}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])

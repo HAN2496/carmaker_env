@@ -15,9 +15,9 @@ from SLALOM_env_low import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
-from SLALOM_cone3 import Road, Car, Cone
+from SLALOM_cone2 import Road, Car, Cone
 import pygame
-from SLALOM_data3 import Data
+from SLALOM_data2 import Data
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -77,7 +77,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.start()
 
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
-        self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model_compatible.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"best_model/SLALOM_env1_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
@@ -116,8 +116,8 @@ class CarMakerEnvB(gym.Env):
         traj_lowlevel_abs = self.data.find_traj_points()
         traj_lowlevel_rel = self.data.to_relative_coordinates(traj_lowlevel_abs).flatten()
         self.low_level_obs = np.concatenate((np.array([self.data.carv, self.data.steerAng]), traj_lowlevel_rel))
-        steering_changes = self.low_level_model.predict(self.low_level_obs)[0]
-        action_to_sim = np.append(steering_changes, self.test_num)
+        steering_changes = self.low_level_model.predict(self.low_level_obs)
+        action_to_sim = np.append(steering_changes[0], self.test_num)
 
         # 최초 실행시
         if self.sim_initiated == False:
@@ -141,7 +141,7 @@ class CarMakerEnvB(gym.Env):
 
         else:
             state = np.array(state) #어레이 변환
-            state, reward_argument, info = self.data.manage_state(steering_changes, state, action)
+            state, reward_argument, info = self.data.manage_state(state, action)
 
         # 리워드 계산
         reward = self.getReward(reward_argument, time)
@@ -157,19 +157,17 @@ class CarMakerEnvB(gym.Env):
         caryaw = reward_argument['caryaw']
         carx = reward_argument['carx']
         traj_shape = Point(traj[0], traj[1])
-        collision_reward = 0
 
-        collision_reward -= self.is_traj_in_cone(traj_shape) * 200
+        cone_reward = - self.is_traj_in_cone(traj_shape) * 200
 
-        collision_reward -= self.is_traj_in_forbidden(traj_shape) * 500
+        forbidden_reward = - self.is_traj_in_forbidden(traj_shape) * 500
 
         x_reward = - abs(traj[0] - carx - 8) * 500
-        y_reward = - abs(traj[1] + 10) * 300
-        x_reward= 0
-        e = collision_reward + x_reward + y_reward
+        y_reward = - abs(traj[1] + 10) * 3000
+        e = cone_reward + x_reward + y_reward + forbidden_reward
 
         if self.test_num % 100 == 0:
-            print(f"[traj: {traj}] [forbidden: {collision_reward}] [y r: {y_reward}]")
+            print(f"[traj: {traj}] [forbidden: {forbidden_reward}] [cone: {cone_reward}] [x r: {x_reward}] [y r: {y_reward}]")
         return e
 
     def is_traj_in_cone(self, traj_shape):
@@ -200,29 +198,25 @@ if __name__ == "__main__":
 
         # 에피소드 실행
         done = False
-        try:
-            while not done:
-                action = env.action_space.sample()  # 랜덤 액션 선택
-                if i==0:
-                    act_lst.append(action)
-                    df = pd.DataFrame(data=act_lst)
-                next_state, reward, done, info = env.step(action)
+        while not done:
+            action = env.action_space.sample()  # 랜덤 액션 선택
+            if i==0:
+                act_lst.append(action)
+                df = pd.DataFrame(data=act_lst)
+            next_state, reward, done, info = env.step(action)
 
-                if i==0:
-                    next_state_lst.append(next_state)
-                    info_lst.append(info)
+            if i==0:
+                next_state_lst.append(next_state)
+                info_lst.append(info)
 
-                if done == True:
-                    print("Episode Finished.")
-                    df.to_csv('env_action_check.csv')
+            if done == True:
+                print("Episode Finished.")
+                df.to_csv('env_action_check.csv')
 
-                    df2 = pd.DataFrame(data=next_state_lst)
-                    df2.to_csv('env_state_check.csv', index=False)
+                df2 = pd.DataFrame(data=next_state_lst)
+                df2.to_csv('env_state_check.csv', index=False)
 
-                    df3 = pd.DataFrame(data=info_lst)
-                    df3.to_csv('env_info_check.csv', index=False)
+                df3 = pd.DataFrame(data=info_lst)
+                df3.to_csv('env_info_check.csv', index=False)
 
-                    break
-
-        except KeyboardInterrupt:
-                print('Exit by Keyboard Interrupt')
+                break

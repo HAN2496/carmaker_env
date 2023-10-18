@@ -12,12 +12,10 @@ dist_from_axis = (car_width + 1) / 2 + cone_r
 def plot(road, cone, car):
     #plt.figure(figsize=(10, 5))
 
-    for cone in cone.cones_arr:
-        plt.scatter(cone[0], cone[1], color='green')
+    # Plot forbidden areas
+    for cone in cone.cones_shape:
+        plt.plot(*cone.exterior.xy, color='red')
 
-    plt.plot(*road.forbbiden_area1.exterior.xy)
-    plt.plot(*road.forbbiden_area2.exterior.xy)
-    print(cone.cones_forbidden_shape)
     # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
@@ -55,25 +53,30 @@ class Cone:
         self.cones_arr = self.create_cone_arr()
         self.cones_shape = self.create_cone_shape()
         self.cones_forbidden_shape = self.create_cone_forbidden_shape()
-    def create_cone_arr(self):
-        cones = []
-        #좌측이 -1, 우측이 +1 (yaw가 +일때 시계방향으로 회전함)
-        for i in range(10):
-            sign = (i % 2) * 2
-            cone1 = np.array([100 + 30 * i, - 10, (i % 2) * 2 - 1])
-            cones.append(cone1)
-        further_cones = np.array([[800 + 30 * int(i / 2), -10 + ((i % 2) - 0.5) * 2 * 3, (i % 2) * 2 - 1] for i in range(10)])
-        cones = np.concatenate((cones, further_cones), axis=0)
-        return cones
 
     def create_cone_shape(self):
         cones = []
         dist_from_axis = (car_width + 1) / 2 + cone_r + 1
-        for i, j, k in self.cones_arr:
+        for i, j in self.cones_arr:
             cone = Point(i, j).buffer(dist_from_axis)
             cones.append(cone)
 
         return np.array(cones)
+    def create_cone_forbidden_shape(self):
+        cones = []
+        for idx, (i, j) in enumerate(self.cones_arr):
+            sign = ((idx-1) % 2) * 2
+            vertices = [(i - 10, -10), (i + 10, -10), (i + 10, - sign * 10), (i - 10, - sign * 10), (i - 10, -10)]
+            cone_area = Polygon(vertices)
+            cones.append(cone_area)
+
+        return np.array(cones)
+
+    def create_cone_arr(self):
+        road_cones = np.array([[100 + 30 * i, -10] for i in range(10)])
+        further_cones = np.array([[800 + 30 * i, -10] for i in range(5)])
+        cones = np.concatenate((road_cones, further_cones), axis=0)
+        return cones
 
 class Road:
     def __init__(self):
@@ -83,8 +86,8 @@ class Road:
         self.car = Car()
         self._forbidden_area()
     def _forbidden_area(self):
-        vertices1 = [(0, 15), (500, 15), (500, -7), (0, -7), (0, 15)]
-        vertices2 = [(0, -13), (500, -13), (500, -35), (0, -35), (0, -13)]
+        vertices1 = [(0, 0), (500, 0), (500, -5), (0, -5), (0, 0)]
+        vertices2 = [(0, -15), (500, -15), (500, -20), (0, -20), (0, -15)]
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
         self.road_boundary = Polygon(
