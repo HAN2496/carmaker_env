@@ -15,9 +15,9 @@ from SLALOM_env_low import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
 from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
-from SLALOM_cone3 import Road, Car, Cone
+from SLALOM_cone2 import Road, Car, Cone
 import pygame
-from SLALOM_data3 import Data
+from SLALOM_data2 import Data
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -98,7 +98,6 @@ class CarMakerEnvB(gym.Env):
         self.sim_started = False
 
         return self._initial_state()
-
 
     def step(self, action):
         """
@@ -181,9 +180,6 @@ class CarMakerEnvB(gym.Env):
     def is_traj_in_forbidden(self, traj_shape):
         if self.road.forbbiden_area1.intersects(traj_shape) or self.road.forbbiden_area2.intersects(traj_shape):
             return 1
-        for cone in self.cone.cones_forbidden_shape:
-            if traj_shape.intersects(cone):
-                return 1
         return 0
 
 if __name__ == "__main__":

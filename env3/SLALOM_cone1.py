@@ -53,27 +53,6 @@ class Cone:
         self.cone_r = 0.2
         self.cones_arr = self.create_cone_arr()
         self.cones_shape = self.create_cone_shape()
-        self.cones_forbidden_shape = self.create_cone_forbidden_shape()
-
-    def create_cone_shape(self):
-        cones = []
-        dist_from_axis = (car_width + 1) / 2 + cone_r + 1
-        for i, j in self.cones_arr:
-            cone = Point(i, j).buffer(dist_from_axis)
-            cones.append(cone)
-
-        return np.array(cones)
-    def create_cone_forbidden_shape(self):
-        cones = []
-        for i in range(10):
-            sign = ((i-1) % 2) * 2
-            dist = 10
-            x0, x1 = 30 * i - dist + 100, 30 * i + dist + 100
-            vertices = [(x0, -10), (x1, -10), (x1, - sign * 10), (x0, - sign * 10), (x0, -10)]
-            cone_area = Polygon(vertices)
-            cones.append(cone_area)
-
-        return np.array(cones)
 
     def create_cone_arr(self):
         cones = []
@@ -88,6 +67,14 @@ class Cone:
         cones = np.concatenate((before_cones, cones, further_cones), axis=0)
         return cones
 
+    def create_cone_shape(self):
+        cones = []
+        dist_from_axis = (car_width + 1) / 2 + cone_r + 1
+        for i, j in self.cones_arr:
+            cone = Point(i, j).buffer(dist_from_axis)
+            cones.append(cone)
+
+        return np.array(cones)
 
 class Road:
     def __init__(self):
