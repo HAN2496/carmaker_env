@@ -51,6 +51,7 @@ def is_car_in_road(self, car_shape):
 class Cone:
     def __init__(self):
         self.cone_r = 0.2
+        self.cone_dist = (car_width + 1) / 2 + cone_r
         self.cones_arr = self.create_cone_arr()
         self.cones_shape = self.create_cone_shape()
 
@@ -59,9 +60,9 @@ class Cone:
         more_before_cone = np.array([[-20, -7], [-20, -13]])
         before_cones = np.array([[30 * int(i / 2) + 10, -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(6)])
         for i in range(10):
-            sign = (i % 2) * 2
+            sign = (i % 2) * 2 - 1 # [-1 1]
             cone1 = np.array([100 + 30 * i, - 10])
-            cone2 = np.array([100 + 30 * i, -sign * 10])
+            cone2 = np.array([100 + 30 * i, -10 - sign * 5])
             cones.append(cone1)
             cones.append(cone2)
         further_cones = np.array([[30 * int(i / 2) + 400, -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(20)])
@@ -85,9 +86,9 @@ class Road:
         self.car = Car()
         self._forbidden_area()
     def _forbidden_area(self):
-        vertices1 = [[100 + 30 * i, -10 * (i % 2)] for i in range(10)]
-        vertices1 = np.array(vertices1 + [[385, -7], [510, -7], [510, 15], [0, 15], [0, -7], [85, -7], [100, 0]])
-        vertices2 = [[100 + 30 * i, -10 * (i % 2 + 1)] for i in range(10)]
+        vertices1 = [[100 + 30 * i, - 5 - 5 * (i % 2)] for i in range(10)]
+        vertices1 = np.array(vertices1 + [[385, -7], [510, -7], [510, 15], [0, 15], [0, -7], [85, -7], [100, -5]])
+        vertices2 = [[100 + 30 * i, - 10 - 5 * (i % 2)] for i in range(10)]
         vertices2 = np.array(vertices2 + [[385, -13], [510, -13], [510, -35], [0, -35], [0, -13], [85, -13], [100, -10]])
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
