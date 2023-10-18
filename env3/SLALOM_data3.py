@@ -51,11 +51,7 @@ class Data:
         self.alHori, self.roll = arr[11:13]
 
     def make_traj_point(self, action):
-<<<<<<< Updated upstream
-        theta = action * 0.05
-=======
         theta = action * 0.05 + self.caryaw
->>>>>>> Stashed changes
         new_traj_point = np.array([self.carx + 8 * np.cos(theta),
                                    self.cary + 8 * np.sin(theta)])
         return new_traj_point
