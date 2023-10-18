@@ -18,6 +18,7 @@ from shapely.geometry import Polygon, Point, LineString
 from DLC_cone import Road, Car
 import pygame
 from DLC_data2 import Data
+from common_functions import *
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
