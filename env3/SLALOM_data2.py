@@ -4,7 +4,7 @@ import pygame
 from scipy.interpolate import interp1d
 
 XSIZE, YSIZE = 2, 5
-
+BLACK, GRAY, ORANGE, GREEN = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0)
 class Data:
     def __init__(self, point_interval=2, point_num=5, check=1, show=True):
         self.point_interval = point_interval
@@ -226,7 +226,20 @@ class Data:
         # 렌더링된 이미지를 화면에 그리기
         self.screen.blit(text_surface, (text_x, text_y))
 
+        if self.check_collision() !=0:
+            txt = f"Trajectory Collision"
+            txt_surface = font.render(txt, True, (255, 255, 255))
+            self.screen.blit(txt_surface, (text_x, text_y - YSIZE))
+
         pygame.display.flip()
+
+    def check_collision(self):
+        shape_car = self.car.shape_car(slelf.carx, self.cary, self.caryaw)
+        car = self.shape_car(carx, cary, caryaw)
+        for cone in self.cone.cones_shape:
+            if shape_car.intersects(cone):
+                return 1
+        return 0
 
 class Test:
     def __init__(self):

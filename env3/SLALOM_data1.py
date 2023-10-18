@@ -4,6 +4,7 @@ import pygame
 from scipy.interpolate import interp1d
 
 XSIZE, YSIZE = 2, 5
+BLACK, GRAY, ORANGE, GREEN = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0)
 
 class Data:
     def __init__(self, point_interval=2, point_num=5, check=1, show=True):
@@ -51,7 +52,7 @@ class Data:
         self.alHori, self.roll = arr[11:13]
 
     def make_traj_point(self, action):
-        theta = action * 0.1 + self.caryaw
+        theta = action * 0.15 + self.caryaw
         new_traj_point = np.array([self.carx + 8 * np.cos(theta),
                                    self.cary + 8 * np.sin(theta)])
         return new_traj_point
@@ -174,21 +175,17 @@ class Data:
             if event.type == pygame.QUIT:
                 pygame.quit()
 
-        self.screen.fill((128, 128, 128))
+        self.screen.fill(GRAY)
 
+        pygame.draw.polygon(self.screen, BLACK, self.road.forbidden_line1, 0)
+        pygame.draw.polygon(self.screen, BLACK, self.road.forbidden_line2, 0)
 
-        before_cone = (0, 0)
         for idx, cone in enumerate(self.cone.cones_shape):
             x, y = cone.centroid.coords[0]
-            pygame.draw.circle(self.screen, (255, 140, 0), (int(x * XSIZE), int(-y * YSIZE)), 5)
-            if idx % 2 == 1:
-                recent_cone = (x * XSIZE, -y * YSIZE)
-                pygame.draw.line(self.screen, (255, 255, 255), before_cone, recent_cone, 3)
-            else:
-                before_cone = (x * XSIZE, -y * YSIZE)
+            pygame.draw.circle(self.screen, ORANGE, (int(x * XSIZE), int(-y * YSIZE)), 5)
 
         for trajx, trajy in self.traj_points:
-            pygame.draw.circle(self.screen, (0, 128, 0), (trajx * XSIZE, - trajy * YSIZE), 5)
+            pygame.draw.circle(self.screen, GREEN, (trajx * XSIZE, - trajy * YSIZE), 5)
 
         car_color = (255, 0, 0)
 

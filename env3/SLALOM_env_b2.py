@@ -158,9 +158,9 @@ class CarMakerEnvB(gym.Env):
         traj_shape = Point(traj[0], traj[1])
         collision_reward = 0
 
-        collision_reward -= self.is_traj_in_cone(traj_shape) * 500
+        collision_reward -= self.is_traj_in_cone(traj_shape) * 1500
 
-        collision_reward -= self.is_traj_in_forbidden(traj_shape) * 500
+        collision_reward -= self.is_traj_in_forbidden(traj_shape) * 1500
 
         y_reward = - abs(traj[1] + 10) * 300
         e = collision_reward + y_reward
