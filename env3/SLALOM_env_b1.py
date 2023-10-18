@@ -170,6 +170,7 @@ class CarMakerEnvB(gym.Env):
             cone_depth = abs(traj[1] - self.is_collding_with_cone(traj_shape) - self.cone.cone_dist + 5)
         else:
             cone_depth = 0
+        print(f"Depth: {round(cone_depth, 2)}")
         traj_collision_reward -= cone_depth * 2500
 
         traj_collision_reward -= self.is_collding_with_forbidden(traj_shape) * 1500 * forbidden_depth
