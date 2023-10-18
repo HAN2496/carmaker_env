@@ -116,8 +116,8 @@ class CarMakerEnvB(gym.Env):
         traj_lowlevel_abs = self.data.find_traj_points()
         traj_lowlevel_rel = self.data.to_relative_coordinates(traj_lowlevel_abs).flatten()
         self.low_level_obs = np.concatenate((np.array([self.data.carv, self.data.steerAng]), traj_lowlevel_rel))
-        steering_changes = self.low_level_model.predict(self.low_level_obs)
-        action_to_sim = np.append(steering_changes[0], self.test_num)
+        steering_changes = self.low_level_model.predict(self.low_level_obs)[0]
+        action_to_sim = np.append(steering_changes, self.test_num)
 
         # 최초 실행시
         if self.sim_initiated == False:
@@ -141,7 +141,7 @@ class CarMakerEnvB(gym.Env):
 
         else:
             state = np.array(state) #어레이 변환
-            state, reward_argument, info = self.data.manage_state(state, action)
+            state, reward_argument, info = self.data.manage_state(steering_changes, state, action)
 
         # 리워드 계산
         reward = self.getReward(reward_argument, time)

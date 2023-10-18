@@ -131,7 +131,7 @@ class Data:
             if idx % 80 == 0:
                 print("/")
 
-    def manage_state(self, arr, action):
+    def manage_state(self, steering_changes, arr, action):
         blevel_action = action[0]
         self.put_simul_data(arr)
 
@@ -147,12 +147,8 @@ class Data:
 
         cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
         cones_rel = self.to_relative_coordinates(cones_abs).flatten()
-        """
-        print(f"[{self.carx, self.cary}] [Yaw: {round(self.caryaw, 2)}]"
-              f"[Traj: {np.round(traj_point_new, 2)}] [Cone: {np.round(cones_abs, 2)}]")
-        """
 
-        state = np.concatenate((np.array([self.caryaw]), traj_rel, cones_rel)) # <- Policy B의 state
+        state = np.concatenate((np.array([steering_changes, self.steerAng, self.steerVel, self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
 
         reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw, "carx": self.carx}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
