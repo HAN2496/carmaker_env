@@ -148,7 +148,7 @@ class Data:
         cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
         cones_rel = self.to_relative_coordinates(cones_abs).flatten()
 
-        state = np.concatenate((np.array([steering_changes, self.steerAng, self.steerVel, self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
+        state = np.concatenate((steering_changes, np.array([self.steerAng, self.steerVel, self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
 
         reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw, "carx": self.carx}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
@@ -159,7 +159,7 @@ class Data:
 
     def state_size(self):
         arr = np.zeros((13))
-        array, _, _ = self.manage_state(0, arr, np.array([0]))
+        array, _, _ = self.manage_state(np.array([0]), arr, np.array([0]))
         return array.size
 
     def _init_reward_argument(self):
