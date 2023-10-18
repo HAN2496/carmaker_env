@@ -199,25 +199,29 @@ if __name__ == "__main__":
 
         # 에피소드 실행
         done = False
-        while not done:
-            action = env.action_space.sample()  # 랜덤 액션 선택
-            if i==0:
-                act_lst.append(action)
-                df = pd.DataFrame(data=act_lst)
-            next_state, reward, done, info = env.step(action)
+        try:
+            while not done:
+                action = env.action_space.sample()  # 랜덤 액션 선택
+                if i==0:
+                    act_lst.append(action)
+                    df = pd.DataFrame(data=act_lst)
+                next_state, reward, done, info = env.step(action)
 
-            if i==0:
-                next_state_lst.append(next_state)
-                info_lst.append(info)
+                if i==0:
+                    next_state_lst.append(next_state)
+                    info_lst.append(info)
 
-            if done == True:
-                print("Episode Finished.")
-                df.to_csv('env_action_check.csv')
+                if done == True:
+                    print("Episode Finished.")
+                    df.to_csv('env_action_check.csv')
 
-                df2 = pd.DataFrame(data=next_state_lst)
-                df2.to_csv('env_state_check.csv', index=False)
+                    df2 = pd.DataFrame(data=next_state_lst)
+                    df2.to_csv('env_state_check.csv', index=False)
 
-                df3 = pd.DataFrame(data=info_lst)
-                df3.to_csv('env_info_check.csv', index=False)
+                    df3 = pd.DataFrame(data=info_lst)
+                    df3.to_csv('env_info_check.csv', index=False)
 
-                break
+                    break
+
+        except KeyboardInterrupt:
+                print('Exit by Keyboard Interrupt')
