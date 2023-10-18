@@ -157,18 +157,19 @@ class CarMakerEnvB(gym.Env):
         caryaw = reward_argument['caryaw']
         carx = reward_argument['carx']
         traj_shape = Point(traj[0], traj[1])
+        collision_reward = 0
 
-        cone_reward = - self.is_traj_in_cone(traj_shape) * 200
+        collision_reward -= self.is_traj_in_cone(traj_shape) * 200
 
-        forbidden_reward = - self.is_traj_in_forbidden(traj_shape) * 500
+        collision_reward -= self.is_traj_in_forbidden(traj_shape) * 500
 
         x_reward = - abs(traj[0] - carx - 8) * 500
         y_reward = - abs(traj[1] + 10) * 300
         x_reward= 0
-        e = cone_reward + x_reward + y_reward + forbidden_reward
+        e = collision_reward + x_reward + y_reward
 
         if self.test_num % 100 == 0:
-            print(f"[traj: {traj}] [forbidden: {forbidden_reward}] [cone: {cone_reward}] [x r: {x_reward}] [y r: {y_reward}]")
+            print(f"[traj: {traj}] [forbidden: {collision_reward}] [y r: {y_reward}]")
         return e
 
     def is_traj_in_cone(self, traj_shape):

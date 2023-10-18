@@ -15,6 +15,9 @@ def plot(road, cone, car):
     for cone in cone.cones_arr:
         plt.scatter(cone[0], cone[1], color='green')
 
+    plt.plot(*road.forbbiden_area1.exterior.xy)
+    plt.plot(*road.forbbiden_area2.exterior.xy)
+    print(cone.cones_forbidden_shape)
     # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
