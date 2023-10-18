@@ -3,6 +3,7 @@ from SLALOM_cone1 import Road, Car, Cone
 import pygame
 from scipy.interpolate import interp1d
 import time
+from shapely.geometry import Polygon, Point, LineString
 
 XSIZE, YSIZE = 2, 5
 BLACK, GRAY, ORANGE, GREEN, WHITE = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0), (255, 255, 255)
@@ -226,8 +227,19 @@ class Data:
         # 렌더링된 이미지를 화면에 그리기
         self.screen.blit(text_surface, (text_x, text_y))
 
+        if self.check_collision() != 0:
+            txt = f"Traj Colliding"
+            txt_surface = font.render(txt, True, (255, 255, 255))
+            text_x = self.road.road_length * XSIZE - txt_surface.get_width() - XSIZE
+            self.screen.blit(txt_surface, (text_x, text_y - 5 * YSIZE))
+
         pygame.display.flip()
 
+    def check_collision(self):
+        point = Point(self.traj_point[0], self.traj_point[1])
+        if self.road.forbbiden_area1.intersects(point) or self.road.forbbiden_area2.intersects(point):
+            return 1
+        return 0
 
 class Test:
     def __init__(self):
