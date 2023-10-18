@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 cone_r = 0.2
 car_width, car_length = 1.568, 4.3
 dist_from_axis = (car_width + 1) / 2 + cone_r
-
+XSIZE, YSIZE = 2, 5
 
 
 def plot(road, cone, car):
@@ -56,15 +56,16 @@ class Cone:
 
     def create_cone_arr(self):
         cones = []
-        before_cones = np.array([[30 * int(i / 2) + 10, -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(6)])
+        more_before_cone = np.array([[-20, -7], [-20, -13]])
+        before_cones = np.array([[30 * int(i / 2) + 25, -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(6)])
         for i in range(10):
             sign = (i % 2) * 2
             cone1 = np.array([100 + 30 * i, - 10])
             cone2 = np.array([100 + 30 * i, -sign * 10])
             cones.append(cone1)
             cones.append(cone2)
-        further_cones = np.array([[800 + 30 * int(i / 2), -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(10)])
-        cones = np.concatenate((before_cones, cones, further_cones), axis=0)
+        further_cones = np.array([[30 * int(i / 2) + 385, -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(20)])
+        cones = np.concatenate((more_before_cone, before_cones, cones, further_cones), axis=0)
         return cones
 
     def create_cone_shape(self):

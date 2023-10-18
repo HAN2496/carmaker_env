@@ -2,9 +2,10 @@ import numpy as np
 from SLALOM_cone1 import Road, Car, Cone
 import pygame
 from scipy.interpolate import interp1d
+import time
 
 XSIZE, YSIZE = 2, 5
-BLACK, GRAY, ORANGE, GREEN = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0)
+BLACK, GRAY, ORANGE, GREEN, WHITE = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0), (255, 255, 255)
 
 class Data:
     def __init__(self, point_interval=2, point_num=5, check=1, show=True):
@@ -50,9 +51,10 @@ class Data:
         self.steerAng, self.steerVel, self.steerAcc = arr[6:9]
         self.devDist, self.devAng = arr[9:11]
         self.alHori, self.roll = arr[11:13]
+        self.yaw_before = 0
 
     def make_traj_point(self, action):
-        theta = action * 0.15 + self.caryaw
+        theta = action * 0.1 + self.caryaw
         new_traj_point = np.array([self.carx + 8 * np.cos(theta),
                                    self.cary + 8 * np.sin(theta)])
         return new_traj_point
@@ -146,15 +148,20 @@ class Data:
         lengths = [round(np.sqrt((i-self.carx) ** 2 + (j - self.cary) ** 2), 3) for i, j in self.traj_points]
         traj_rel = self.to_relative_coordinates(self.traj_points).flatten()
 
-        cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
+        cones_abs_front = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
+        cones_abs_behind = self.cone.cones_arr[self.cone.cones_arr[:, 0] < self.carx][-2:]
+        cones_abs = np.vstack((cones_abs_behind, cones_abs_front))
         cones_rel = self.to_relative_coordinates(cones_abs).flatten()
 
-        state = np.concatenate((steering_changes, np.array([self.steerAng, self.steerVel, self.caryaw, self.cary + 10]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
+        yawrate = (self.caryaw - self.yaw_before) / 0.01
 
-        reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw, "carx": self.carx}
+        state = np.concatenate((steering_changes, np.array([self.steerAng, self.steerVel, self.caryaw, yawrate, self.cary + 10]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
+
+        reward_argument = {"traj": traj_point_new, "carx": self.carx, "cary": self.cary, "caryaw": self.caryaw}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, arr[1:])}
 
+        self.yaw_before = self.caryaw
 
         return state, reward_argument, info
 
@@ -164,13 +171,13 @@ class Data:
         return array.size
 
     def _init_reward_argument(self):
-        return {"traj": self.traj_point, "caryaw": 0, "carx": self.carx}
+        return {"traj": self.traj_point, "carx": self.carx, "cary": self.cary, "caryaw": self.caryaw}
 
     def _init_info(self):
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         return {key: value for key, value in zip(info_key, np.zeros(14))}
 
-    def render(self, mode='human'):
+    def render(self, mode='human', check=False):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -210,7 +217,7 @@ class Data:
         #차량 위치 렌더링
         font = pygame.font.SysFont("arial", 15, True, True)
         text_str = f"Traj : ({round(self.traj_point[0], 1)}, {round(self.traj_point[1], 1)})"
-        text_surface = font.render(text_str, True, (255, 255, 255))
+        text_surface = font.render(text_str, True, WHITE)
 
         # 텍스트 이미지의 위치 계산 (우측 하단)
         text_x = self.road.road_length * XSIZE - text_surface.get_width() - XSIZE
@@ -221,9 +228,11 @@ class Data:
 
         pygame.display.flip()
 
+
 class Test:
     def __init__(self):
-        self.data = Data()
+        self.data = Data(check=0)
+        self.data._init()
 
 if __name__ == "__main__":
     data = Data()
@@ -231,5 +240,6 @@ if __name__ == "__main__":
     data.put_simul_data(arr)
     test = Test()
     test.data.state_size()
+    test.data.render()
 
 

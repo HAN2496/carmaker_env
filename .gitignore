@@ -1,4 +1,5 @@
 models/
+tensorboard/
 __pycache__/
 .idea/
 train.py
