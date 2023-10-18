@@ -95,8 +95,8 @@ class Road:
         self.car = Car()
         self._forbidden_area()
     def _forbidden_area(self):
-        vertices1 = [(0, 0), (500, 0), (500, -7), (0, -7), (0, 0)]
-        vertices2 = [(0, -13), (500, -13), (500, -20), (0, -20), (0, -13)]
+        vertices1 = [(0, 15), (500, 15), (500, -7), (0, -7), (0, 15)]
+        vertices2 = [(0, -13), (500, -13), (500, -35), (0, -35), (0, -13)]
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
         self.road_boundary = Polygon(
