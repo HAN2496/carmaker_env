@@ -7,7 +7,7 @@ cone_r = 0.2
 car_width, car_length = 1.568, 4.3
 dist_from_axis = (car_width + 1) / 2 + cone_r
 
-
+XSIZE, YSIZE = 2, 5
 
 def plot(road, cone, car):
     #plt.figure(figsize=(10, 5))
@@ -17,7 +17,7 @@ def plot(road, cone, car):
 
     plt.plot(*road.forbbiden_area1.exterior.xy)
     plt.plot(*road.forbbiden_area2.exterior.xy)
-    print(cone.cones_forbidden_shape)
+
     # Plot the car
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
@@ -53,15 +53,15 @@ class Cone:
     def __init__(self):
         self.cone_r = 0.2
         self.cones_arr = self.create_cone_arr()
+        a = self.cones_arr[self.cones_arr[:, 0] > 30][:2]
         self.cones_shape = self.create_cone_shape()
-        self.cones_forbidden_shape = self.create_cone_forbidden_shape()
     def create_cone_arr(self):
         cones = []
         #좌측이 -1, 우측이 +1 (yaw가 +일때 시계방향으로 회전함)
         for i in range(10):
             sign = (i % 2) * 2
-            cone1 = np.array([100 + 30 * i, - 10, (i % 2) * 2 - 1])
-            cones.append(cone1)
+            cone = np.array([100 + 30 * i, - 10, (i % 2) * 2 - 1])
+            cones.append(cone)
         further_cones = np.array([[800 + 30 * int(i / 2), -10 + ((i % 2) - 0.5) * 2 * 3, (i % 2) * 2 - 1] for i in range(10)])
         cones = np.concatenate((cones, further_cones), axis=0)
         return cones
@@ -83,10 +83,19 @@ class Road:
         self.car = Car()
         self._forbidden_area()
     def _forbidden_area(self):
-        vertices1 = [(0, 15), (500, 15), (500, -7), (0, -7), (0, 15)]
-        vertices2 = [(0, -13), (500, -13), (500, -35), (0, -35), (0, -13)]
+        vertices1 = [[100 + 30 * i, -10 * (i % 2)] for i in range(10)]
+        vertices1 = np.array(vertices1 + [[385, -7], [510, -7], [510, 15], [0, 15], [0, -7], [85, -7], [100, 0]])
+        vertices2 = [[100 + 30 * i, -10 * (i % 2 + 1)] for i in range(10)]
+        vertices2 = np.array(vertices2 + [[385, -13], [510, -13], [510, -35], [0, -35], [0, -13], [85, -13], [100, -10]])
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
+        self.forbidden_line1 = vertices1
+        self.forbidden_line2 = vertices2
+        self.forbidden_line1[:, 0] *= XSIZE
+        self.forbidden_line1[:, 1] *= -YSIZE
+        self.forbidden_line2[:, 0] *= XSIZE
+        self.forbidden_line2[:, 1] *= -YSIZE
+
         self.road_boundary = Polygon(
             [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
         ])
