@@ -156,7 +156,7 @@ class Data:
         yawrate = (self.caryaw - self.yaw_before) / 0.01
 
         state = np.concatenate((steering_changes, np.array([self.steerAng, self.steerVel, self.caryaw, yawrate, self.cary + 10]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
-        reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw, "carx": self.carx}
+        reward_argument = {"traj": traj_point_new, "carx": self.carx, "cary": self.cary, "caryaw": self.caryaw}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, arr[1:])}
 
@@ -170,7 +170,7 @@ class Data:
         return array.size
 
     def _init_reward_argument(self):
-        return {"traj": self.traj_point, "caryaw": 0, "carx": self.carx}
+        return {"traj": self.traj_point, "carx": self.carx, "cary": self.cary, "caryaw": self.caryaw}
 
     def _init_info(self):
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
