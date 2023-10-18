@@ -159,7 +159,7 @@ class Data:
 
     def state_size(self):
         arr = np.zeros((13))
-        array, _, _ = self.manage_state(arr, np.array([0]))
+        array, _, _ = self.manage_state(0, arr, np.array([0]))
         return array.size
 
     def _init_reward_argument(self):
