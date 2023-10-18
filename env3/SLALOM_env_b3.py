@@ -193,7 +193,7 @@ if __name__ == "__main__":
     info_lst = []
 
 
-    for i in range(1):
+    for i in range(3):
         # 환경 초기화
         state = env.reset()
 

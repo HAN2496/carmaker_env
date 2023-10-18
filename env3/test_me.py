@@ -1,7 +1,5 @@
-from stable_baselines3 import SAC
-import pickle
+import numpy as np
+from common_functions import *
 
-# 모델 불러오기
-a = 10
-
-print(a%7)
+a = np.array([1, 2])
+check_car_pos(a)
