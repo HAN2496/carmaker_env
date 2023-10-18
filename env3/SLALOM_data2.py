@@ -5,7 +5,7 @@ from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
 
 XSIZE, YSIZE = 2, 5
-BLACK, GRAY, ORANGE, GREEN = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0)
+BLACK, GRAY, ORANGE, GREEN, WHITE = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0), (255, 255, 255)
 class Data:
     def __init__(self, point_interval=2, point_num=5, check=1, show=True):
         self.point_interval = point_interval

@@ -156,29 +156,34 @@ class CarMakerEnvB(gym.Env):
         traj = reward_argument['traj']
         caryaw = reward_argument['caryaw']
         carx = reward_argument['carx']
+        cary = reward_argument['cary']
+
+        car_shape = Car().shape_car(carx, cary, caryaw)
         traj_shape = Point(traj[0], traj[1])
-        collision_reward = 0
+        car_collision_reward, traj_collision_reward = 0, 0
 
-        collision_reward -= self.is_traj_in_cone(traj_shape) * 200
+        car_collision_reward -= self.is_collding_with_cone(car_shape) * 1500
+        car_collision_reward -= self.is_collding_with_forbidden(car_shape) * 1500
 
-        collision_reward -= self.is_traj_in_forbidden(traj_shape) * 500
+        traj_collision_reward -= self.is_collding_with_cone(traj_shape) * 1500
 
-        x_reward = - abs(traj[0] - carx - 8) * 500
+        traj_collision_reward -= self.is_collding_with_forbidden(traj_shape) * 1500
+
         y_reward = - abs(traj[1] + 10) * 300
-        x_reward= 0
-        e = collision_reward + x_reward + y_reward
+        yaw_reward = - abs(caryaw) * 500
+        e = car_collision_reward + traj_collision_reward + y_reward + yaw_reward
 
         if self.test_num % 100 == 0:
-            print(f"[traj: {traj}] [forbidden: {collision_reward}] [y r: {y_reward}]")
+            print(f"[carx: {carx}] [Car Col: {-car_collision_reward/1500}] [[Traj Col: {-traj_collision_reward/1500}]] [y r: {y_reward}]")
         return e
 
-    def is_traj_in_cone(self, traj_shape):
+    def is_collding_with_cone(self, traj_shape):
         for cone in self.cone.cones_shape:
             if traj_shape.intersects(cone):
                 return 1
         return 0
 
-    def is_traj_in_forbidden(self, traj_shape):
+    def is_collding_with_forbidden(self, traj_shape):
         if self.road.forbbiden_area1.intersects(traj_shape) or self.road.forbbiden_area2.intersects(traj_shape):
             return 1
         return 0
