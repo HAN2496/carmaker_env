@@ -69,7 +69,7 @@ class Cone:
 
     def create_cone_shape(self):
         cones = []
-        dist_from_axis = (car_width + 1) / 2 + cone_r + 1
+        dist_from_axis = (car_width + 1) / 2 + self.cone_r + 1
         for i, j in self.cones_arr:
             cone = Point(i, j).buffer(dist_from_axis)
             cones.append(cone)
@@ -90,6 +90,13 @@ class Road:
         vertices2 = np.array(vertices2 + [[385, -13], [510, -13], [510, -35], [0, -35], [0, -13], [85, -13], [100, -10]])
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
+        self.forbidden_line1 = vertices1
+        self.forbidden_line2 = vertices2
+        self.forbidden_line1[:, 0] *= XSIZE
+        self.forbidden_line1[:, 1] *= -YSIZE
+        self.forbidden_line2[:, 0] *= XSIZE
+        self.forbidden_line2[:, 1] *= -YSIZE
+
         self.road_boundary = Polygon(
             [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
         ])
