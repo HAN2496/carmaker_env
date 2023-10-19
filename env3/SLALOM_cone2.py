@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 cone_r = 0.2
 car_width, car_length = 1.568, 4.3
 dist_from_axis = (car_width + 1) / 2 + cone_r
-
 XSIZE, YSIZE = 2, 5
 
 def plot(road, cone, car):
@@ -29,7 +28,7 @@ def plot(road, cone, car):
     plt.title('Car, Forbidden Areas and Cones')
     plt.legend()
     plt.grid(True)
-    plt.axis('equal')
+    #plt.axis('equal')
     plt.show()
 
 def is_car_in_forbidden_area(car_shape, road):
@@ -53,14 +52,13 @@ class Cone:
     def __init__(self):
         self.cone_r = 0.2
         self.cones_arr = self.create_cone_arr()
-        a = self.cones_arr[self.cones_arr[:, 0] > 30][:2]
         self.cones_shape = self.create_cone_shape()
     def create_cone_arr(self):
         cones = []
         #좌측이 -1, 우측이 +1 (yaw가 +일때 시계방향으로 회전함)
         for i in range(10):
-            sign = (i % 2) * 2
-            cone = np.array([100 + 30 * i, - 10, (i % 2) * 2 - 1])
+            sign = (i % 2) * 2 - 1 # [-1 1]
+            cone = np.array([100 + 30 * i, - 10 - sign * dist_from_axis, (i % 2) * 2 - 1])
             cones.append(cone)
         further_cones = np.array([[800 + 30 * int(i / 2), -10 + ((i % 2) - 0.5) * 2 * 3, (i % 2) * 2 - 1] for i in range(10)])
         cones = np.concatenate((cones, further_cones), axis=0)
@@ -70,7 +68,7 @@ class Cone:
         cones = []
         dist_from_axis = (car_width + 1) / 2 + cone_r + 1
         for i, j, k in self.cones_arr:
-            cone = Point(i, j).buffer(dist_from_axis)
+            cone = Point(i, j)
             cones.append(cone)
 
         return np.array(cones)
@@ -83,10 +81,10 @@ class Road:
         self.car = Car()
         self._forbidden_area()
     def _forbidden_area(self):
-        vertices1 = [[100 + 30 * i, - 5 - 5 * (i % 2) - dist_from_axis] for i in range(10)]
+        vertices1 = [[100 + 30 * i, - 10 - dist_from_axis - 7 * (i % 2 - 1)] for i in range(10)]
         vertices1 = np.array(vertices1 + [[385, -7 - dist_from_axis], [510, -7 - dist_from_axis], [510, 15], [0, 15],
-                                          [0, -7 - dist_from_axis], [85, -7 - dist_from_axis], [100, - dist_from_axis - 5]])
-        vertices2 = [[100 + 30 * i, - 10 - 5 * (i % 2) + dist_from_axis] for i in range(10)]
+                                          [0, -7 - dist_from_axis], [85, -7 - dist_from_axis], [100, - dist_from_axis - 3]])
+        vertices2 = [[100 + 30 * i, -10 + dist_from_axis - 7 * (i % 2)] for i in range(10)]
         vertices2 = np.array(vertices2 + [[385, -13 + dist_from_axis], [510, -13 + dist_from_axis], [510, -35], [0, -35],
                                           [0, -13 + dist_from_axis], [85, -13 + dist_from_axis], [100, -10 + dist_from_axis]])
         self.forbbiden_area1 = Polygon(vertices1)
