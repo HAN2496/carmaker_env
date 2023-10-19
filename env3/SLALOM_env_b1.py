@@ -162,11 +162,10 @@ class CarMakerEnvB(gym.Env):
         traj_shape = Point(traj[0], traj[1])
         car_collision_reward, traj_collision_reward = 0, 0
 
-        car_collision_reward -= self.is_collding_with_cone(car_shape) * 1500
-        car_collision_reward -= self.is_collding_with_forbidden(car_shape) * 1500
 
-        traj_collision_reward -= self.is_collding_with_cone(traj_shape) * 1500
-        traj_collision_reward -= self.is_collding_with_forbidden(traj_shape) * 1500
+        car_collision_reward -= self.is_collding_with_forbidden(car_shape) * 2000
+
+        traj_collision_reward -= self.is_collding_with_forbidden(traj_shape) * 2000
 
         y_reward = - abs(traj[1] + 10) * 300
         yaw_reward = - abs(caryaw) * 500

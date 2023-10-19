@@ -14,6 +14,7 @@ def plot(road, cone, car):
 
     for cone in cone.cones_arr:
         plt.scatter(cone[0], cone[1], color='green')
+        print(f"x: {cone[0]} / y: {cone[1]}")
 
     plt.plot(*road.forbbiden_area1.exterior.xy)
     plt.plot(*road.forbbiden_area2.exterior.xy)
@@ -28,7 +29,7 @@ def plot(road, cone, car):
     plt.title('Car, Forbidden Areas and Cones')
     plt.legend()
     plt.grid(True)
-    plt.axis('equal')
+    #plt.axis('equal')
     plt.show()
 
 def is_car_in_forbidden_area(car_shape, road):
@@ -58,14 +59,14 @@ class Cone:
     def create_cone_arr(self):
         cones = []
         more_before_cone = np.array([[-20, -7], [-20, -13]])
-        before_cones = np.array([[30 * int(i / 2) + 10, -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(6)])
+        before_cones = np.array([[30 * int(i / 2) + 10, -10 + ((i % 2) - 0.5) * (6 - dist_from_axis * 2)] for i in range(6)])
         for i in range(10):
             sign = (i % 2) * 2 - 1 # [-1 1]
-            cone1 = np.array([100 + 30 * i, - 10])
-            cone2 = np.array([100 + 30 * i, -10 - sign * 5])
+            cone1 = np.array([100 + 30 * i, - 10 - sign * dist_from_axis]) # -10+d(lower), -10-d (upper)
+            cone2 = np.array([100 + 30 * i, -10 - sign * (7 - dist_from_axis)]) #-10+(7-d) (upeer), -10-(7-d) (lower)
             cones.append(cone1)
             cones.append(cone2)
-        further_cones = np.array([[30 * int(i / 2) + 400, -10 + ((i % 2) - 0.5) * 2 * 3] for i in range(20)])
+        further_cones = np.array([[30 * int(i / 2) + 400, -10 + ((i % 2) - 0.5) * (6 - dist_from_axis * 2)] for i in range(20)])
         cones = np.concatenate((more_before_cone, before_cones, cones, further_cones), axis=0)
         return cones
 
@@ -73,7 +74,7 @@ class Cone:
         cones = []
         dist_from_axis = (car_width + 1) / 2 + self.cone_r + 1
         for i, j in self.cones_arr:
-            cone = Point(i, j).buffer(dist_from_axis)
+            cone = Point(i, j)
             cones.append(cone)
 
         return np.array(cones)
@@ -86,10 +87,10 @@ class Road:
         self.car = Car()
         self._forbidden_area()
     def _forbidden_area(self):
-        vertices1 = [[100 + 30 * i, - 5 - 5 * (i % 2) - dist_from_axis] for i in range(10)]
+        vertices1 = [[100 + 30 * i, - 10 - dist_from_axis - 7 * (i % 2 - 1)] for i in range(10)]
         vertices1 = np.array(vertices1 + [[385, -7 - dist_from_axis], [510, -7 - dist_from_axis], [510, 15], [0, 15],
-                                          [0, -7 - dist_from_axis], [85, -7 - dist_from_axis], [100, - dist_from_axis - 5]])
-        vertices2 = [[100 + 30 * i, - 10 - 5 * (i % 2) + dist_from_axis] for i in range(10)]
+                                          [0, -7 - dist_from_axis], [85, -7 - dist_from_axis], [100, - dist_from_axis - 3]])
+        vertices2 = [[100 + 30 * i, -10 + dist_from_axis - 7 * (i % 2)] for i in range(10)]
         vertices2 = np.array(vertices2 + [[385, -13 + dist_from_axis], [510, -13 + dist_from_axis], [510, -35], [0, -35],
                                           [0, -13 + dist_from_axis], [85, -13 + dist_from_axis], [100, -10 + dist_from_axis]])
         self.forbbiden_area1 = Polygon(vertices1)
