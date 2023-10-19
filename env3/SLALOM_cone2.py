@@ -56,7 +56,7 @@ class Cone:
     def create_cone_arr(self):
         cones = []
         more_before_cone = np.array([[-30, -7, +1]])
-        #좌측이 -1, 우측이 +1 (yaw가 +일때 시계방향으로 회전함)
+        #좌측이 -1, 우측이 +1 (yaw가 +일때 시계방향으로 회전함) 1
         for i in range(10):
             sign = (i % 2) * 2 - 1 # [-1 1]
             cone = np.array([100 + 30 * i, - 10 - sign * dist_from_axis, (i % 2) * 2 - 1])
