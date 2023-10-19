@@ -55,13 +55,14 @@ class Cone:
         self.cones_shape = self.create_cone_shape()
     def create_cone_arr(self):
         cones = []
+        more_before_cone = np.array([[-30, -7, +1]])
         #좌측이 -1, 우측이 +1 (yaw가 +일때 시계방향으로 회전함)
         for i in range(10):
             sign = (i % 2) * 2 - 1 # [-1 1]
             cone = np.array([100 + 30 * i, - 10 - sign * dist_from_axis, (i % 2) * 2 - 1])
             cones.append(cone)
         further_cones = np.array([[800 + 30 * int(i / 2), -10 + ((i % 2) - 0.5) * 2 * 3, (i % 2) * 2 - 1] for i in range(10)])
-        cones = np.concatenate((cones, further_cones), axis=0)
+        cones = np.concatenate((more_before_cone, cones, further_cones), axis=0)
         return cones
 
     def create_cone_shape(self):
