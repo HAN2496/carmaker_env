@@ -165,15 +165,8 @@ class CarMakerEnvB(gym.Env):
         car_collision_reward -= self.is_collding_with_cone(car_shape) * 1500
         car_collision_reward -= self.is_collding_with_forbidden(car_shape) * 1500
 
-        forbidden_depth = abs(traj[1] + 10)
-        if self.is_collding_with_cone(traj_shape) != 0:
-            cone_depth = abs(self.cone.cone_dist - np.linalg.norm(traj - self.is_collding_with_cone(traj_shape))) + 3
-        else:
-            cone_depth = 0
-        print(f"Depth: {round(cone_depth, 2)} / Forbidden: {round(forbidden_depth, 2)}")
-        traj_collision_reward -= cone_depth * 2500
-
-        traj_collision_reward -= self.is_collding_with_forbidden(traj_shape) * 1500 * forbidden_depth
+        traj_collision_reward -= self.is_collding_with_cone(traj_shape) * 1500
+        traj_collision_reward -= self.is_collding_with_forbidden(traj_shape) * 1500
 
         y_reward = - abs(traj[1] + 10) * 300
         yaw_reward = - abs(caryaw) * 500
@@ -186,8 +179,7 @@ class CarMakerEnvB(gym.Env):
     def is_collding_with_cone(self, traj_shape):
         for cone in self.cone.cones_shape:
             if traj_shape.intersects(cone):
-                cone_center = self.cone.cones_arr[i]
-                return cone_center
+                return 1
         return 0
 
     def is_collding_with_forbidden(self, traj_shape):
