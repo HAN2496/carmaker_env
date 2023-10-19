@@ -80,7 +80,7 @@ def main():
 
     input("Program Start.\n")
 
-    model = SAC('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join(f"tensorboard/{prefix}"))
+    model = SAC('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join(f"models/{prefix}"))
 #    model = PPO.load("UTurn_env22_best_model.pkl", env=env, verbos=1, tensorboard_log=os.path.join("tensorboard/{}/Additional_study".format(naming)))
 
     try:
