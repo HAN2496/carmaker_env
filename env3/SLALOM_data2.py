@@ -147,11 +147,21 @@ class Data:
         lengths = [round(np.sqrt((i-self.carx) ** 2 + (j - self.cary) ** 2), 3) for i, j in self.traj_points]
         traj_rel = self.to_relative_coordinates(self.traj_points).flatten()
 
-        cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
-        cone_pos = cones_abs[:, :2]
-        cone_sign = np.reshape(cones_abs[:, 2], (2, 1))
-        cones_rel = self.to_relative_coordinates(cone_pos)
-        cones_rel = np.hstack((cones_rel, cone_sign)).flatten()
+        cones_abs_front = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
+        cone_pos_front = cones_abs_front[:, :2]
+        cone_sign_front = np.reshape(cones_abs_front[:, 2], (2, 1))
+        cones_rel_front = self.to_relative_coordinates(cone_pos_front)
+        cones_rel_front = np.hstack((cones_rel_front, cone_sign_front))
+
+        cones_abs_behind = self.cone.cones_arr[self.cone.cones_arr[:, 0] < self.carx][-2:]
+        cone_pos_behind = cones_abs_behind[:, :2]
+        cone_sign_behind = np.reshape(cones_abs_behind[:, 2], (2, 1))
+        cones_rel_behind = self.to_relative_coordinates(cone_pos_behind)
+        cones_rel_behind = np.hstack((cones_rel_behind, cone_sign_behind))
+
+        cones_rel = np.vstack((cones_rel_behind, cones_rel_front)).flatten()
+
+        print(cones_rel)
 
         yawrate = (self.caryaw - self.yaw_before) / 0.01
 
