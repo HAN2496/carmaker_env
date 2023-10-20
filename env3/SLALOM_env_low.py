@@ -39,7 +39,7 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_SLALOM', use_carmaker = True):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_JX1', use_carmaker = True):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.use_carmaker = use_carmaker
@@ -91,7 +91,7 @@ class CarMakerEnv(gym.Env):
         return self._initial_state()
 
     def step(self, action1):
-        action = np.append(action1, self.test_num)
+        action = np.append(self.test_num, action1)
         self.test_num += 1
         state_for_info = np.zeros(16)
         time = 0
@@ -137,18 +137,18 @@ class CarMakerEnv(gym.Env):
             state = state[1:]
             state_for_info = state
             time = state[0]
-            car_pos = state[1:4] #x, y, yaw
+            carx, cary, caryaw = state[1:4] #x, y, yaw
             car_v = state[4] #1
             car_steer = state[5:8]
             dev = self.calculate_dev(car_pos[0], car_pos[1], car_pos[2])
             alHori = state[10]
             roll = state[11]
-#            wheel_steer = state[12:]
+            wheel_steer = state[12:]
             lookahead_sight = [2 * i for i in range(5)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
 
-            state = np.concatenate((np.array([car_v, car_steer[0]]), lookahead_traj_rel))
+            state = np.concatenate((np.array([car_v, caryaw, car_steer[0]]), wheel_steer, lookahead_traj_rel))
 
 
         # 리워드 계산
@@ -209,10 +209,10 @@ class CarMakerEnv(gym.Env):
         reward_devAng = dev_ang * 5000
 
         e = - reward_devDist - reward_devAng
-
+        """
         if self.test_num % 300 == 0 and self.check == 0:
             print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
-
+        """
         return e
 
     def calculate_dev(self, carx, cary, caryaw):
