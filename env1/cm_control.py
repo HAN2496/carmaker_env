@@ -65,7 +65,7 @@ def tcp_thread(ip, port, send_queue, receive_queue, action_num=3, state_num=1):
 # 카메이커 시뮬링크와 직접 통신하기 위한 클라스
 class CMcontrolNode:
     def __init__(self, action_queue, state_queue, action_num, state_num,
-                 host='127.0.0.1', port=10003, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='JX1_RWS_project_v2_simple'):
+                 host='127.0.0.1', port=10003, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_DLC2'):
         # 카메이커 프로젝트 폴더 밑 src_cm4sl 폴더
         self.MATLAB_PATH = matlab_path
         self.SIMUL_PATH = simul_path

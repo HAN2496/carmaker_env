@@ -36,7 +36,7 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_DLC', use_carmaker=True):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_JX1', use_carmaker=True):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "DLC"
@@ -230,20 +230,12 @@ class CarMakerEnv(gym.Env):
         #devDist, devAng에 따른 리워드
         reward_devDist = dev_dist * 1000
         reward_devAng = dev_ang * 1000
-        """
-
-        #직선경로에서 차의 횡가속도를 0에 가깝게 만들기 위한 리워드
-        if car_x <= 50 or car_x >=111:
-            a_reward = alHori * 100
-        else:
-            a_reward = 0
-        """
 
         e = - reward_devDist - reward_devAng
-
+        """
         if self.test_num % 300 == 0 and self.check == 0:
             print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
-
+        """
         return e
 
 
