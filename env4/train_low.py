@@ -8,7 +8,7 @@
 4. 학습이 완료된 후 웨이트 파일(e.g. model.pkl)을 저장한다.
 """
 import sys
-from SLALOM_env_b1 import CarMakerEnvB
+from SLALOM_env_low import CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -46,7 +46,7 @@ class Args:
 def make_env(rank, seed=0):
 
     def _init():
-        env = CarMakerEnvB(host='127.0.0.1', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnv(host='127.0.0.1', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
         env.seed(seed + rank)
 
         return env
@@ -63,12 +63,12 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    env_num = 2
+    env_num = 1
     road_type = "SLALOM"
-    comment = "b"
-    explanation = "simplify reward"
+    comment = "3"
+    explanation = "For python version"
 
-    num_proc = 1
+    num_proc = 2
     naming = f"env{env_num}_{comment}"
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')
@@ -97,7 +97,6 @@ def main():
         print("Saving model..")
         logging.info(f"{prefix} - Training End")
         model.save(f"models/{prefix}_last.pkl")
-        model.save(f"model_forcheck/{prefix}_last.pkl")
         print("Model saved.")
 
 
