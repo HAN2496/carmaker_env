@@ -25,14 +25,7 @@ class Data:
         self._init()
 
     def _init(self):
-        self.test_num = 0
-        self.time = 0
-        self.carx, self.cary, self.caryaw, self.carv = 2.1976, -10, 0, 13.8889
-        self.steerAng, self.steerVel, self.steerAcc = 0, 0, 0
-        self.devDist, self.devAng = 0, 0
-        self.alHori, self.roll = 0, 0
-        self.yaw_before = 0
-
+        self.set_initia_value()
         self.traj_data = np.array([self.carx, self.cary])
         self.traj_data = self.make_trajectory(0)
 
@@ -42,6 +35,15 @@ class Data:
 
         if self.check == 0:
             self.render()
+
+    def set_initia_value(self):
+        self.test_num = 0
+        self.time = 0
+        self.carx, self.cary, self.caryaw, self.carv = 2.1976, -10, 0, 13.8889
+        self.steerAng, self.steerVel, self.steerAcc = 0, 0, 0
+        self.devDist, self.devAng = 0, 0
+        self.alHori, self.roll = 0, 0
+        self.yaw_before = 0
 
     def put_simul_data(self, arr):
         self.simul_data = arr
@@ -237,9 +239,7 @@ class Data:
 
     def check_collision(self):
         point = Point(self.traj_point[0], self.traj_point[1])
-        if self.road.forbbiden_area1.intersects(point) or self.road.forbbiden_area2.intersects(point):
-            return 1
-        return 0
+        return self.road.forbbiden_area1.intersects(point) or self.road.forbbiden_area2.intersects(point)
 
 class Test:
     def __init__(self):
