@@ -97,7 +97,6 @@ def main():
         print("Saving model..")
         logging.info(f"{prefix} - Training End")
         model.save(f"models/{prefix}_last.pkl")
-        model.save(f"model_forcheck/{prefix}_last.pkl")
         print("Model saved.")
 
 

@@ -8,7 +8,7 @@
 4. 학습이 완료된 후 웨이트 파일(e.g. model.pkl)을 저장한다.
 """
 import sys
-from SLALOM_env_b1 import CarMakerEnvB
+from SLALOM_env_b3 import CarMakerEnvB
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -97,7 +97,6 @@ def main():
         print("Saving model..")
         logging.info(f"{prefix} - Training End")
         model.save(f"models/{prefix}_last.pkl")
-        model.save(f"model_forcheck/{prefix}_last.pkl")
         print("Model saved.")
 
 

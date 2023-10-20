@@ -63,10 +63,10 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    env_num = 2
+    env_num = 1
     road_type = "SLALOM"
-    comment = "b"
-    explanation = "simplify reward"
+    comment = "b2"
+    explanation = "moidfy reward, state"
 
     num_proc = 1
     naming = f"env{env_num}_{comment}"
@@ -97,7 +97,6 @@ def main():
         print("Saving model..")
         logging.info(f"{prefix} - Training End")
         model.save(f"models/{prefix}_last.pkl")
-        model.save(f"model_forcheck/{prefix}_last.pkl")
         print("Model saved.")
 
 
