@@ -37,11 +37,10 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, check=2, simul_path='pythonCtrl_JX1', road_type="DLC", use_carmaker=True):
+    def __init__(self, check=2, port=10001, simul_path='pythonCtrl_JX1', road_type="DLC", use_carmaker=True):
         # Action과 State의 크기 및 형태를 정의.
         matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
         host = '127.0.0.1'
-        port = 10001
 
         self.check = check
         self.use_carmaker = use_carmaker
@@ -51,7 +50,7 @@ class CarMakerEnv(gym.Env):
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        env_obs_num = 18
+        env_obs_num = 16
         sim_obs_num = 15
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
