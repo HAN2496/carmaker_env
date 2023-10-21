@@ -44,7 +44,7 @@ class Args:
         self.prefix = prefix
         self.alg = alg
 
-def make_env(rank, seed=0):
+def make_env(rank, road_type, seed=0):
 
     def _init():
         env = CarMakerEnv(host='127.0.0.1', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임

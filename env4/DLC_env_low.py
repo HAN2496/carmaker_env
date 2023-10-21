@@ -11,6 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
+from SLALOM_data import Data
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -36,11 +37,16 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_JX1', use_carmaker=True):
+    def __init__(self, check=2, simul_path='pythonCtrl_JX1', road_type="DLC", use_carmaker=True):
         # Action과 State의 크기 및 형태를 정의.
+        matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
+        host = '127.0.0.1'
+        port = 10001
+
         self.check = check
         self.use_carmaker = use_carmaker
-        self.road_type = "SLALOM"
+        self.road_type = road_type
+        self.data = Data(level_b=False)
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
