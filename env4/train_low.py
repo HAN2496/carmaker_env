@@ -47,7 +47,7 @@ class Args:
 def make_env(rank, road_type, seed=0):
 
     def _init():
-        env = CarMakerEnv(road_type=road_type, check=rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnv(road_type=road_type, port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
         env.seed(seed + rank)
 
         return env
@@ -66,8 +66,8 @@ def main():
 
     env_num = 1
     road_type = "SLALOM"
-    comment = "3"
-    explanation = "For python version"
+    comment = "low"
+    explanation = "JX1"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
@@ -88,7 +88,7 @@ def main():
         custom_logger.info(f"[{prefix}]")
         custom_logger.info(f" --> {explanation}")
         logging.info(f"{prefix} - Training Start")
-        model.learn(total_timesteps=10000*400, log_interval=50, callback=EvalCallback)
+        model.learn(total_timesteps=10000*400, log_interval=50, callback=bestRewardCallback)
 
     except KeyboardInterrupt:
         logging.info(f"{prefix} - Keyboard Interrupt")
