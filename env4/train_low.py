@@ -14,6 +14,7 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
 from stable_baselines3.common.vec_env import VecMonitor
 from stable_baselines3.common.utils import set_random_seed
+from stable_baselines3.common.callbacks import EvalCallback
 import os
 import torch
 import logging
@@ -87,7 +88,7 @@ def main():
         custom_logger.info(f"[{prefix}]")
         custom_logger.info(f" --> {explanation}")
         logging.info(f"{prefix} - Training Start")
-        model.learn(total_timesteps=10000*400, log_interval=50, callback=bestRewardCallback)
+        model.learn(total_timesteps=10000*400, log_interval=50, callback=EvalCallback)
 
     except KeyboardInterrupt:
         logging.info(f"{prefix} - Keyboard Interrupt")
