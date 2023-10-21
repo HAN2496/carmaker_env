@@ -6,6 +6,7 @@ from shapely.geometry import Polygon, Point, LineString
 
 XSIZE, YSIZE = 2, 5
 BLACK, GRAY, ORANGE, GREEN, WHITE = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0), (255, 255, 255)
+
 class Data:
     def __init__(self, point_interval=2, point_num=5, check=1, show=True):
         self.point_interval = point_interval
@@ -129,7 +130,8 @@ class Data:
             devAng = dy / dx
 
         devAng = - np.arctan(devAng) - self.yaw
-        return np.array([devDist, devAng])
+        self.devDist = devDist
+        self.devAng = devAng
 
     def to_relative_coordinates(self, arr):
         relative_coords = []
@@ -157,6 +159,7 @@ class Data:
 
     def mangae_state_for_low(self, state):
         self.put_simul_data(state)
+        self.calculate_dev()
         lookahead_traj_abs = self.find_lookahead_traj()
         lookahead_traj_rel = self.to_relative_coordinates(lookahead_traj_abs).flatten()
         state = np.concatenate((np.array([self.carv, self.yaw, self.steerAng, self.steerVel]), self.wheel_steer, lookahead_traj_rel))
