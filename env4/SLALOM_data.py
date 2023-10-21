@@ -8,17 +8,17 @@ XSIZE, YSIZE = 2, 5
 BLACK, GRAY, ORANGE, GREEN, WHITE = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0), (255, 255, 255)
 
 class Data:
-    def __init__(self, point_interval=2, point_num=5, check=1, show=True):
+    def __init__(self, point_interval=2, point_num=5, check=1, level_b=True):
         self.point_interval = point_interval
         self.point_num = point_num
         self.check = check
-        self.show = show
+        self.level_b = level_b
 
         self.cone = Cone()
         self.road = Road()
         self.car = Car()
 
-        if self.show and self.check == 0:
+        if self.level_b and self.check == 0:
             pygame.init()
             self.screen = pygame.display.set_mode((self.road.road_length * XSIZE, - self.road.road_width * YSIZE))
             pygame.display.set_caption("B level Environment")
