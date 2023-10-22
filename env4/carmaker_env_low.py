@@ -142,7 +142,7 @@ class CarMakerEnv(gym.Env):
             carx, cary, caryaw = state[1:4] #x, y, yaw
             car_v = state[4] #1
             car_steer = state[5:8]
-            dev = self.calculate_dev(carx, cay, caryqw)
+            dev = self.calculate_dev(carx, cary, caryaw)
             alHori = state[10]
             roll = state[11]
             wheel_steer = state[12:16]
