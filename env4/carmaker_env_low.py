@@ -37,14 +37,14 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, check=2, port=10001, simul_path='pythonCtrl_JX1', road_type="SLALOM", use_carmaker=True):
+    def __init__(self, check=2, port=10001, simul_path='pythonCtrl_JX1', road_type="DLC", use_carmaker=True):
         # Action과 State의 크기 및 형태를 정의.
         matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
         host = '127.0.0.1'
 
         self.check = check
         self.use_carmaker = use_carmaker
-        self.road_type = "SLALOM"
+        self.road_type = road_type
         self.data = Data(level_b=False)
 
         env_action_num = 1
@@ -77,6 +77,7 @@ class CarMakerEnv(gym.Env):
         self.cm_thread.join()
 
     def _initial_state(self):
+        self.test_num = 0
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
@@ -246,7 +247,7 @@ class CarMakerEnv(gym.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(check=0, simul_path='test_Nomove')
+    env = CarMakerEnv(check=0)
     act_lst = []
     next_state_lst = []
     info_lst = []
