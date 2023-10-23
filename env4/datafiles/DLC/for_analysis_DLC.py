@@ -40,12 +40,14 @@ def plot_compare(x_data_list, title, idx, labels, subplot_shape):
     plt.title(title)
     plt.legend()
 
-def plot_multiple(data_keys, titles, labels, ipg, rl):
+def plot_multiple(data_keys, titles, labels, *datasets):
     num_plots = len(data_keys)
-    subplot_shape = (np.ceil(num_plots / 3).astype(int), 3)
+    subplot_shape = (int(np.ceil(num_plots / 3)), 3)  # np.ceil의 결과는 float이므로 int로 변환
 
     for idx, (data_key, title) in enumerate(zip(data_keys, titles), start=1):
-        plot_compare([ipg[data_key], rl[data_key]], title, idx, labels, subplot_shape)
+        # 각 데이터셋에서 data_key에 해당하는 데이터를 추출
+        data_list = [dataset.get(data_key) for dataset in datasets]
+        plot_compare(data_list, title, idx, labels, subplot_shape)
 
     plt.tight_layout()
     plt.show()
@@ -66,6 +68,7 @@ def get_value_or_interpolate(carx, carv, target_x):
     return linear_interpolation(carx[left_idx], carv[left_idx], carx[right_idx], carv[right_idx], target_x)
 
 def calc_performance(dataset, data_dict):
+    rad2deg = 57.2958
 
     time = data_dict['time'][-2]
     avg_carv = np.sum(np.abs(data_dict['carv'])) / time
@@ -74,7 +77,7 @@ def calc_performance(dataset, data_dict):
     escape_carv = get_value_or_interpolate(data_dict['carx'], data_dict['carv'], 111)
 
     roll_rate = np.sum(np.abs(np.diff(data_dict['roll']))) / time
-    yaw_rate = np.sum(np.abs(np.diff(data_dict["caryaw"]))) / time
+    yaw_rate = np.sum(np.abs(np.diff(data_dict["caryaw"]))) / time * rad2deg
     maximum_lateral_acc = np.max(np.abs(data_dict['alHori']))
     total_reward = np.sum(data_dict['reward'])
 
@@ -82,12 +85,16 @@ def calc_performance(dataset, data_dict):
 
 
 
-def plot_trajectory(cones, traj, ipg, rl):
-    plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='red')
+def plot_trajectory(cones, traj, ipg, rl, mpc):
+    plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='red', linewidth=3)
 #    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
-    plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue')
-    plt.plot(rl['carx'], rl['cary'], label="RL")
+    plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=3)
+    plt.plot(rl['carx'], rl['cary'], label="RL", linewidth=3)
+    plt.plot(mpc['carx'], mpc['cary'], label="MPC", linewidth=3)
 #    plt.axis("equal")
+    plt.xlabel("m")
+    plt.ylabel("m")
+    plt.title("Trajectory")
     plt.legend()
     plt.show()
 
