@@ -69,12 +69,13 @@ def get_value_or_interpolate(carx, carv, target_x):
 
 def calc_performance(dataset, data_dict):
     rad2deg = 57.2958
+    ms2kph = 3.6
 
     time = data_dict['time'][-2]
     avg_carv = np.sum(np.abs(data_dict['carv'])) / time
 
-    initial_carv = get_value_or_interpolate(data_dict['carx'], data_dict['carv'], 50)
-    escape_carv = get_value_or_interpolate(data_dict['carx'], data_dict['carv'], 111)
+    initial_carv = get_value_or_interpolate(data_dict['carx'], data_dict['carv'], 52) * ms2kph
+    escape_carv = get_value_or_interpolate(data_dict['carx'], data_dict['carv'], 111) * ms2kph
 
     roll_rate = np.sum(np.abs(np.diff(data_dict['roll']))) / time
     yaw_rate = np.sum(np.abs(np.diff(data_dict["caryaw"]))) / time * rad2deg
@@ -85,12 +86,13 @@ def calc_performance(dataset, data_dict):
 
 
 
-def plot_trajectory(cones, traj, ipg, rl, mpc):
+
+
+def plot_trajectory(cones, traj, ipg, rl, labels):
     plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='red', linewidth=3)
 #    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
     plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=3)
-    plt.plot(rl['carx'], rl['cary'], label="RL", linewidth=3)
-    plt.plot(mpc['carx'], mpc['cary'], label="MPC", linewidth=3)
+    plt.plot(rl['carx'], rl['cary'], label=labels, linewidth=3)
 #    plt.axis("equal")
     plt.xlabel("m")
     plt.ylabel("m")
