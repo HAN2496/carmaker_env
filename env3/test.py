@@ -5,7 +5,7 @@
 3. 테스트를 수행한다.
 """
 
-from DLC_env_b2 import CarMakerEnvB
+from DLC_env_low2 import CarMakerEnv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,12 +14,12 @@ from stable_baselines3 import SAC
 if __name__ == '__main__':
     road_type = "DLC"
     data_name = 'RL'
-    comment = "test"
+    comment = "env2"
     prefix = data_name + "_" + comment
 
 
-    env = CarMakerEnvB(host='127.0.0.1', port=9999, check=0)
-    model = SAC.load(f"best_model/979999_Check_model.pkl", env=env)
+    env = CarMakerEnv(host='127.0.0.1', port=9999, check=0)
+    model = SAC.load(f"best_model/DLC_env2_best_model.pkl", env=env)
 #    model = SAC.load(f"41599_best_model.pkl", env=env)
     print("Model loaded.")
 
