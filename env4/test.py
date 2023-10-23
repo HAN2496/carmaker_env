@@ -5,20 +5,20 @@
 3. 테스트를 수행한다.
 """
 
-from carmaker_env_low import CarMakerEnvB
+from carmaker_env_low import CarMakerEnv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from stable_baselines3 import SAC
 
 if __name__ == '__main__':
-    road_type = "DLC"
+    road_type = "SLALOM"
     data_name = 'IPG'
     comment = "low"
     prefix = data_name + "_" + comment
 
 
-    env = CarMakerEnvB(host='127.0.0.1', port=9999, check=0)
+    env = CarMakerEnv(check=0, simul_path='test_IPG', road_type=road_type)
     model = SAC.load(f"best_model/model.pkl", env=env)
 #    model = SAC.load(f"41599_best_model.pkl", env=env)
     print("Model loaded.")
