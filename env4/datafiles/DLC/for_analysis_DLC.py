@@ -54,14 +54,11 @@ def linear_interpolation(x1, y1, x2, y2, x):
     return y1 + ((x - x1) * (y2 - y1) / (x2 - x1))
 
 def get_value_or_interpolate(carx, carv, target_x):
-    # Try to get the value at target_x
     if target_x in carx:
         return carv[np.where(carx == target_x)[0][0]]
 
-    # If not, find indices of surrounding values
     greater_indices = np.where(carx > target_x)
     if not greater_indices[0].size:
-        # If there are no greater values, return the last value
         return carv[-1]
     right_idx = greater_indices[0][0]
     left_idx = right_idx - 1
