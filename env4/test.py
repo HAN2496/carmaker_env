@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from stable_baselines3 import SAC
 
 if __name__ == '__main__':
-    road_type = "DLC"
+    road_type = "SLALOM"
     data_name = 'IPG'
     comment = "forMPC"
     prefix = data_name + "_" + comment
