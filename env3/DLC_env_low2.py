@@ -71,7 +71,7 @@ class CarMakerEnv(gym.Env):
             self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
             self.cm_thread.start()
 
-            self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+            self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj2.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
     def __del__(self):
         self.cm_thread.join()
