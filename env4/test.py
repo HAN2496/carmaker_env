@@ -12,9 +12,9 @@ import matplotlib.pyplot as plt
 from stable_baselines3 import SAC
 
 if __name__ == '__main__':
-    road_type = "SLALOM"
+    road_type = "DLC"
     data_name = 'IPG'
-    comment = "cutting_half"
+    comment = "cutting_zero"
     prefix = data_name + "_" + comment
 
     env = CarMakerEnv(check=0, simul_path='test_IPG', road_type=road_type)
