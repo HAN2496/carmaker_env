@@ -5,7 +5,7 @@ import re
 from for_analysis_SLALOM import *
 
 CONER = 0.2
-CARWIDTH, CARLENGTH = 1.568, 4.3
+CARWIDTH, CARLENGTH = 1.568, 4
 
 cones = np.array([[100 + 30 * i, -10] for i in range(10)])
 
@@ -13,7 +13,7 @@ cones = np.array([[100 + 30 * i, -10] for i in range(10)])
 road_types = 'SLALOM'
 traj = pd.read_csv(f'datasets_traj.csv').loc[:, ["traj_tx", "traj_ty"]].values
 
-ipg_rl = load_data('IPG', 'forRL')
+ipg_rl = load_data('IPG', 'cutting_half')
 ipg_mpc = load_data('IPG', 'forMPC')
 rl = load_data('RL', "env1")
 mpc = load_data('mpc')
