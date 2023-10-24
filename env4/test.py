@@ -14,7 +14,7 @@ from stable_baselines3 import SAC
 if __name__ == '__main__':
     road_type = "SLALOM"
     data_name = 'IPG'
-    comment = "forMPC"
+    comment = "cutting_half"
     prefix = data_name + "_" + comment
 
     env = CarMakerEnv(check=0, simul_path='test_IPG', road_type=road_type)
