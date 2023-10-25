@@ -176,7 +176,10 @@ class CarMakerEnv(gym.Env):
 
         #devDist, devAng에 따른 리워드
         reward_devDist = dev_dist * 1000
-        reward_devAng = dev_ang * 5000
+        if self.road_type == 'DLC':
+            reward_devAng = dev_ang * 1000
+        else:
+            reward_devAng = dev_ang * 5000
 
         e = - reward_devDist - reward_devAng
 
