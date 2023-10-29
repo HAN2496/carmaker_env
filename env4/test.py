@@ -12,13 +12,13 @@ import matplotlib.pyplot as plt
 from stable_baselines3 import SAC
 
 if __name__ == '__main__':
-    road_type = "DLC"
-    data_name = 'IPG'
-    comment = "cutting_zero_rl"
+    road_type = "SLALOM"
+    data_name = 'RL'
+    comment = "RWS"
     prefix = data_name + "_" + comment
 
-    env = CarMakerEnv(check=0, simul_path='test_IPG', road_type=road_type)
-    model = SAC.load(f"best_model/model.pkl", env=env)
+    env = CarMakerEnv(check=0, road_type=road_type)
+    model = SAC.load(f"best_model/SLALOM_low_best_model_rws2.pkl", env=env)
 #    model = SAC.load(f"41599_best_model.pkl", env=env)
     print("Model loaded.")
 

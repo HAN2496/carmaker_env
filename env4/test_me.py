@@ -1,5 +1,6 @@
-import numpy as np
-from common_functions import *
-
-a = np.array([1, 2])
-check_car_pos(a)
+a = 2
+b=0
+if a != 1:
+    pass
+elif b == 0:
+    print('here')
