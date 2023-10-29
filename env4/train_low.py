@@ -88,7 +88,7 @@ def main():
         custom_logger.info(f"[{prefix}]")
         custom_logger.info(f" --> {explanation}")
         logging.info(f"{prefix} - Training Start")
-        model.learn(total_timesteps=10000*400, log_interval=50, callback=bestRewardCallback)
+        model.learn(total_timesteps=10000*800, log_interval=50, callback=bestRewardCallback)
 
     except KeyboardInterrupt:
         logging.info(f"{prefix} - Keyboard Interrupt")
