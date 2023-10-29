@@ -203,17 +203,17 @@ def plot_car_trajectory(cones, data, traj_tx, traj_ty, label, collision_cones=No
     if collision_cones:
         collision_x = [x[0] for x in collision_cones]
         collision_y = [x[1] for x in collision_cones]
-        plt.scatter(collision_x, collision_y, marker='s', label='Collision Cone', color='red')
+        #plt.scatter(collision_x, collision_y, marker='s', label='Collision Cone', color='red')
 
     carx_upper = carx + np.sin(caryaw) * car_width / 2
     carx_lower = carx - np.sin(caryaw) * car_width / 2
     cary_upper = cary + np.cos(caryaw) * car_width / 2
     cary_lower = cary - np.cos(caryaw) * car_width / 2
 
-    plt.plot(carx_upper, cary_upper, label=label, color='blue')
-    plt.plot(carx_lower, cary_lower, color='blue')
+#    plt.plot(carx_upper, cary_upper, label=label, color='blue')
+#    plt.plot(carx_lower, cary_lower, color='blue')
 
-    plt.plot(traj_tx, traj_ty, label='Trajectory', color='green')
+    plt.plot(traj_tx, traj_ty, label='Trajectory', color='green', linewidth=5)
     plt.xlabel("Distance (m)")
     plt.ylabel("Distance (m)")
     plt.xlim([0, 161])
