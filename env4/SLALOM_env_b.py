@@ -43,7 +43,7 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnvB(gym.Env):
-    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_SLALOM'):
+    def __init__(self, host='127.0.0.1', port=10001, check=2, matlab_path='C:/CM_Projects/JX1_102/src_cm4sl', simul_path='pythonCtrl_JX1'):
         # Action과 State의 크기 및 형태를 정의.
         self.check = check
         self.road_type = "SLALOM"
@@ -76,7 +76,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
         self.cm_thread.start()
 
-        low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
+        low_level_env = LowLevelCarMakerEnv(use_carmaker=False, road_type=self.road_type)
         self.low_level_model = SAC.load(f"best_model/SLALOM_low_best_model_rws2.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
@@ -114,7 +114,10 @@ class CarMakerEnvB(gym.Env):
 
         traj_lowlevel_abs = self.data.find_traj_points()
         traj_lowlevel_rel = self.data.to_relative_coordinates(traj_lowlevel_abs).flatten()
-        self.low_level_obs = np.concatenate((np.array([self.data.carv, self.data.steerAng]), traj_lowlevel_rel))
+        dev = self.calculate_dev(self.data.carx, self.data.cary, self.data.caryaw)
+        wheel_steer = np.array([self.data.rl, self.data.rr, self.data.fl, self.data.fr])
+        r_ext = np.array([self.data.rr_ext, self.data.rl_ext])
+        self.low_level_obs = np.concatenate((dev, np.array([self.data.carv, self.data.caryaw, self.data.steerAng, self.data.steerVel]), wheel_steer, r_ext, traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)[0]
         action_to_sim = np.append(steering_changes, self.test_num)
 
@@ -185,6 +188,32 @@ class CarMakerEnvB(gym.Env):
         if self.road.forbbiden_area1.intersects(traj_shape) or self.road.forbbiden_area2.intersects(traj_shape):
             return 1
         return 0
+
+    def calculate_dev(self, carx, cary, caryaw):
+        arr = np.array(self.data.traj_data)
+        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+        dist_index = np.argmin(distances)
+        devDist = distances[dist_index]
+
+        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
+        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
+
+        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
+        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
+
+        # 분모가 0이 될 수 있는 경우에 대한 예외처리
+        if dx1 == 0:
+            devAng1 = np.inf if dy1 > 0 else -np.inf
+        else:
+            devAng1 = dy1 / dx1
+
+        if dx2 == 0:
+            devAng2 = np.inf if dy2 > 0 else -np.inf
+        else:
+            devAng2 = dy2 / dx2
+
+        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
+        return np.array([devDist, devAng])
 
 if __name__ == "__main__":
     # 환경 테스트
