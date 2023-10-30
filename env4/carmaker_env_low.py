@@ -11,7 +11,6 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from SLALOM_data import Data
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -45,7 +44,6 @@ class CarMakerEnv(gym.Env):
         self.check = check
         self.use_carmaker = use_carmaker
         self.road_type = road_type
-        self.data = Data(level_b=False)
 
         env_action_num = 1
         sim_action_num = env_action_num + 1

@@ -65,7 +65,7 @@ def main():
     """
 
     env_num = 1
-    road_type = "DLC"
+    road_type = "SLALOM"
     comment = "low"
     explanation = "JX1, dev ang reward changed"
 
@@ -89,6 +89,7 @@ def main():
         custom_logger.info(f" --> {explanation}")
         logging.info(f"{prefix} - Training Start")
         model.learn(total_timesteps=10000*800, log_interval=50, callback=bestRewardCallback)
+
 
     except KeyboardInterrupt:
         logging.info(f"{prefix} - Keyboard Interrupt")
