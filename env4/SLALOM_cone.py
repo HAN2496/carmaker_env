@@ -4,7 +4,7 @@ from shapely import affinity
 import matplotlib.pyplot as plt
 
 cone_r = 0.2
-car_width, car_length = 1.568, 4.3
+car_width, car_length = 1.8, 4
 dist_from_axis = (car_width + 1) / 2 + cone_r
 XSIZE, YSIZE = 2, 5
 
@@ -21,6 +21,8 @@ def plot(road, cone, car):
     car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
     plt.scatter(car.carx, car.cary, color='blue')
+
+    print(is_car_in_forbidden_area(car_shape, road))
 
     plt.xlabel('X')
     plt.ylabel('Y')
@@ -121,8 +123,8 @@ class Road:
 
 class Car:
     def __init__(self, carx=3, cary=-10, caryaw=0, carv=13.8889):
-        self.length = 4.3
-        self.width = 1.568
+        self.length =car_length
+        self.width =  car_width
         self.carx = carx
         self.cary = cary
         self.caryaw = caryaw

@@ -1,15 +1,15 @@
 import numpy as np
-from SLALOM_cone import Road, Car, Cone
+from SLALOM_cone3 import Road, Car, Cone
 import pygame
 from scipy.interpolate import interp1d
-from shapely.geometry import Polygon, Point, LineString
 
-XSIZE, YSIZE = 2, 5
-BLACK, GRAY, ORANGE, GREEN, WHITE = (0, 0, 0), (128, 128, 128), (255, 144, 0), (0, 128, 0), (255, 255, 255)
+XSIZE, YSIZE = 10, 10
+
 class Data:
-    def __init__(self, point_interval=2, point_num=5, check=1, show=True):
+    def __init__(self, point_interval=3, point_num=5, check=1, show=True):
         self.point_interval = point_interval
         self.point_num = point_num
+        self.sight = self.point_interval * (self.point_num - 1)
         self.check = check
         self.show = show
 
@@ -31,7 +31,6 @@ class Data:
         self.steerAng, self.steerVel, self.steerAcc = 0, 0, 0
         self.devDist, self.devAng = 0, 0
         self.alHori, self.roll = 0, 0
-        self.yaw_before = 0
 
         self.traj_data = np.array([self.carx, self.cary])
         self.traj_data = self.make_trajectory(0)
@@ -49,11 +48,11 @@ class Data:
         self.time = arr[1]
         self.carx, self.cary, self.caryaw, self.carv = arr[2:6]
         self.steerAng, self.steerVel, self.steerAcc = arr[6:9]
-        self.alHori, self.roll = arr[9:11]
-        self.rl, self.rr, self.fl, self.fr, self.rr_ext, self.rl_ext = arr[11:]
+        self.devDist, self.devAng = arr[9:11]
+        self.alHori, self.roll = arr[11:13]
 
     def make_traj_point(self, action):
-        theta = action * 0.1 + self.caryaw
+        theta = action * 0.05 + self.caryaw
         new_traj_point = np.array([self.carx + 8 * np.cos(theta),
                                    self.cary + 8 * np.sin(theta)])
         return new_traj_point
@@ -148,29 +147,24 @@ class Data:
         traj_rel = self.to_relative_coordinates(self.traj_points).flatten()
 
         cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > self.carx][:2]
-        cone_pos = cones_abs[:, :2]
-        cone_sign = np.reshape(cones_abs[:, 2], (2, 1))
-        cones_rel = self.to_relative_coordinates(cone_pos)
-        cones_rel = np.hstack((cones_rel, cone_sign)).flatten()
+        cones_rel = self.to_relative_coordinates(cones_abs).flatten()
 
-        yawrate = (self.caryaw - self.yaw_before) / 0.01
+        state = np.concatenate((steering_changes, np.array([self.steerAng, self.steerVel, self.caryaw]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
 
-        state = np.concatenate((steering_changes, np.array([self.steerAng, self.steerVel, self.caryaw, yawrate, self.cary + 10]), traj_point_new_rel, cones_rel)) # <- Policy B의 state
-        reward_argument = {"traj": traj_point_new, "carx": self.carx, "cary": self.cary, "caryaw": self.caryaw}
+        reward_argument = {"traj": traj_point_new, "caryaw": self.caryaw, "carx": self.carx}
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, arr[1:])}
 
-        self.yaw_before = self.caryaw
 
         return state, reward_argument, info
 
     def state_size(self):
-        arr = np.zeros((17))
+        arr = np.zeros((13))
         array, _, _ = self.manage_state(np.array([0]), arr, np.array([0]))
         return array.size
 
     def _init_reward_argument(self):
-        return {"traj": self.traj_point, "carx": self.carx, "cary": self.cary, "caryaw": self.caryaw}
+        return {"traj": self.traj_point, "caryaw": 0, "carx": self.carx}
 
     def _init_info(self):
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
@@ -184,13 +178,15 @@ class Data:
         self.screen.fill((128, 128, 128))
 
 
-        pygame.draw.polygon(self.screen, (0, 0, 0), self.road.forbidden_line1, 0)
-        pygame.draw.polygon(self.screen, (0, 0, 0), self.road.forbidden_line2, 0)
-
+        before_cone = (0, 0)
         for idx, cone in enumerate(self.cone.cones_shape):
             x, y = cone.centroid.coords[0]
             pygame.draw.circle(self.screen, (255, 140, 0), (int(x * XSIZE), int(-y * YSIZE)), 5)
-
+            if idx % 2 == 1:
+                recent_cone = (x * XSIZE, -y * YSIZE)
+                pygame.draw.line(self.screen, (255, 255, 255), before_cone, recent_cone, 3)
+            else:
+                before_cone = (x * XSIZE, -y * YSIZE)
 
         for trajx, trajy in self.traj_points:
             pygame.draw.circle(self.screen, (0, 128, 0), (trajx * XSIZE, - trajy * YSIZE), 5)
@@ -227,19 +223,7 @@ class Data:
         # 렌더링된 이미지를 화면에 그리기
         self.screen.blit(text_surface, (text_x, text_y))
 
-        if self.check_collision() != 0:
-            txt = f"Traj Colliding"
-            txt_surface = font.render(txt, True, (255, 255, 255))
-            text_x = self.road.road_length * XSIZE - txt_surface.get_width() - XSIZE
-            self.screen.blit(txt_surface, (text_x, text_y - 5 * YSIZE))
-
         pygame.display.flip()
-
-    def check_collision(self):
-        point = Point(self.traj_point[0], self.traj_point[1])
-        if self.road.forbbiden_area1.intersects(point) or self.road.forbbiden_area2.intersects(point):
-            return 1
-        return 0
 
 class Test:
     def __init__(self):
