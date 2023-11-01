@@ -23,7 +23,7 @@ cones = np.array(cone1 + cone2 + cone3)
 road_types = 'DLC'
 traj = pd.read_csv(f'datasets_traj.csv').loc[:, ["traj_tx", "traj_ty"]].values
 
-ipg_rl = load_data('IPG', 'cutting_zero')
+ipg_rl = load_data('IPG', 'cutting_zero_rl')
 ipg_mpc = load_data('IPG', 'cutting_zero')
 rl = load_data('RL', "env1")
 mpc = load_data('mpc')
