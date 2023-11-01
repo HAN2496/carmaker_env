@@ -1,5 +1,5 @@
 import numpy as np
-from SLALOM_cone3 import Road, Car, Cone
+from DLC_cone import Road, Car, Cone
 import pygame
 from scipy.interpolate import interp1d
 
