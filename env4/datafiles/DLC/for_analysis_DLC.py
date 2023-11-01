@@ -80,6 +80,10 @@ def calc_performance(dataset, data_dict):
     roll_rate = np.sum(np.abs(np.diff(data_dict['roll']))) / time
     yaw_rate = np.sum(np.abs(np.diff(data_dict["caryaw"]))) / time * rad2deg
     maximum_lateral_acc = np.max(np.abs(data_dict['alHori']))
+    maximum_lateral_acc_idx = np.where((
+np.array(data_dict['alHori']) == maximum_lateral_acc) | (
+np.array(data_dict['alHori']) == -maximum_lateral_acc))[0][0]
+    print(f"Max Lateral IDX: {time[maximum_lateral_acc_idx]}")
     total_reward = np.sum(data_dict['reward'])
 
     return [dataset, time, initial_carv, escape_carv, roll_rate, yaw_rate, maximum_lateral_acc, total_reward]
