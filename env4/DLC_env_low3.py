@@ -182,10 +182,12 @@ class CarMakerEnv(gym.Env):
         else:
             reward_devAng = dev_ang * 5000
 
-        e = - reward_devDist - reward_devAng
+        reward_collision = self.is_car_colliding_with_cone(carx, cary, caryaw) * 1000
 
-        if self.test_num % 150 == 0 and self.check == 0:
-            print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
+        e = - reward_devDist - reward_devAng - reward_collision
+
+        if self.test_num % 300 == 0 and self.check == 0:
+            print(f"Time: {round(time,2)}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
 
         return e
 
