@@ -11,7 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from DLC_cone import Cone, Car
+from DLC_cone import Cone, Car, Road
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -46,6 +46,7 @@ class CarMakerEnv(gym.Env):
         self.use_carmaker = use_carmaker
         self.road_type = road_type
         self.cone = Cone()
+        self.road = Road()
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
@@ -193,9 +194,8 @@ class CarMakerEnv(gym.Env):
 
     def is_car_colliding_with_cone(self, carx, cary, caryaw):
         car_shape = Car().shape_car(carx, cary, caryaw)
-        for cone in self.cone.cones_shape:
-            if car_shape.intersects(cone):
-                return 1
+        if self.road.cones_boundary.contains(car_shape):
+            return 1
         return 0
     def calculate_dev(self, carx, cary, caryaw):
         arr = np.array(self.traj_data)

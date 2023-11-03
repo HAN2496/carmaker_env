@@ -9,8 +9,14 @@ CARLENGTH = 4
 DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
 XSIZE, YSZIE = 10, 10
 
-def plot(cone, car):
+def plot(cone, road, car):
     #plt.figure(figsize=(10, 5))
+
+    # Plot forbidden areas
+    plt.plot(*road.cones_boundary.exterior.xy, label="Cone Boundary", color='red')
+    #    plt.plot(*road.forbbiden_area1.exterior.xy, label="Forbidden Area 1", color='red')
+    #    plt.plot(*road.forbbiden_area2.exterior.xy, label="Forbidden Area 2", color='blue')
+    plt.plot(*road.road_boundary.exterior.xy, label="ROAD BOUNDARY", color='green')
 
     cones_x = cone.cones_arr[:, 0]
     cones_y = cone.cones_arr[:, 1]
@@ -162,4 +168,4 @@ if __name__ == "__main__":
     carx = 10
     cones_abs = cone.cones_arr[cone.cones_arr[:, 0] > carx][:2]
     print(cones_abs)
-    plot(cone, car)
+    plot(cone, road, car)
