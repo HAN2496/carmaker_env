@@ -68,7 +68,7 @@ class Cone:
 
     def create_DLC_cone(self):
         sections = [
-            {'start': 0, 'gap': 5, 'cone_dist': 2.23, 'num': 10, 'y_offset': -10},
+            {'start': -5, 'gap': 5, 'cone_dist': 2.23, 'num': 11, 'y_offset': -10},
             {'start': 50, 'gap': 3, 'cone_dist': 2.23, 'num': 5, 'y_offset': -10}, #
             {'start': 64.7, 'gap': 2.7, 'cone_dist': 6.03, 'num': 4, 'y_offset': -8.1},
             {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.8, 'num': 5, 'y_offset': -6.485}, #

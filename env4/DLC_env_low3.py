@@ -152,10 +152,13 @@ class CarMakerEnv(gym.Env):
             lookahead_sight = [2 * i for i in range(5)]
             lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
             lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
-            lookahead_cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:2]
-            lookahead_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_cones_abs).flatten()
+            ahead_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:1]
+            behind_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] <= carx][:1]
+            closest_cones = np.vstack((behind_cones, ahead_cones))
 
-            state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, r_ext, lookahead_traj_rel, lookahead_cones_rel))
+            closest_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], closest_cones).flatten()
+
+            state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0]]), wheel_steer, r_ext, lookahead_traj_rel, closest_cones_rel))
 
         # 리워드 계산
         reward_state = np.concatenate((dev, np.array([alHori]), car_pos))
