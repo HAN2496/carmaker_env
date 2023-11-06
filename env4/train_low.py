@@ -8,7 +8,7 @@
 4. 학습이 완료된 후 웨이트 파일(e.g. model.pkl)을 저장한다.
 """
 import sys
-from DLC_env_low3 import CarMakerEnv
+from carmaker_env_low import CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -64,10 +64,10 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    env_num = 3
+    env_num = 1
     road_type = "DLC"
     comment = "low"
-    explanation = "cone data add in reward and state"
+    explanation = "carmaker env low"
 
     num_proc = 2
     naming = f"env{env_num}_{comment}"
@@ -88,7 +88,7 @@ def main():
         custom_logger.info(f"[{prefix}]")
         custom_logger.info(f" --> {explanation}")
         logging.info(f"{prefix} - Training Start")
-        model.learn(total_timesteps=10000*800, log_interval=50, callback=bestRewardCallback)
+        model.learn(total_timesteps=10000*300, log_interval=50, callback=bestRewardCallback)
 
 
     except KeyboardInterrupt:
