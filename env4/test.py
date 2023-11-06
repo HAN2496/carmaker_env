@@ -1,21 +1,44 @@
-import bezier
+"""
+학습 후 테스트하는 코드 예제
+1. 카메이커 연동 환경을 불러온다
+2. 학습에 사용한 RL 모델(e.g. PPO)에 학습된 웨이트 파일(e.g. model.pkl)을 로드한다.
+3. 테스트를 수행한다.
+"""
+
+from DLC_env_low3 import CarMakerEnv
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
+from stable_baselines3 import SAC
 
-# 제어점 설정
-nodes = np.asfortranarray([
-    [0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0],  # x 좌표
-    [0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0],  # y 좌표
-])
+if __name__ == '__main__':
+    road_type = "DLC"
+    data_name = 'IPG'
+    comment = "rws"
+    prefix = data_name + "_" + comment
 
-# 베지에 커브 객체 생성
-curve = bezier.Curve(nodes, degree=6)
-print(curve)
-# 커브 플로팅
-fig, ax = plt.subplots()
-curve.plot(num_pts=256, ax=ax)
 
-# 제어점 플로팅
-ax.plot(nodes[0, :], nodes[1, :], linestyle="None", marker="x", color="black")
+    env = CarMakerEnv(simul_path='test_IPG', port=9999, check=0)
+    model = SAC.load(f"best_model/DLC_low_best_model_rws3.pkl", env=env)
+#    model = SAC.load(f"41599_best_model.pkl", env=env)
+    print("Model loaded.")
 
-plt.show()
+    obs = env.reset()
+    action_lst = []
+    reward_lst=[]
+    info_lst = []
+    while True:
+        action = model.predict(obs)
+        obs, reward, done, info = env.step(action[0])
+        info_lst.append(info)
+        action_lst.append(action[0])
+        reward_lst.append(reward)
+        if done:
+            df1 = pd.DataFrame(data=reward_lst)
+            df1.to_csv(f'datafiles/{road_type}/{prefix}_reward.csv')
+            df3 = pd.DataFrame(data=info_lst)
+            df3.to_csv(f'datafiles/{road_type}/{prefix}_info.csv', index=False)
+            df4 = pd.DataFrame(data=action_lst)
+            df4.to_csv(f'datafiles/{road_type}/{prefix}_action.csv', index=False)
+            print("Episode Finished. Data saved.")
+            break
