@@ -17,7 +17,7 @@ from scipy.interpolate import interp1d
 from shapely.geometry import Polygon, Point, LineString
 from DLC_cone import Road, Car
 import pygame
-from DLC_data2 import Data
+from DLC_data import Data
 from common_functions import *
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
@@ -49,6 +49,7 @@ class CarMakerEnvB(gym.Env):
         self.check = check
         self.road_type = "DLC"
         self.data = Data()
+        self.cone = Cone()
         
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 1
@@ -125,6 +126,15 @@ class CarMakerEnvB(gym.Env):
         self.test_num += 1
         done = False
 
+        # 최초 실행시
+        if self.sim_initiated == False:
+            self.sim_initiated = True
+
+        # 에피소드의 첫 스텝
+        if self.sim_started == False:
+            self.status_queue.put("start")
+            self.sim_started = True
+
         time = 0
         carx, cary, caryaw = np.array([0, 0, 0])
         car_v = 0
@@ -135,20 +145,12 @@ class CarMakerEnvB(gym.Env):
         new_traj_point = self.make_traj_point(self.car_data[0], self.car_data[1], 0)
         sight = np.array([3 * i for i in range(5)])
 
+
         traj_lowlevel_abs = self.find_nearest_point(self.car_data[0], self.car_data[1], sight)
         traj_lowlevel_rel = self.to_relative_coordinates(self.car_data[0], self.car_data[1], self.car_data[2], traj_lowlevel_abs).flatten()
         self.low_level_obs = np.concatenate((np.array([self.car_data[3], self.car_data[4]]), traj_lowlevel_rel))
         steering_changes = self.low_level_model.predict(self.low_level_obs)
         action_to_sim = np.append(steering_changes[0], self.test_num)
-
-        # 최초 실행시
-        if self.sim_initiated == False:
-            self.sim_initiated = True
-
-        # 에피소드의 첫 스텝
-        if self.sim_started == False:
-            self.status_queue.put("start")
-            self.sim_started = True
 
         # Action 값 전송 / State 값 수신
         self.action_queue.put(action_to_sim)
@@ -182,10 +184,10 @@ class CarMakerEnvB(gym.Env):
             self.traj_point = traj_abs
             traj_rel = self.to_relative_coordinates(carx, cary, caryaw, traj_abs).flatten()
             car_dev = self.calculate_dev(carx, cary, caryaw)
-            cones_abs = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:3]
+            cones_abs = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:3]
             cones_rel = self.to_relative_coordinates(carx, cary, caryaw, cones_abs).flatten()
 
-            cones_for_lowlevel = self.road.cones_arr[self.road.cones_arr[:, 0] > carx][:2]
+            cones_for_lowlevel = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:2]
             cones_rel_for_lowlevel = self.to_relative_coordinates(carx, cary, caryaw, cones_for_lowlevel).flatten()
             self.car_data = np.array([carx, cary, caryaw, carv, car_steer[0]])
 

@@ -1,0 +1,4 @@
+env4: 기존 방식의 policy b까지 제작된 코드
+env5
+ - bezier curve도입
+ - policy b trajectory 생성 시기를 늦추어줌

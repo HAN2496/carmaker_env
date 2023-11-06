@@ -1,0 +1,13 @@
+[DLC low]
+env1: trajectory만
+env2: trajectory + state에 콘
+env3: trajectory + state, reward에 콘
+
+[SLALOM]
+env1: 한 y축에 콘이 두 개
+env2: 한 y축에 콘은 한 개 + 좌우를 -1, 1로 구분
+env3: env2 수정
+
+[DLC policy b]
+env1: 기존 방식. 매 step마다 경로 생성
+env2: 조건부로 경로 생성
