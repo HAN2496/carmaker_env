@@ -40,16 +40,3 @@ def calculate_dev(car_pos, traj_data):
 
     devAng = - np.arctan(devAng) - caryaw
     return np.array([devDist, devAng])
-
-def make_traj_point(car_pos, action):
-    check_car_pos(car_pos)
-    carx, cary, caryaw = car_pos
-    theta = action * 0.1 + caryaw
-    new_traj_point = np.array([carx + 8 * np.cos(theta),
-                               cary + 8 * np.sin(theta)])
-    return new_traj_point
-
-def check_collision(shape1, shape2):
-    if shape1.intersects(shape2):
-        return 1
-    return 0

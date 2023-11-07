@@ -40,6 +40,7 @@ class Cone:
         self.cone_r = 0.2
         self.cones_arr = self.create_cone_arr()
         self.cones_shape = self.create_cone_shape()
+#        print(f"Shape: {np.shape(self.cones_shape)}")
     def create_cone_shape(self):
         sections = self.create_DLC_cone()
         cones = []

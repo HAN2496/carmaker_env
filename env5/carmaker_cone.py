@@ -9,83 +9,115 @@ CARLENGTH = 4
 DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
 XSIZE, YSZIE = 10, 10
 
-def plot(cone, road, car):
-    #plt.figure(figsize=(10, 5))
+def plot(cone_arr):
+    plt.scatter(cone_arr[:, 0], cone_arr[:, 1], label="Cone")
 
-    # Plot forbidden areas
-    plt.plot(*road.cones_boundary.exterior.xy, label="Cone Boundary", color='red')
-    #    plt.plot(*road.forbbiden_area1.exterior.xy, label="Forbidden Area 1", color='red')
-    #    plt.plot(*road.forbbiden_area2.exterior.xy, label="Forbidden Area 2", color='blue')
-    plt.plot(*road.road_boundary.exterior.xy, label="ROAD BOUNDARY", color='green')
-
-    cones_x = cone.cones_arr[:, 0]
-    cones_y = cone.cones_arr[:, 1]
-    plt.scatter(cones_x, cones_y, s=10, color='orange', label="Cones")
-
-    car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
-    plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
-    plt.scatter(car.carx, car.cary, color='blue')
-
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    #plt.gca().invert_yaxis()
-    plt.title('Car, Forbidden Areas and Cones')
     plt.legend()
-    plt.grid(True)
     plt.axis('equal')
     plt.show()
 
+def create_SLALOM_cone_arr():
+    cones = []
+    more_before_cone = np.array([[-30, -10]])
+    for i in range(10):
+        sign = (i % 2) * 2 - 1  # [-1 1]
+        cone = np.array([100 + 30 * i, -10])
+        cones.append(cone)
+    further_cones = np.array([[600, -10]])
+    cones = np.concatenate((more_before_cone, cones, further_cones), axis=0)
+    return cones
+
+def create_SLALOM_cone_arr_sign():
+    cones = []
+    more_before_cone = np.array([[-30, -7, +1]])
+    # 좌측이 -1, 우측이 +1 (yaw가 +일때 시계방향으로 회전함) 1
+    for i in range(10):
+        sign = (i % 2) * 2 - 1  # [-1 1]
+        cone = np.array([100 + 30 * i, - 10 - sign * DIST_FROM_AXIS, (i % 2) * 2 - 1])
+        cones.append(cone)
+    further_cones = np.array(
+        [[800 + 30 * int(i / 2), -10 + ((i % 2) - 0.5) * 2 * 3, (i % 2) * 2 - 1] for i in range(10)])
+    cones = np.concatenate((more_before_cone, cones, further_cones), axis=0)
+    return cones
+
+def create_DLC_cone_arr():
+    sections = [
+        {'start': -5, 'gap': 5, 'cone_dist': 2.23, 'num': 11, 'y_offset': -10},
+        {'start': 50, 'gap': 3, 'cone_dist': 2.23, 'num': 5, 'y_offset': -10},  #
+        {'start': 64.7, 'gap': 2.7, 'cone_dist': 6.03, 'num': 4, 'y_offset': -8.1},
+        {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.8, 'num': 5, 'y_offset': -6.485},  #
+        {'start': 89, 'gap': 2.5, 'cone_dist': 6.8, 'num': 4, 'y_offset': -8.485},
+        {'start': 99, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -10.385},  #
+        {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 20, 'y_offset': -10.385}
+    ]
+    cones = []
+
+    for section in sections:
+        for i in range(section['num']):  # Each section has 5 pairs
+            x_base = section['start'] + section['gap'] * i
+            y1 = section['y_offset'] - section['cone_dist'] / 2
+            y2 = section['y_offset'] + section['cone_dist'] / 2
+            cones.extend([[x_base, y1], [x_base, y2]])
+
+    return np.array(cones)
+
 class Cone:
-    def __init__(self):
-        self.cone_r = 0.2
-        self.cones_arr = self.create_cone_arr()
-        self.cones_shape = self.create_cone_shape()
+    def __init__(self, road_type):
+        self.cone_r = CONER
+        self.road_type = road_type
+        if road_type == "DLC":
+            self.cone_arr = create_DLC_cone_arr()
+        elif road_type == "SLALOM":
+            self.cone_arr = create_SLALOM_cone_arr()
+        elif road_type == "SLALOM2":
+            self.cone_arr = create_SLALOM_cone_arr_sign()
+        else:
+            self.cone_arr = create_SLALOM_cone_arr_sign()
+        self.cone_shape = self.create_cone_shape()
+
     def create_cone_shape(self):
-        sections = self.create_DLC_cone()
-        cones = []
-        for section in sections:
-            for i in range(section['num']):  # Each section has 5 pairs
-                x_base = section['start'] + section['gap'] * i
-                y1 = section['y_offset'] - section['cone_dist'] / 2
-                y2 = section['y_offset'] + section['cone_dist'] / 2
-                cone1 = Point(x_base, y1).buffer(0.2)  # 반지름이 0.2m인 원 생성
-                cone2 = Point(x_base, y2).buffer(0.2)  # 반지름이 0.2m인 원 생성
-                cones.extend([cone1, cone2])
+        cone_shape = []
+        if self.road_type == "SLALOM2":
+            for i, j, k in self.cone_arr:
+                cone = Point(i, j).buffer(self.cone_r)
+                cone_shape.append(cone)
 
-        return np.array(cones)
-
-    def create_cone_arr(self):
-        sections = self.create_DLC_cone()
-        cones = []
-        for section in sections:
-            for i in range(section['num']):  # Each section has 5 pairs
-                x_base = section['start'] + section['gap'] * i
-                y1 = section['y_offset'] - section['cone_dist'] / 2
-                y2 = section['y_offset'] + section['cone_dist'] / 2
-                cones.extend([[x_base, y1], [x_base, y2]])
-
-        return np.array(cones)
-
-    def create_DLC_cone(self):
-        sections = [
-            {'start': -5, 'gap': 5, 'cone_dist': 2.23, 'num': 11, 'y_offset': -10},
-            {'start': 50, 'gap': 3, 'cone_dist': 2.23, 'num': 5, 'y_offset': -10}, #
-            {'start': 64.7, 'gap': 2.7, 'cone_dist': 6.03, 'num': 4, 'y_offset': -8.1},
-            {'start': 75.5, 'gap': 2.75, 'cone_dist': 2.8, 'num': 5, 'y_offset': -6.485}, #
-            {'start': 89, 'gap': 2.5, 'cone_dist': 6.8, 'num': 4, 'y_offset': -8.485},
-            {'start': 99, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -10.385}, #
-            {'start': 111, 'gap': 5, 'cone_dist': 3, 'num': 20, 'y_offset': -10.385}
-        ]
-        return sections
+            return np.array(cone_shape)
+        else:
+            for i, j in self.cone_arr:
+                cone = Point(i, j).buffer(self.cone_r)
+                cone_shape.append(cone)
+            return np.array(cone_shape)
 
 class Road:
-    def __init__(self):
+    def __init__(self, road_type):
+        self.road_type = road_type
+        if road_type == "DLC":
+            self.create_DLC_road()
+        elif road_type == "SLALOM":
+            self.create_SLALOM_road()
+
+    def create_SLALOM_road(self):
+        self.road_length = 500
+        self.road_width = -20
+        vertices1 = [[100 + 30 * i, - 10 - DIST_FROM_AXIS - 7 * (i % 2 - 1)] for i in range(10)]
+        vertices1 = np.array(vertices1 + [[385, -7 - DIST_FROM_AXIS], [510, -7 - DIST_FROM_AXIS], [510, 15], [0, 15],
+                                          [0, -7 - DIST_FROM_AXIS], [85, -7 - DIST_FROM_AXIS], [100, - DIST_FROM_AXIS - 3]])
+        vertices2 = [[100 + 30 * i, -10 + DIST_FROM_AXIS - 7 * (i % 2)] for i in range(10)]
+        vertices2 = np.array(vertices2 + [[385, -13 + DIST_FROM_AXIS], [510, -13 + DIST_FROM_AXIS], [510, -35], [0, -35],
+                                          [0, -13 + DIST_FROM_AXIS], [85, -13 + DIST_FROM_AXIS], [100, -10 + DIST_FROM_AXIS]])
+        self.forbbiden_area1 = Polygon(vertices1)
+        self.forbbiden_area2 = Polygon(vertices2)
+        self.forbidden_line1 = vertices1
+        self.forbidden_line2 = vertices2
+
+        self.road_boundary = Polygon(
+            [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
+        ])
+
+    def create_DLC_road(self):
         self.road_length = 161
         self.road_width = -20
-        self._forbidden_area()
-        self.cone = Cone()
-
-    def _forbidden_area(self):
         vertices1 = [
             (0, -8.885), (62, -8.885), (62, -5.085), (99, -5.085), (99, -8.885),
             (161, -8.85), (161, 0), (0, 0), (0, -8.885)
@@ -106,37 +138,26 @@ class Road:
              (161, -11.885), (86.5, -11.885), (86.5, -7.885), (75.5, -7.885), (75.5, -11.115), (0, -11.115)
         ])
 
-    def is_car_in_forbidden_area(self, car_shape):
-        if car_shape.intersects(self.forbbiden_area1) or car_shape.intersects(self.forbbiden_area2):
-            return 1
-        else:
-            return 0
-    def is_car_colliding_with_cones(self, car_shape):
-        for cone in self.cone.cones_shape:
-            if car_shape.intersects(cone):
-                return 1
-        return 0
-
-    def is_car_in_road(self, car_shape):
-        if not car_shape.intersects(self.road_boundary):
-            return 1
-        if not self.road_boundary.contains(car_shape):
-            return 1
-        return 0
+    def plot_road(self):
+        plt.plot(*self.road_boundary.exterior.xy, label='road boundary', color='blue')
+        plt.plot(*self.forbbiden_area1.exterior.xy, label='forbidden area', color='red')
+        plt.plot(*self.forbbiden_area2.exterior.xy, color='red')
+        plt.plot(*self.cones_boundary.exterior.xy, label="Cone Boundary", color='orange')
+        plt.fill(*self.cones_boundary.exterior.coords.xy, color='orange', alpha=0.5)
+        plt.legend()
+        plt.show()
 
 class Car:
-    def __init__(self, carx=3, cary=-10, caryaw=0, carv=13.8889):
+    def __init__(self):
         self.length = CARLENGTH
         self.width = CARWIDTH
-        self.carx = carx
-        self.cary = cary
-        self.caryaw = caryaw
-        self.carv = carv
+        self.reset_car()
 
     def reset_car(self):
-        self.carx = 3
+        self.carx = 2.9855712
         self.cary = -10
         self.caryaw = 0
+        self.carv = 13.8888889
 
     def move_car(self, angle):
         angle = angle[0]
@@ -161,11 +182,10 @@ class Car:
 
         return car_shape
 
+
 if __name__ == "__main__":
-    cone =Cone()
-    road = Road()
-    car = Car()
-    carx = 10
-    cones_abs = cone.cones_arr[cone.cones_arr[:, 0] > carx][:2]
-    print(cones_abs)
-    plot(cone, road, car)
+    road_type = "DLC"
+    cone = Cone(road_type=road_type)
+    print(np.shape(cone.cone_shape))
+    road = Road(road_type=road_type)
+    road.plot_road()
