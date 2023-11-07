@@ -16,15 +16,20 @@ def plot(cone, road, car):
     plt.plot(*road.cones_boundary.exterior.xy, label="Cone Boundary", color='red')
     #    plt.plot(*road.forbbiden_area1.exterior.xy, label="Forbidden Area 1", color='red')
     #    plt.plot(*road.forbbiden_area2.exterior.xy, label="Forbidden Area 2", color='blue')
-    plt.plot(*road.road_boundary.exterior.xy, label="ROAD BOUNDARY", color='green')
+#    plt.plot(*road.road_boundary.exterior.xy, label="ROAD BOUNDARY", color='green')
 
     cones_x = cone.cones_arr[:, 0]
     cones_y = cone.cones_arr[:, 1]
     plt.scatter(cones_x, cones_y, s=10, color='orange', label="Cones")
 
-    car_shape = car.shape_car(car.carx, car.cary, car.caryaw)
+    car_shape = car.shape_car(4, -9, 0)
     plt.plot(*car_shape.exterior.xy, color='blue', label="Car")
     plt.scatter(car.carx, car.cary, color='blue')
+
+    if road.cones_boundary.contains(car_shape):
+        print("IN BOUNDARY")
+    else:
+        print("COLLISION")
 
     plt.xlabel('X')
     plt.ylabel('Y')

@@ -102,7 +102,7 @@ class CarMakerEnv(gym.Env):
         time = 0
         dev = np.array([0, 0])
         alHori = 0
-        car_pos = np.array([2, -10, 0])
+        carx, cary, caryaw = np.array([2, -10, 0])
         car_dev = np.array([0, 0])
         car_steer = np.array([0, 0, 0])
         collision = 0
@@ -152,19 +152,19 @@ class CarMakerEnv(gym.Env):
             r_ext = state[14:]
 
             lookahead_sight = [2 * i for i in range(5)]
-            lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
-            lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
+            lookahead_traj_abs = self.find_lookahead_traj(carx, cary, lookahead_sight)
+            lookahead_traj_rel = self.to_relative_coordinates(carx, cary, caryaw, lookahead_traj_abs).flatten()
 
             ahead_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:1]
             behind_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] <= carx][:1]
             closest_cones = np.vstack((behind_cones, ahead_cones))
 
-            closest_cones_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], closest_cones).flatten()
+            closest_cones_rel = self.to_relative_coordinates(carx, cary, caryaw, closest_cones).flatten()
 
             state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, r_ext, lookahead_traj_rel, closest_cones_rel))
 
         # 리워드 계산
-        reward_state = np.concatenate((car_pos, dev))
+        reward_state = np.concatenate((np.array([carx, cary, caryaw]), dev))
         reward = self.getReward(reward_state, time)
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, state_for_info)}
@@ -183,8 +183,6 @@ class CarMakerEnv(gym.Env):
         ang_reward = abs(devang) * 500
         col_reward = self.is_car_colliding_with_cone(carx, cary, caryaw) * 1000
 
-        if col_reward !=0:
-            print("COL")
         e = - col_reward - dist_reward - ang_reward
         if self.test_num % 150 == 0 and self.check == 0:
             print(f"Time: {time}, Reward : [Collision: {col_reward}]")

@@ -1,3 +1,4 @@
 [low]
 env1: 그냥 trajectory따라가기
 env2: 콘 충돌의 경우에만 벌점. state도 콘 충돌만
+env3: 콘 충돌 + dev
