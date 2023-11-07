@@ -2,6 +2,7 @@ import numpy as np
 from shapely.geometry import Polygon, Point, LineString
 from shapely import affinity
 import matplotlib.pyplot as plt
+from common_functions import *
 
 CONER = 0.2
 CARWIDTH = 1.8
@@ -123,8 +124,8 @@ class Road:
             (161, -8.85), (161, 0), (0, 0), (0, -8.885)
         ]
         vertices2 = [
-            (0, -11.885), (75.5, -11.885), (75.5, -7.885), (86.5, -7.885),
-            (86.5, -11.885), (161, -11.885), (161, -20), (0, -20), (0, -11.885)
+            (0, -11.115), (75.5, -11.115), (75.5, -7.885), (86.5, -7.885),
+            (86.5, -11.885), (161, -11.885), (161, -20), (0, -20), (0, -11.115)
         ]
         self.forbbiden_area1 = Polygon(vertices1)
         self.forbbiden_area2 = Polygon(vertices2)
@@ -181,7 +182,6 @@ class Car:
         car_shape = affinity.translate(car_shape, carx, cary)
 
         return car_shape
-
 
 if __name__ == "__main__":
     road_type = "DLC"

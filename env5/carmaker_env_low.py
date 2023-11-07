@@ -11,6 +11,8 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
+from carmaker_cone import *
+from carmaker_data import *
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -44,6 +46,7 @@ class CarMakerEnv(gym.Env):
         self.check = check
         self.use_carmaker = use_carmaker
         self.road_type = road_type
+        self.data = Data(road_type=road_type)
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
@@ -94,36 +97,21 @@ class CarMakerEnv(gym.Env):
     def step(self, action1):
         action = np.append(self.test_num, action1)
         self.test_num += 1
-        state_for_info = np.zeros(16)
-        time = 0
-        dev = np.array([0, 0])
-        alHori = 0
-        carx, cary, caryaw = np.array([2, -10, 0])
-        car_dev = np.array([0, 0])
-        car_steer = np.array([0, 0, 0])
-        collision = 0
-        car_v = 0
-        car_roll = 0
 
         done = False
-
         # 최초 실행시
         if self.sim_initiated == False:
             self.sim_initiated = True
-
         # 에피소드의 첫 스텝
         if self.sim_started == False:
             self.status_queue.put("start")
             self.sim_started = True
-
         # Action 값 전송
         # CarMakerEnv -> CMcontrolNode -> tcpip_thread -> simulink tcp/ip block
         self.action_queue.put(action)
-
         # State 값 수신
         # simulink tcp/ip block -> tcpip_thread -> CMcontrolNode -> CarMakerEnv
         state = self.state_queue.get()
-
 
         if state == False:
             # 시뮬레이션 종료
@@ -135,28 +123,19 @@ class CarMakerEnv(gym.Env):
         else:
             # 튜플로 넘어온 값을 numpy array로 변환
             state = np.array(state) #어레이 변환
-            state = state[1:]
-            state_for_info = state
-            time = state[0]
-            carx, cary, caryaw = state[1:4] #x, y, yaw
-            car_v = state[4] #1
-            car_steer = state[5:8]
-            dev = self.calculate_dev(carx, cary, caryaw)
-            alHori = state[8]
-            roll = state[9]
-            wheel_steer = state[10:14]
-            r_ext = state[14:]
-            lookahead_sight = [2 * i for i in range(5)]
-            lookahead_traj_abs = self.find_lookahead_traj(carx, cary, lookahead_sight)
-            lookahead_traj_rel = self.to_relative_coordinates(carx, cary, caryaw, lookahead_traj_abs).flatten()
+            self.data.put_simul_data(state)
 
-            state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, r_ext, lookahead_traj_rel))
+            lookahead_sight = [2 * i for i in range(5)]
+            lookahead_traj_abs = self.find_lookahead_traj(self.data.carx, self.data.cary, lookahead_sight)
+            lookahead_traj_rel = self.to_relative_coordinates(self.data.carx, self.data.cary, self.data.caryaw, lookahead_traj_abs).flatten()
+
+            state = np.concatenate((self.data.manage_state_low(), lookahead_traj_rel))
 
         # 리워드 계산
-        reward_state = np.concatenate((dev, np.array([alHori]), np.array([carx, cary, caryaw])))
+        reward_state = np.array([self.data.devDist, self.data.devAng, self.data.alHori, self.data.carx, self.data.cary, self.data.caryaw])
         reward = self.getReward(reward_state, time)
-        info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
-        info = {key: value for key, value in zip(info_key, state_for_info)}
+        info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
+        info = {key: value for key, value in zip(info_key, self.data.simul_data)}
 
         return state, reward, done, info
 
