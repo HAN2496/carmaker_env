@@ -103,11 +103,7 @@ class Road:
             [(0, 0), (self.road_length, 0), (self.road_length, self.road_width), (0, self.road_width)
         ])
 
-    def is_car_in_forbidden_area(self, car_shape):
-        if car_shape.intersects(self.forbbiden_area1) or car_shape.intersects(self.forbbiden_area2):
-            return 1
-        else:
-            return 0
+
     def is_car_colliding_with_cones(self, car_shape):
         for cone in self.cone.cones_shape:
             if car_shape.intersects(cone):
