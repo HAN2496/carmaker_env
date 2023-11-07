@@ -11,7 +11,7 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from SLALOM_data import Data
+from DLC_cone import Cone, Car, Road
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -37,22 +37,23 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, check=2, simul_path='pythonCtrl_JX1', road_type="DLC", use_carmaker=True):
+    def __init__(self, check=2, port=10001, simul_path='pythonCtrl_JX1', road_type="DLC", use_carmaker=True):
         # Action과 State의 크기 및 형태를 정의.
         matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
         host = '127.0.0.1'
-        port = 10001
 
         self.check = check
         self.use_carmaker = use_carmaker
         self.road_type = road_type
-        self.data = Data(level_b=False)
+        self.cone = Cone()
+        self.road = Road()
+        self.car = Car()
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        env_obs_num = 18
-        sim_obs_num = 15
+        env_obs_num = 20
+        sim_obs_num = 17
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
@@ -78,6 +79,7 @@ class CarMakerEnv(gym.Env):
         self.cm_thread.join()
 
     def _initial_state(self):
+        self.test_num = 0
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
@@ -143,24 +145,72 @@ class CarMakerEnv(gym.Env):
             carx, cary, caryaw = state[1:4] #x, y, yaw
             car_v = state[4] #1
             car_steer = state[5:8]
-            dev = self.calculate_dev(car_pos[0], car_pos[1], car_pos[2])
-            alHori = state[10]
-            roll = state[11]
-            wheel_steer = state[12:]
-            lookahead_sight = [2 * i for i in range(5)]
-            lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
-            lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
+            dev = self.calculate_dev(carx, cary, caryaw)
+            alHori = state[8]
+            roll = state[9]
+            wheel_steer = state[10:14]
+            r_ext = state[14:]
 
-            state = np.concatenate((np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, lookahead_traj_rel))
+            ahead_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:2]
+            behind_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] <= carx][:2]
+            closest_cones = np.vstack((behind_cones, ahead_cones))
 
+            state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, r_ext, closest_cones))
 
         # 리워드 계산
-        reward_state = np.concatenate((dev, np.array([alHori]), car_pos))
+        reward_state = np.concatenate((car_pos))
         reward = self.getReward(reward_state, time)
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, state_for_info)}
 
         return state, reward, done, info
+
+
+    def getReward(self, state, time):
+        if state.any() == False:
+            # 에피소드 종료시
+            return 0.0
+        carx, cary, caryaw = state
+
+        reward_collision = self.is_car_colliding_with_cone(carx, cary, caryaw) * 1000
+
+        e = - reward_collision
+        if self.test_num % 150 == 0 and self.check == 0:
+            print(f"Time: {time}, Reward : [Collision: {reward_collision}]")
+
+        return e
+
+    def is_car_colliding_with_cone(self, carx, cary, caryaw):
+        car_shape = Car().shape_car(carx, cary, caryaw)
+        if self.road.cones_boundary.contains(car_shape):
+            return 0
+        return 1
+
+    def calculate_dev(self, carx, cary, caryaw):
+        arr = np.array(self.traj_data)
+        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+        dist_index = np.argmin(distances)
+        devDist = distances[dist_index]
+
+        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
+        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
+
+        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
+        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
+
+        # 분모가 0이 될 수 있는 경우에 대한 예외처리
+        if dx1 == 0:
+            devAng1 = np.inf if dy1 > 0 else -np.inf
+        else:
+            devAng1 = dy1 / dx1
+
+        if dx2 == 0:
+            devAng2 = np.inf if dy2 > 0 else -np.inf
+        else:
+            devAng2 = dy2 / dx2
+
+        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
+        return np.array([devDist, devAng])
 
     def find_lookahead_traj(self, x, y, distances):
         distances = np.array(distances)
@@ -196,57 +246,9 @@ class CarMakerEnv(gym.Env):
 
         return np.array(relative_coords)
 
-    def getReward(self, state, time):
-
-        if state.any() == False:
-            # 에피소드 종료시
-            return 0.0
-
-        dev_dist = abs(state[0])
-        dev_ang = abs(state[1])
-        alHori = abs(state[2])
-        carx, cary, caryaw = state[3:]
-
-        #devDist, devAng에 따른 리워드
-        reward_devDist = dev_dist * 1000
-        reward_devAng = dev_ang * 5000
-
-        e = - reward_devDist - reward_devAng
-        """
-        if self.test_num % 300 == 0 and self.check == 0:
-            print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
-        """
-        return e
-
-    def calculate_dev(self, carx, cary, caryaw):
-        arr = np.array(self.traj_data)
-        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
-        dist_index = np.argmin(distances)
-        devDist = distances[dist_index]
-
-        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
-        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
-
-        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
-        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
-
-        # 분모가 0이 될 수 있는 경우에 대한 예외처리
-        if dx1 == 0:
-            devAng1 = np.inf if dy1 > 0 else -np.inf
-        else:
-            devAng1 = dy1 / dx1
-
-        if dx2 == 0:
-            devAng2 = np.inf if dy2 > 0 else -np.inf
-        else:
-            devAng2 = dy2 / dx2
-
-        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
-        return np.array([devDist, devAng])
-
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(check=0, simul_path='test_Nomove')
+    env = CarMakerEnv(check=0)
     act_lst = []
     next_state_lst = []
     info_lst = []

@@ -198,8 +198,8 @@ class CarMakerEnv(gym.Env):
     def is_car_colliding_with_cone(self, carx, cary, caryaw):
         car_shape = Car().shape_car(carx, cary, caryaw)
         if self.road.cones_boundary.contains(car_shape):
-            return 1
-        return 0
+            return 0
+        return 1
     def calculate_dev(self, carx, cary, caryaw):
         arr = np.array(self.traj_data)
         distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
