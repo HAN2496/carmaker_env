@@ -32,10 +32,9 @@ compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']
 titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "Car pos X", "Car pos Y", "Reward"]
 
 plot_multiple(compare_keys, titles, ['ipg', 'rl'], ipg_rl, rl)
-plot_multiple(compare_keys, titles, ['ipg', 'mpc'], )
 plot_trajectory(cones, traj, ipg_rl, rl, 'RL')
 
-print("IPG: ", check_collision(cones))
+print("IPG: ", check_collision(cones, ipg_rl))
 print("RL: ",check_collision(cones, rl))
 
 tables_rl = []
