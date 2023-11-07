@@ -160,7 +160,7 @@ class CarMakerEnv(gym.Env):
             state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, r_ext, closest_cones_rel))
 
         # 리워드 계산
-        reward_state = np.concatenate((car_pos))
+        reward_state = car_pos
         reward = self.getReward(reward_state, time)
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, state_for_info)}

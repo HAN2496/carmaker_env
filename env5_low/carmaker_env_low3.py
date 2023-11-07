@@ -52,7 +52,7 @@ class CarMakerEnv(gym.Env):
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        env_obs_num = 25
+        env_obs_num = 26
         sim_obs_num = 17
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -183,6 +183,8 @@ class CarMakerEnv(gym.Env):
         ang_reward = abs(devang) * 500
         col_reward = self.is_car_colliding_with_cone(carx, cary, caryaw) * 1000
 
+        if col_reward !=0:
+            print("COL")
         e = - col_reward - dist_reward - ang_reward
         if self.test_num % 150 == 0 and self.check == 0:
             print(f"Time: {time}, Reward : [Collision: {col_reward}]")
