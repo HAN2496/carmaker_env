@@ -100,7 +100,7 @@ class CarMakerEnv(gym.Env):
         time = 0
         dev = np.array([0, 0])
         alHori = 0
-        car_pos = np.array([2, -10, 0])
+        carx, cary, caryaw = np.array([2, -10, 0])
         car_dev = np.array([0, 0])
         car_steer = np.array([0, 0, 0])
         collision = 0
@@ -143,19 +143,19 @@ class CarMakerEnv(gym.Env):
             carx, cary, caryaw = state[1:4] #x, y, yaw
             car_v = state[4] #1
             car_steer = state[5:8]
-            dev = self.calculate_dev(car_pos[0], car_pos[1], car_pos[2])
+            dev = self.calculate_dev(carx, cary, caryaw)
             alHori = state[10]
             roll = state[11]
             wheel_steer = state[12:]
             lookahead_sight = [2 * i for i in range(5)]
-            lookahead_traj_abs = self.find_lookahead_traj(car_pos[0], car_pos[1], lookahead_sight)
-            lookahead_traj_rel = self.to_relative_coordinates(car_pos[0], car_pos[1], car_pos[2], lookahead_traj_abs).flatten()
+            lookahead_traj_abs = self.find_lookahead_traj(carx, cary, lookahead_sight)
+            lookahead_traj_rel = self.to_relative_coordinates(carx, cary, caryaw, lookahead_traj_abs).flatten()
 
             state = np.concatenate((np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, lookahead_traj_rel))
 
 
         # 리워드 계산
-        reward_state = np.concatenate((dev, np.array([alHori]), car_pos))
+        reward_state = np.concatenate((dev, np.array([alHori, carx, cary, caryaw])))
         reward = self.getReward(reward_state, time)
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, state_for_info)}
