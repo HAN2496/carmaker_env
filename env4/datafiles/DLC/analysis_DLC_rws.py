@@ -7,6 +7,24 @@ from for_analysis_DLC import *
 CONER = 0.2
 CARWIDTH, CARLENGTH = 1.8, 4
 
+def plot_trajectory_each(cones, traj, ipg, rl, ipg_col, rl_col):
+    plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='orange', linewidth=3)
+    plt.scatter(ipg_col[:, 0], ipg_col[:, 1], color='red', linewidth=3)
+    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='black')
+    plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=3)
+    plt.legend()
+    plt.show()
+    plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='orange', linewidth=3)
+    plt.scatter(rl_col[:, 0], rl_col[:, 1], color='red', linewidth=3)
+    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='black')
+    plt.plot(rl['carx'], rl['cary'], label='RL', linewidth=3)
+#    plt.axis("equal")
+    plt.xlabel("m")
+    plt.ylabel("m")
+    plt.title("Trajectory")
+    plt.legend()
+    plt.show()
+
 def make_dlc_cone(start, interval, width, num):
     arr = []
     for i in range(num):
@@ -31,12 +49,20 @@ labels = ['ipg', 'rl']
 compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']
 titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "Car pos X", "Car pos Y", "Reward"]
 
+"""
+#그래프 플롯
 plot_multiple(compare_keys, titles, ['ipg', 'rl'], ipg_rl, rl)
 plot_trajectory(cones, traj, ipg_rl, rl, 'RL')
+"""
+#충돌 콘 플롯
+ipg_collision = np.array(check_collision(cones, ipg_rl))
+rl_collision = np.array(check_collision(cones, rl))
+print("IPG: ", ipg_collision)
+print("RL: ", rl_collision)
 
-print("IPG: ", check_collision(cones, ipg_rl))
-print("RL: ",check_collision(cones, rl))
+plot_trajectory_each(cones, traj, ipg_rl, rl, ipg_collision, rl_collision)
 
+#성능지표 플롯
 tables_rl = []
 for dataset, data_dict in zip(['ipg', 'rl'], [ipg_rl, rl]):
     calc_data = calc_performance(dataset, data_dict)

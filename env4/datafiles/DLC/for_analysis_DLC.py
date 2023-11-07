@@ -94,7 +94,7 @@ np.array(data_dict['alHori']) == -maximum_lateral_acc))[0][0]
 
 def plot_trajectory(cones, traj, ipg, rl, labels):
     plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='red', linewidth=3)
-#    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
+    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
     plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=3)
     plt.plot(rl['carx'], rl['cary'], label=labels, linewidth=3)
 #    plt.axis("equal")
