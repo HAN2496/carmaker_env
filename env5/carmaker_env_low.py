@@ -11,7 +11,6 @@ import threading
 from queue import Queue
 import pandas as pd
 import time
-from DLC_cone import Cone, Car, Road
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -45,14 +44,11 @@ class CarMakerEnv(gym.Env):
         self.check = check
         self.use_carmaker = use_carmaker
         self.road_type = road_type
-        self.cone = Cone()
-        self.road = Road()
-        self.car = Car()
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        env_obs_num = 20
+        env_obs_num = 22
         sim_obs_num = 17
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -102,7 +98,7 @@ class CarMakerEnv(gym.Env):
         time = 0
         dev = np.array([0, 0])
         alHori = 0
-        car_pos = np.array([2, -10, 0])
+        carx, cary, caryaw = np.array([2, -10, 0])
         car_dev = np.array([0, 0])
         car_steer = np.array([0, 0, 0])
         collision = 0
@@ -150,17 +146,14 @@ class CarMakerEnv(gym.Env):
             roll = state[9]
             wheel_steer = state[10:14]
             r_ext = state[14:]
+            lookahead_sight = [2 * i for i in range(5)]
+            lookahead_traj_abs = self.find_lookahead_traj(carx, cary, lookahead_sight)
+            lookahead_traj_rel = self.to_relative_coordinates(carx, cary, caryaw, lookahead_traj_abs).flatten()
 
-            ahead_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:2]
-            behind_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] <= carx][:2]
-            closest_cones = np.vstack((behind_cones, ahead_cones))
-
-            closest_cones_rel = self.to_relative_coordinates(carx, cary, caryaw, closest_cones).flatten()
-
-            state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, r_ext, closest_cones_rel))
+            state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, r_ext, lookahead_traj_rel))
 
         # 리워드 계산
-        reward_state = np.array([carx, cary, caryaw])
+        reward_state = np.concatenate((dev, np.array([alHori]), np.array([carx, cary, caryaw])))
         reward = self.getReward(reward_state, time)
         info_key = np.array(["time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, state_for_info)}
@@ -169,24 +162,29 @@ class CarMakerEnv(gym.Env):
 
 
     def getReward(self, state, time):
+
         if state.any() == False:
             # 에피소드 종료시
             return 0.0
-        carx, cary, caryaw = state
 
-        reward_collision = self.is_car_colliding_with_cone(carx, cary, caryaw) * 1000
+        dev_dist = abs(state[0])
+        dev_ang = abs(state[1])
+        alHori = abs(state[2])
+        carx, cary, caryaw = state[3:]
 
-        e = - reward_collision
+        #devDist, devAng에 따른 리워드
+        reward_devDist = dev_dist * 1000
+        if self.road_type == 'DLC':
+            reward_devAng = dev_ang * 1000
+        else:
+            reward_devAng = dev_ang * 5000
+
+        e = - reward_devDist - reward_devAng
+
         if self.test_num % 150 == 0 and self.check == 0:
-            print(f"Time: {time}, Reward : [Collision: {reward_collision}]")
+            print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
 
         return e
-
-    def is_car_colliding_with_cone(self, carx, cary, caryaw):
-        car_shape = Car().shape_car(carx, cary, caryaw)
-        if self.road.cones_boundary.contains(car_shape):
-            return 0
-        return 1
 
     def calculate_dev(self, carx, cary, caryaw):
         arr = np.array(self.traj_data)
