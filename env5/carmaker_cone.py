@@ -78,25 +78,27 @@ class Cone:
 
     def create_cone_shape(self):
         cone_shape = []
-        if self.road_type == "SLALOM2":
-            for i, j, k in self.cone_arr:
-                cone = Point(i, j).buffer(self.cone_r)
-                cone_shape.append(cone)
-
-            return np.array(cone_shape)
-        else:
-            for i, j in self.cone_arr:
-                cone = Point(i, j).buffer(self.cone_r)
-                cone_shape.append(cone)
-            return np.array(cone_shape)
+        for x, y in self.cone_arr:
+            cone_square = [(x - CONER, y - CONER),
+            (x - CONER, y + CONER),
+            (x + CONER, y + CONER),
+            (x + CONER, y - CONER)
+            ]
+            square = Polygon(cone_square)
+            cone_shape.append(square)
+        return np.array(cone_shape)
 
 class Road:
     def __init__(self, road_type):
         self.road_type = road_type
+        self.cone = Cone(road_type=road_type)
+        self.cone_shape = self.cone.cone_shape
         if road_type == "DLC":
             self.create_DLC_road()
+            self.cone = Cone(road_type=road_type)
         elif road_type == "SLALOM":
             self.create_SLALOM_road()
+            self.cone = Cone(road_type=road_type)
 
     def create_SLALOM_road(self):
         self.road_length = 500
@@ -145,6 +147,12 @@ class Road:
         plt.plot(*self.forbbiden_area2.exterior.xy, color='red')
         plt.plot(*self.cones_boundary.exterior.xy, label="Cone Boundary", color='orange')
         plt.fill(*self.cones_boundary.exterior.coords.xy, color='orange', alpha=0.5)
+        for idx, cone in enumerate(self.cone_shape):
+            x, y = cone.exterior.xy
+            if idx == 0:
+                plt.scatter(x, y, color='blue', label='cone')
+            else:
+                plt.scatter(x, y, color='blue')
         plt.legend()
         plt.show()
 

@@ -38,15 +38,15 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gym.Env):
-    def __init__(self, check=2, port=10001, simul_path='pythonCtrl_JX1', road_type="DLC", use_carmaker=True):
+    def __init__(self, check=2, port=10001, simul_path='pythonCtrl_JX1', road_type="DLC", use_low=True):
         # Action과 State의 크기 및 형태를 정의.
         matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
         host = '127.0.0.1'
 
         self.check = check
-        self.use_carmaker = use_carmaker
+        self.use_low = use_low
         self.road_type = road_type
-        self.data = Data(road_type=road_type, low_env=use_carmaker)
+        self.data = Data(road_type=road_type, low_env=use_low)
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
@@ -56,7 +56,7 @@ class CarMakerEnv(gym.Env):
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
-        if self.use_carmaker:
+        if self.use_low:
             # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
             self.status_queue = Queue()
             self.action_queue = Queue()
@@ -82,7 +82,7 @@ class CarMakerEnv(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
-        if self.use_carmaker == True:
+        if self.use_low == True:
             # 초기화 코드
             if self.sim_initiated == True:
                 # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
@@ -131,7 +131,6 @@ class CarMakerEnv(gym.Env):
 
             state = np.concatenate((self.data.manage_state_low(), lookahead_traj_rel))
 
-        print(self.data.carx)
         # 리워드 계산
         reward_state = np.array([self.data.devDist, self.data.devAng, self.data.alHori, self.data.carx, self.data.cary, self.data.caryaw])
         reward = self.getReward(reward_state, self.data.time)
