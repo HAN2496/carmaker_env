@@ -9,6 +9,7 @@ CARWIDTH = 1.8
 CARLENGTH = 4
 DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
 XSIZE, YSZIE = 10, 10
+
 class Data:
     def __init__(self, road_type, low_env):
         self.road_type = road_type
@@ -136,11 +137,15 @@ class Trajectory:
 
         return result_points
 
+class Test:
+    def __init__(self):
+        road_type = "DLC"
+        self.data = Data(road_type=road_type, low_env=True)
+        tmp = np.zeros(17)
+        self.data.put_simul_data(tmp)
+        print(self.data.carx)
 
 if __name__ == "__main__":
     road_type = "DLC"
     traj = Trajectory(low_env=True)
-    data = Data(road_type=road_type, low_env=True)
-    arr = np.zeros(17)
-    data.carx = 10
-    print(data.carx)
+    test=Test()
