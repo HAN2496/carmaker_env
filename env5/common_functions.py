@@ -6,7 +6,7 @@ def check_car_pos(car_pos):
         print("Error: Car Pos array have to include carx, cary, caryaw")
         sys.exit(1)
 
-def to_relative_coordinates(arr, car_pos):
+def to_relative_coordinates(car_pos, arr):
     check_car_pos(car_pos)
     relative_coords = []
     carx, cary, caryaw = car_pos
@@ -40,3 +40,23 @@ def calculate_dev(car_pos, traj_data):
 
     devAng = - np.arctan(devAng) - caryaw
     return np.array([devDist, devAng])
+
+def find_lookahead_traj(x, y, distances):
+    distances = np.array(distances)
+    result_points = []
+
+    min_idx = np.argmin(np.sum((self.traj_data - np.array([x, y])) ** 2, axis=1))
+
+    for dist in distances:
+        lookahead_idx = min_idx
+        total_distance = 0.0
+        while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
+            total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
+            lookahead_idx += 1
+
+        if lookahead_idx < len(self.traj_data):
+            result_points.append(self.traj_data[lookahead_idx])
+        else:
+            result_points.append(self.traj_data[-1])
+
+    return result_points

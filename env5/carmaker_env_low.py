@@ -46,13 +46,14 @@ class CarMakerEnv(gym.Env):
         self.check = check
         self.use_low = use_low
         self.road_type = road_type
-        self.data = Data(road_type=road_type, low_env=use_low)
+        self.data = Data(road_type=road_type, low_env=use_low, check=check)
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        env_obs_num = 22
+        env_obs_num = np.size(self.data.manage_state_low())
         sim_obs_num = 17
+
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
@@ -72,7 +73,6 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
         self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
-
 
     def __del__(self):
         self.cm_thread.join()
@@ -124,106 +124,28 @@ class CarMakerEnv(gym.Env):
             # 튜플로 넘어온 값을 numpy array로 변환
             state = np.array(state) #어레이 변환
             self.data.put_simul_data(state)
+            state = self.data.manage_state_low()
 
-            lookahead_sight = [2 * i for i in range(5)]
-            lookahead_traj_abs = self.find_lookahead_traj(self.data.carx, self.data.cary, lookahead_sight)
-            lookahead_traj_rel = self.to_relative_coordinates(self.data.carx, self.data.cary, self.data.caryaw, lookahead_traj_abs).flatten()
-
-            state = np.concatenate((self.data.manage_state_low(), lookahead_traj_rel))
+        if state.any() == False:
+            reward = 0.0
 
         # 리워드 계산
-        reward_state = np.array([self.data.devDist, self.data.devAng, self.data.alHori, self.data.carx, self.data.cary, self.data.caryaw])
-        reward = self.getReward(reward_state, self.data.time)
-        info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng", "alHori", "roll", "rl", "rr", "fl", "fr"])
+        reward = self.data.manage_reward_low()
+        info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
+                             "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
 
         return state, reward, done, info
 
 
-    def getReward(self, state, time):
+    def getReward(self, time):
 
         if state.any() == False:
             # 에피소드 종료시
             return 0.0
 
-        dev_dist = abs(state[0])
-        dev_ang = abs(state[1])
-        alHori = abs(state[2])
-        carx, cary, caryaw = state[3:]
+        return self.data.manage_reward_low()
 
-        #devDist, devAng에 따른 리워드
-        reward_devDist = dev_dist * 1000
-        if self.road_type == 'DLC':
-            reward_devAng = dev_ang * 1000
-        else:
-            reward_devAng = dev_ang * 5000
-
-        e = - reward_devDist - reward_devAng
-
-        if self.test_num % 150 == 0 and self.check == 0:
-            print(f"Time: {time}, Reward : [ dist : {round(dev_dist,3)}] [ angle : {round(dev_ang, 3)}]")
-
-        return e
-
-    def calculate_dev(self, carx, cary, caryaw):
-        arr = np.array(self.traj_data)
-        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
-        dist_index = np.argmin(distances)
-        devDist = distances[dist_index]
-
-        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
-        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
-
-        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
-        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
-
-        # 분모가 0이 될 수 있는 경우에 대한 예외처리
-        if dx1 == 0:
-            devAng1 = np.inf if dy1 > 0 else -np.inf
-        else:
-            devAng1 = dy1 / dx1
-
-        if dx2 == 0:
-            devAng2 = np.inf if dy2 > 0 else -np.inf
-        else:
-            devAng2 = dy2 / dx2
-
-        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
-        return np.array([devDist, devAng])
-
-    def find_lookahead_traj(self, x, y, distances):
-        distances = np.array(distances)
-        result_points = []
-
-        min_idx = np.argmin(np.sum((self.traj_data - np.array([x, y])) ** 2, axis=1))
-
-        for dist in distances:
-            lookahead_idx = min_idx
-            total_distance = 0.0
-            while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
-                total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
-                lookahead_idx += 1
-
-            if lookahead_idx < len(self.traj_data):
-                result_points.append(self.traj_data[lookahead_idx])
-            else:
-                result_points.append(self.traj_data[-1])
-
-        return result_points
-
-    def to_relative_coordinates(self, x, y, yaw, arr):
-        relative_coords = []
-
-        for point in arr:
-            dx = point[0] - x
-            dy = point[1] - y
-
-            rotated_x = dx * np.cos(-yaw) - dy * np.sin(-yaw)
-            rotated_y = dx * np.sin(-yaw) + dy * np.cos(-yaw)
-
-            relative_coords.append((rotated_x, rotated_y))
-
-        return np.array(relative_coords)
 
 if __name__ == "__main__":
     # 환경 테스트

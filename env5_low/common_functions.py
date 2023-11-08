@@ -6,8 +6,9 @@ def check_car_pos(car_pos):
         print("Error: Car Pos array have to include carx, cary, caryaw")
         sys.exit(1)
 
-def to_relative_coordinates(arr, car_pos):
-    check_car_pos(car_pos)
+def to_relative_coordinates(car_pos, arr):
+    print(np.size(car_pos))
+#    check_car_pos(car_pos)
     relative_coords = []
     carx, cary, caryaw = car_pos
 
