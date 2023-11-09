@@ -5,7 +5,7 @@
 3. 테스트를 수행한다.
 """
 
-from carmaker_env_low3 import CarMakerEnv
+from carmaker_env_low4 import CarMakerEnv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -14,12 +14,12 @@ from stable_baselines3 import SAC
 if __name__ == '__main__':
     road_type = "DLC"
     data_name = 'RL'
-    comment = "rws3"
+    comment = "4_no_rws"
     prefix = data_name + "_" + comment
 
 
     env = CarMakerEnv(port=9999, check=0)
-    model = SAC.load(f"best_model/DLC_env3_best_model.pkl", env=env)
+    model = SAC.load(f"best_model/DLC_env4_best_model_no_rws.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()
