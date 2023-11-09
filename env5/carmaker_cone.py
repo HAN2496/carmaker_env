@@ -91,6 +91,7 @@ class Cone:
 class Road:
     def __init__(self, road_type):
         self.road_type = road_type
+
         self.cone = Cone(road_type=road_type)
 
         if road_type == "DLC":
@@ -202,7 +203,7 @@ class Car:
         return car_shape
 
 if __name__ == "__main__":
-    road_type = "SLALOM"
+    road_type = "SLALOM2"
     cone = Cone(road_type=road_type)
     road = Road(road_type=road_type)
     road.plot_road()

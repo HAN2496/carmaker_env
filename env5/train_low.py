@@ -65,7 +65,7 @@ def main():
     """
 
     env_num = 1
-    road_type = "DLC"
+    road_type = "SLALOM"
     comment = "low"
     explanation = "carmaker env low"
 
