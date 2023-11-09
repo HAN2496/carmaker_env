@@ -63,6 +63,10 @@ class Data:
         lookahead_traj_abs = self.traj.find_lookahead_traj(self.carx, self.cary, lookahead_sight)
         lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], lookahead_traj_abs).flatten()
 
+        if self.road_type == "SLALOM":
+            return np.concatenate(([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
+                         self.rl, self.rr, self.fl, self.fr, self.rr_ext, self.rl_ext], lookahead_traj_rel))
+
         ahead_cones = self.cone.cone_arr[self.cone.cone_arr[:, 0] > self.carx][:1]
         behind_cones = self.cone.cone_arr[self.cone.cone_arr[:, 0] <= self.carx][:1]
         closest_cones = np.vstack((behind_cones, ahead_cones))
@@ -79,7 +83,7 @@ class Data:
         e = - col_reward - dist_reward - ang_reward
 
         if self.test_num % 150 == 0 and self.check == 0:
-            print(f"Time: {self.time}, Reward : [ dist : {round(self.devDist,3)}] [ angle : {round(self.devAng, 3)}]")
+            print(f"Time: {self.time}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}] Reward : [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
 
         return e
 
