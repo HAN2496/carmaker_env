@@ -52,7 +52,7 @@ class CarMakerEnv(gym.Env):
         env_action_num = 1
         sim_action_num = env_action_num + 1
 
-        env_obs_num = 20
+        env_obs_num = 24
         sim_obs_num = 17
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -161,7 +161,7 @@ class CarMakerEnv(gym.Env):
 
             closest_cones_rel = self.to_relative_coordinates(carx, cary, caryaw, closest_cones).flatten()
 
-            state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), lookahead_traj_rel, closest_cones_rel))
+            state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), lookahead_traj_rel, wheel_steer, closest_cones_rel))
 
         # 리워드 계산
         reward_state = np.concatenate((np.array([carx, cary, caryaw]), dev))
