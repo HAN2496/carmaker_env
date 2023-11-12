@@ -35,7 +35,10 @@ circle_path2 = np.array(circle_path2)
 total_traj = np.vstack((straight_line, circle_path, circle_path2))
 
 plt.figure(figsize=(6,6))
-plt.plot(total_traj[:, 0], total_traj[:, 1], marker='.')
+plt.plot(straight_line[:, 0], straight_line[:, 1], marker='.')
+plt.plot(circle_path[:, 0], circle_path[:, 1], marker='.')
+plt.plot(circle_path2[:, 0], circle_path2[:, 1], marker='.')
+#plt.plot(total_traj[:, 0], total_traj[:, 1], marker='.')
 plt.scatter(x0, y0, color='red') # Mark the center
 plt.axis('equal') # Equal scaling for both axes
 plt.grid(True)
