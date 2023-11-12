@@ -44,7 +44,7 @@ road_types = 'DLC'
 traj = pd.read_csv(f'datasets_traj.csv').loc[:, ["traj_tx", "traj_ty"]].values
 
 ipg_rl = load_data('IPG', 'rws')
-rl = load_data('RL', "rws3")
+rl = load_data('RL', "4_no_rws")
 labels = ['ipg', 'rl']
 
 compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']
