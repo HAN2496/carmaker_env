@@ -17,14 +17,14 @@ def plot(cone_arr):
     plt.axis('equal')
     plt.show()
 
-def create_SLALOM_cone_arr():
+def create_SLALOM_cone_arr(y_middle):
     cones = []
-    more_before_cone = np.array([[-30, -10]])
+    more_before_cone = np.array([[-30, y_middle]])
     for i in range(10):
         sign = (i % 2) * 2 - 1  # [-1 1]
-        cone = np.array([100 + 30 * i, -10])
+        cone = np.array([100 + 30 * i, y_middle])
         cones.append(cone)
-    further_cones = np.array([[600, -10]])
+    further_cones = np.array([[600, y_middle]])
     cones = np.concatenate((more_before_cone, cones, further_cones), axis=0)
     return cones
 
@@ -69,9 +69,11 @@ class Cone:
         if road_type == "DLC":
             self.cone_arr = create_DLC_cone_arr()
         elif road_type == "SLALOM":
-            self.cone_arr = create_SLALOM_cone_arr()
+            y_middle = -10
+            self.cone_arr = create_SLALOM_cone_arr(y_middle)
         elif road_type == "SLALOM2":
-            self.cone_arr = create_SLALOM_cone_arr_sign()
+            y_middle = -25
+            self.cone_arr = create_SLALOM_cone_arr_sign(y_middle)
         else:
             self.cone_arr = create_SLALOM_cone_arr_sign()
         self.cone_shape = self.create_cone_shape()
