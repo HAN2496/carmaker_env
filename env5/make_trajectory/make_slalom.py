@@ -6,7 +6,7 @@ import pandas as pd
 cone_r = 0.2
 car_width, car_length = 1.8, 4
 dist_from_axis = car_width / 2 + cone_r
-axis_y = -10
+axis_y = -25
 
 cones = np.array([(100 + 30 * i, axis_y) for i in range(10)])
 
