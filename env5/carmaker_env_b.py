@@ -18,6 +18,7 @@ from shapely.geometry import Polygon, Point, LineString
 from SLALOM_cone import Road, Car, Cone
 import pygame
 from carmaker_data import Data, Trajectory
+from common_functions import *
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -43,18 +44,21 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnvB(gym.Env):
-    def __init__(self, road_type, check=2, port=10001, simul_path='pythonCtrl_JX1', use_low=True):
+    def __init__(self, road_type, check=2, port=10001, simul_path='pythonCtrl_JX1', use_low=False):
         # Action과 State의 크기 및 형태를 정의.
         matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
         host = '127.0.0.1'
 
         self.check = check
-        self.use_low = use_low
+        self.use_low = False
         self.road_type = road_type
         self.data = Data(road_type=road_type, low_env=use_low, check=check)
+        self.traj = Trajectory(road_type=road_type, low_env=use_low)
+        self.last_carx = self.data.carx
+        self.dist = 12
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
-        env_action_num = 1
+        env_action_num = np.size(self.data.manage_state_b())
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
@@ -78,7 +82,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.start()
 
         low_level_env = LowLevelCarMakerEnv(road_type=road_type, check=check, use_low=use_low)
-        self.low_level_model = SAC.load(f"best_model/SLALOM_low_best_model_rws2.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"best_model/SLALOM_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
@@ -107,20 +111,10 @@ class CarMakerEnvB(gym.Env):
         Policy b action : traj points -> array(list)
         low_level_obs에 cary, carv 들어가고, car_dev랑 lookahead는 action(신규)에서 가져온 trj 정보로
         """
+        state = np.zeros(np.size(self.data.manage_state_b()))
         self.test_num += 1
         done = False
-
-        reward_argument = self.data._init_reward_argument()
-        info = self.data._init_info()
-
-        traj_lowlevel_abs = self.data.find_traj_points()
-        traj_lowlevel_rel = self.data.to_relative_coordinates(traj_lowlevel_abs).flatten()
-        dev = self.calculate_dev(self.data.carx, self.data.cary, self.data.caryaw)
-        wheel_steer = np.array([self.data.rl, self.data.rr, self.data.fl, self.data.fr])
-        r_ext = np.array([self.data.rr_ext, self.data.rl_ext])
-        self.low_level_obs = np.concatenate((dev, np.array([self.data.carv, self.data.caryaw, self.data.steerAng, self.data.steerVel]), wheel_steer, r_ext, traj_lowlevel_rel))
-        steering_changes = self.low_level_model.predict(self.low_level_obs)[0]
-        action_to_sim = np.append(steering_changes, self.test_num)
+        tmp = 0
 
         # 최초 실행시
         if self.sim_initiated == False:
@@ -131,94 +125,40 @@ class CarMakerEnvB(gym.Env):
             self.status_queue.put("start")
             self.sim_started = True
 
-        # Action 값 전송 / State 값 수신
-        self.action_queue.put(action_to_sim)
-        state = self.state_queue.get()
+        while self.data.carx - self.last_carx < self.dist:
+            self.low_level_obs = self.data.manage_state_low()
+            steering_changes = self.low_level_model.predict(self.low_level_obs)
+            action_to_sim = np.append(steering_changes[0], self.test_num)
 
-        if state == False:
-            # 시뮬레이션 종료
-            # 혹은 여기 (끝날때마다)
-            # CMcontrolNode에서 TCP/IP 통신이 종료되면(시뮬레이션이 끝날 경우) False 값을 리턴하도록 정의됨
-            state = self._initial_state()
-            done = True
+            # Action 값 전송 / State 값 수신
+            self.action_queue.put(action_to_sim)
+            state = self.state_queue.get()
+            state = np.array(state)  # 어레이 변환
+            self.data.put_simul_data(state)
 
-        else:
-            state = np.array(state) #어레이 변환
-            state, reward_argument, info = self.data.manage_state(steering_changes, state, action)
+            if state == False:
+                state = self._initial_state()
+                done = True
+
+        blevel_action = action[0]
+        self.traj.update_b(self.data.carx, self.data.cary, self.data.caryaw, blevel_action)
+        self.last_carx = self.data.carx
+        traj_last_point = self.traj.get_ctrl_last_point()
+        self.dist = np.linalg.norm(traj_last_point - np.array([self.data.carx, self.data.cary]))
 
         # 리워드 계산
-        reward = self.getReward(reward_argument, time)
-        info = info
-
-        if self.check == 0:
-            self.data.render()
+        reward = self.data.manage_reward_b()
+        info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
+                             "alHori", "roll", "rl", "rr", "fl", "fr"])
+        info = {key: value for key, value in zip(info_key, self.data.simul_data)}
 
         return state, reward, done, info
 
-    def getReward(self, reward_argument, time):
-        traj = reward_argument['traj']
-        caryaw = reward_argument['caryaw']
-        carx = reward_argument['carx']
-        cary = reward_argument['cary']
-
-        car_shape = Car().shape_car(carx, cary, caryaw)
-        traj_shape = Point(traj[0], traj[1])
-        car_collision_reward, traj_collision_reward = 0, 0
-
-        car_collision_reward -= self.is_collding_with_cone(car_shape) * 1500
-        car_collision_reward -= self.is_collding_with_forbidden(car_shape) * 1500
-
-        traj_depth = -abs(traj[1] + 10) * 100
-        traj_collision_reward -= self.is_collding_with_cone(traj_shape) * 1500
-        traj_collision_reward -= self.is_collding_with_forbidden(traj_shape) * 1500
-
-        y_reward = - abs(traj[1] + 10) * 100
-        yaw_reward = - abs(caryaw) * 300
-        e = car_collision_reward + traj_collision_reward + y_reward + yaw_reward
-
-        if self.test_num % 100 == 0:
-            print(f"[carx: {carx}] [Car Col: {-car_collision_reward/1500}] [[Traj Col: {-traj_collision_reward/1500}]] [y r: {y_reward}]")
-        return e
-    def is_collding_with_cone(self, traj_shape):
-        for cone in self.cone.cones_shape:
-            if traj_shape.intersects(cone):
-                return 1
-        return 0
-
-    def is_collding_with_forbidden(self, traj_shape):
-        if self.road.forbbiden_area1.intersects(traj_shape) or self.road.forbbiden_area2.intersects(traj_shape):
-            return 1
-        return 0
-
-    def calculate_dev(self, carx, cary, caryaw):
-        arr = np.array(self.data.traj_data)
-        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
-        dist_index = np.argmin(distances)
-        devDist = distances[dist_index]
-
-        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
-        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
-
-        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
-        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
-
-        # 분모가 0이 될 수 있는 경우에 대한 예외처리
-        if dx1 == 0:
-            devAng1 = np.inf if dy1 > 0 else -np.inf
-        else:
-            devAng1 = dy1 / dx1
-
-        if dx2 == 0:
-            devAng2 = np.inf if dy2 > 0 else -np.inf
-        else:
-            devAng2 = dy2 / dx2
-
-        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
-        return np.array([devDist, devAng])
 
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnvB(check=0)
+    road_type = "SLALOM"
+    env = CarMakerEnvB(road_type=road_type, check=0)
     act_lst = []
     next_state_lst = []
     info_lst = []

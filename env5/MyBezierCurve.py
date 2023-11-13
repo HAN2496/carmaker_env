@@ -14,6 +14,7 @@ class BezierCurve:
     def __init__(self, dt):
 
         self.dt = dt # 간격
+        """"""
         self.update(
             np.zeros((3,)),
             [1, 1, 1, 0.0, 0.0]
@@ -41,6 +42,7 @@ class BezierCurve:
             self.p.append(self.p[-1] + l * np.array([np.cos(a), np.sin(a)]))
         self.p_curve = bezier.Curve(np.asfortranarray(self.p).T, degree=3)
 
+
     def get_xy_points(self):
         t = np.arange(0, 1+self.dt, self.dt)
         points = self.p_curve.evaluate_multi(t)
@@ -50,6 +52,7 @@ class BezierCurve:
 
     def get_ctrl_last_point(self):
         return np.array(self.get_ctrl_points())[-1, :]
+
     def show_curve(self):
         t = np.arange(0, 1+self.dt, self.dt)
         points = self.p_curve.evaluate_multi(t)
@@ -66,11 +69,15 @@ class BezierCurve:
 if __name__ == '__main__':
 
     B = BezierCurve(0.001)
+    """"""
     B.update(
-        [2, -10, 0.5],
-        [5, 5, 5, 0.5, 0.5]
+        [2, -10, 0],
+        [5, 5, 5, 0, 0]
     )
-
+    B.update(
+        [2, -10, 0],
+        [5, 5, 5, 0, np.pi/3]
+    )
     B.show_curve()
 #    print(B.get_ctrl_last_point())
     print(B.get_xy_points())

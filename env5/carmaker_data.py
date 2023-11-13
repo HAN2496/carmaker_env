@@ -4,6 +4,7 @@ from shapely import affinity
 import matplotlib.pyplot as plt
 from carmaker_cone import *
 import pandas as pd
+from MyBezierCurve import BezierCurve
 
 CONER = 0.2
 CARWIDTH = 1.8
@@ -27,9 +28,9 @@ class Data:
         elif self.road_type == "SLALOM" or self.road_type == "SLALOM2":
             self.XSIZE, self.YSIZE = 10, 10
 
-        self._init_sim()
+        self._init()
 
-    def _init_sim(self):
+    def _init(self):
         self.test_num = 0
         self.time = 0
         self.carx, self.cary, self.caryaw, self.carv = 2.9855712, -10, 0, 13.8888889
@@ -78,7 +79,7 @@ class Data:
     def manage_reward_low(self):
         dist_reward = abs(self.devDist) * 100
         ang_reward = abs(self.devAng) * 500
-        col_reward = self.is_car_colliding_with_cone(self.carx, self.cary, self.caryaw) * 1000
+        col_reward = self.is_car_colliding_with_cone() * 1000
 
         e = - col_reward - dist_reward - ang_reward
 
@@ -87,11 +88,46 @@ class Data:
 
         return e
 
-    def is_car_colliding_with_cone(self, carx, cary, caryaw):
-        car_shape = Car().shape_car(carx, cary, caryaw)
+    def manage_reward_b(self):
+        car_shape = Car().shape_car(self.carx, self.cary, self.caryaw)
+        trajx, trajy = self.traj.find_traj_points(self.carx)
+        traj_shape = Point(trajx, trajy)
+
+        car_col_reward, traj_col_reward = 0, 0
+        car_col_reward -= self.is_car_colliding_with_cone()
+        traj_col_reward -= self.is_collding_with_cone(traj_shape)
+        traj_col_reward -= self.is_collding_with_forbidden(traj_shape)
+
+        y_reward = - abs(trajy + 10) * 100
+        yaw_reward = - abs(self.caryaw) * 300
+
+        e = car_col_reward + traj_col_reward + y_reward + yaw_reward
+
+        return e
+
+    def manage_state_b(self):
+        traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], self.traj.find_traj_points(self.carx)).flatten()
+        cones_abs = self.cone.cone_arr[self.cone.cone_arr[:, 0] > self.carx][:3]
+        cones_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], cones_abs).flatten()
+        return np.concatenate((traj_rel, cones_rel))
+
+    def is_car_colliding_with_cone(self):
+        car_shape = Car().shape_car(self.carx, self.cary, self.caryaw)
         if self.road.cone_boundary.contains(car_shape):
             return 0
         return 1
+
+    def is_collding_with_cone(self, traj_shape):
+        for cone in self.cone.cone_shape:
+            if traj_shape.intersects(cone):
+                return 1
+        return 0
+
+    def is_collding_with_forbidden(self, traj_shape):
+        if self.road.forbbiden_area1.intersects(traj_shape) or self.road.forbbiden_area2.intersects(traj_shape):
+            return 1
+        return 0
+
 
 class Trajectory:
     def __init__(self, low_env, road_type, point_interval=2, point_num=5):
@@ -99,13 +135,34 @@ class Trajectory:
         self.point_num = point_num
         self.low_env = low_env
         self.road_type = road_type
-        self.traj_points = np.array([[2.9855712, -10]])
+
         self.traj_data = np.array([[2.9855712, -10]])
+
+        self.b = BezierCurve(0.001)
+        self.b_angle_before = 0
+        self.update_b(2.9855712, -10, 0, 0)
 
         self.dev = np.array([0, 0])
 
         if self.low_env:
             self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+
+    def update_traj_data(self):
+        self.traj_data = np.concatenate((self.traj_data, self.b.get_xy_points()))
+
+    def update_b(self, carx, cary, caryaw, action):
+        self.b.update(
+            [carx, cary, caryaw],
+            [6, 6, 6, self.b_angle_before, action]
+        )
+        self.b_angle_before = action
+        self.update_traj_data()
+
+    def get_ctrl_points(self):
+        return self.b.p
+
+    def get_ctrl_last_point(self):
+        return np.array(self.get_ctrl_points())[-1, :]
 
     def calculate_dev(self, carx, cary, caryaw):
         arr = np.array(self.traj_data)
@@ -113,25 +170,27 @@ class Trajectory:
         dist_index = np.argmin(distances)
         devDist = distances[dist_index]
 
-        dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
-        dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
-
-        dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
-        dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
+        dx = arr[dist_index][0] - arr[dist_index - 1][0]
+        dy = arr[dist_index][1] - arr[dist_index - 1][1]
 
         # 분모가 0이 될 수 있는 경우에 대한 예외처리
-        if dx1 == 0:
-            devAng1 = np.inf if dy1 > 0 else -np.inf
-        else:
-            devAng1 = dy1 / dx1
 
-        if dx2 == 0:
-            devAng2 = np.inf if dy2 > 0 else -np.inf
+        if dx == 0:
+            devAng = np.inf if dy > 0 else -np.inf
         else:
-            devAng2 = dy2 / dx2
+            devAng = dy / dx
 
-        devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
+        devAng = - np.arctan(devAng / 2) - caryaw
         return np.array([devDist, devAng])
+
+    def find_traj_points(self, carx):
+        points = []
+        distances = [self.point_interval * i for i in range(self.point_num)]
+        for distance in distances:
+            x_diff = np.abs(self.traj_data[:, 0] - (carx + distance))
+            nearest_idx = np.argmin(x_diff)
+            points.append(self.traj_data[nearest_idx])
+        return points
 
     def find_lookahead_traj(self, x, y, distances):
         distances = np.array(distances)
@@ -153,19 +212,28 @@ class Trajectory:
 
         return result_points
 
+    def show_traj_data(self):
+        plt.scatter(self.traj_data[:, 0], self.traj_data[:, 1])
+        plt.title("Trajectory")
+        plt.xlabel("m")
+        plt.ylabel("m")
+        plt.show()
+
 class Test:
     def __init__(self):
         road_type = "DLC"
-        self.data = Data(road_type=road_type, low_env=True)
+        self.data = Data(road_type=road_type, low_env=False, check=0)
         tmp = np.array([
-            0, 0, 0, -10,
+            0, 0, 21, -10,
             0, 0, 0, 0,
             0, 0, 0, 0,
             0, 0, 0, 0,
             0
         ])
         self.data.put_simul_data(tmp)
-        print(self.data.manage_state_low())
+        print(self.data.traj.b.get_ctrl_last_point())
+        self.data.traj.update_b(self.data.carx, self.data.cary, self.data.caryaw, np.pi/3)
+        self.data.traj.show_traj_data()
 
 if __name__ == "__main__":
     road_type = "DLC"
