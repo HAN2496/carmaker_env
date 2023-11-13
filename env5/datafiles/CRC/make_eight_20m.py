@@ -29,7 +29,7 @@ r = 20
 circle_path = create_circle_path(x0, y0, r, 0)
 circle_path = np.array(circle_path)
 
-circle_path2 = create_circle_path(x0, y0 - 40, r, 1)
+circle_path2 = create_circle_path(x0, y0 - 40, r, 0)
 circle_path2 = np.array(circle_path2)
 
 total_traj = np.vstack((straight_line, circle_path, circle_path2, straight_line2))

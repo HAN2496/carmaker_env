@@ -68,15 +68,13 @@ class Cone:
         self.road_type = road_type
         if road_type == "DLC":
             self.cone_arr = create_DLC_cone_arr()
+            self.cone_shape = self.create_cone_shape()
         elif road_type == "SLALOM":
             y_middle = -10
             self.cone_arr = create_SLALOM_cone_arr(y_middle)
         elif road_type == "SLALOM2":
             y_middle = -25
             self.cone_arr = create_SLALOM_cone_arr_sign(y_middle)
-        else:
-            self.cone_arr = create_SLALOM_cone_arr_sign()
-        self.cone_shape = self.create_cone_shape()
 
     def create_cone_shape(self):
         cone_shape = []

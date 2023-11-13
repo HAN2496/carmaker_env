@@ -148,7 +148,7 @@ class CarMakerEnv(gym.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(road_type="SLALOM", check=0)
+    env = CarMakerEnv(road_type="Eight_20m", check=0)
     act_lst = []
     next_state_lst = []
     info_lst = []

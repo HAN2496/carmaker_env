@@ -23,7 +23,7 @@ print("Waiting for connection...", TCP_PORT)
 conn, addr = s.accept()
 print("Connection from:", addr)
 time.sleep(2)
-columns=['num', 'Time' ,'tx', 'ty', 'traj_tx', 'traj_ty']
+columns=['num', 'Time', 'tx', 'ty', 'traj_tx', 'traj_ty']
 lst=[]
 
 i=0
@@ -58,5 +58,5 @@ finally:
     conn.close()
     time.sleep(1)
     df = pd.DataFrame(data=lst, columns=columns)
-    df.to_csv('test.csv')
+    df.to_csv('traj.csv')
     print('data saved')
