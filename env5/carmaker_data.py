@@ -64,7 +64,7 @@ class Data:
         lookahead_traj_abs = self.traj.find_lookahead_traj(self.carx, self.cary, lookahead_sight)
         lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], lookahead_traj_abs).flatten()
 
-        if self.road_type == "SLALOM":
+        if self.road_type == "SLALOM" or "Eight_20m":
             return np.concatenate(([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
                          self.rl, self.rr, self.fl, self.fr, self.rr_ext, self.rl_ext], lookahead_traj_rel))
 
@@ -79,7 +79,10 @@ class Data:
     def manage_reward_low(self):
         dist_reward = abs(self.devDist) * 100
         ang_reward = abs(self.devAng) * 500
-        col_reward = self.is_car_colliding_with_cone() * 1000
+        if self.road_type == "DLC":
+            col_reward = self.is_car_colliding_with_cone() * 1000
+        else:
+            col_reward = 0
 
         e = - col_reward - dist_reward - ang_reward
 
