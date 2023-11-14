@@ -74,7 +74,7 @@ class Cone:
             self.cone_arr = create_SLALOM_cone_arr(y_middle)
         elif road_type == "SLALOM2":
             y_middle = -25
-            self.cone_arr = create_SLALOM_cone_arr_sign(y_middle)
+            self.cone_arr = create_SLALOM_cone_arr(y_middle)
 
     def create_cone_shape(self):
         cone_shape = []
@@ -100,18 +100,36 @@ class Road:
         elif road_type == "SLALOM":
             self.create_SLALOM_road()
             self.cone = Cone(road_type=road_type)
+        elif road_type == "SLALOM2":
+            self.create_SLALOM_road()
+            self.cone = Cone(road_type=road_type)
 
     def create_SLALOM_road(self):
         self.road_length = 500
-        self.road_width = -20
-        vertices1 = [[100 + 30 * i, - 10 - DIST_FROM_AXIS - 7 * (i % 2 - 1)] for i in range(10)]
-        vertices11 = np.array(vertices1 + [[385, -7 - DIST_FROM_AXIS], [510, -7 - DIST_FROM_AXIS], [510, 15], [0, 15],
-                                          [0, -7 - DIST_FROM_AXIS], [85, -7 - DIST_FROM_AXIS], [100, - DIST_FROM_AXIS - 3]])
-        vertices2 = [[100 + 30 * i, -10 + DIST_FROM_AXIS - 7 * (i % 2)] for i in range(10)]
-        vertices21 = np.array(vertices2 + [[385, -13 + DIST_FROM_AXIS], [510, -13 + DIST_FROM_AXIS], [510, -35], [0, -35],
-                                          [0, -13 + DIST_FROM_AXIS], [85, -13 + DIST_FROM_AXIS], [100, -10 + DIST_FROM_AXIS]])
-        self.forbbiden_area1 = Polygon(vertices11)
-        self.forbbiden_area2 = Polygon(vertices21)
+        if self.road_type == "SLALOM":
+            self.road_width = -20
+
+        elif self.road_type == "SLALOM2":
+            self.road_width = -50
+        else:
+            print("Error in carmaker_cone, create_SLALOM_road function")
+            sys.exit(1)
+
+        y_mid = self.road_width / 2
+        cone_dist = 3
+        y_upper = y_mid + 3
+        y_lower = y_mid - 3
+        vertices1 = [[100 + 30 * i, y_mid - (i % 2 - 1) * (DIST_FROM_AXIS + cone_dist)] for i in range(10)]
+        vertices_upper = np.array(vertices1 + [[385, + y_upper - DIST_FROM_AXIS], [510, + y_upper - DIST_FROM_AXIS],
+                                           [510, 15], [0, 15], [0, + y_upper - DIST_FROM_AXIS],
+                                           [85, + y_upper - DIST_FROM_AXIS], [100, - DIST_FROM_AXIS - 3]])
+        vertices2 = [[100 + 30 * i, y_mid + DIST_FROM_AXIS + y_upper * (i % 2)] for i in range(10)]
+        vertices2 = [[100 + 30 * i, y_mid - (i % 2) * (DIST_FROM_AXIS + cone_dist)] for i in range(10)]
+        vertices_under = np.array(vertices2 + [[385, + y_lower + DIST_FROM_AXIS], [510, + y_lower + DIST_FROM_AXIS], [510, self.road_width - 15],
+                                           [0, self.road_width - 15], [0, y_lower + DIST_FROM_AXIS],
+                                           [85, y_lower + DIST_FROM_AXIS], [100, y_mid + DIST_FROM_AXIS]])
+        self.forbbiden_area1 = Polygon(vertices_upper)
+        self.forbbiden_area2 = Polygon(vertices_under)
         self.forbidden_line1 = vertices1
         self.forbidden_line2 = vertices2
 
@@ -120,11 +138,11 @@ class Road:
         ])
 
         cone_vertics = np.array(
-            [[0, -7 - DIST_FROM_AXIS], [85, -7 - DIST_FROM_AXIS]]
+            [[0, y_upper - DIST_FROM_AXIS], [85, y_upper - DIST_FROM_AXIS]]
             + vertices1
-            +[[385, -7 - DIST_FROM_AXIS], [510, -7 - DIST_FROM_AXIS], [510, -13 + DIST_FROM_AXIS], [385, -13 + DIST_FROM_AXIS]]
-            +[[100 + 30 * i, -10 + DIST_FROM_AXIS - 7 * (i % 2)] for i in range(9, -1, -1)]
-            + [[85, -13 + DIST_FROM_AXIS], [0, -13 + DIST_FROM_AXIS]]
+            +[[385, y_upper - DIST_FROM_AXIS], [510, y_upper - DIST_FROM_AXIS], [510, y_lower + DIST_FROM_AXIS], [385, y_lower + DIST_FROM_AXIS]]
+            +[[100 + 30 * i, y_mid + DIST_FROM_AXIS + y_upper * (i % 2)] for i in range(9, -1, -1)]
+            + [[85, y_lower + DIST_FROM_AXIS], [0, y_lower + DIST_FROM_AXIS]]
         )
         self.cone_boundary = Polygon(cone_vertics)
 

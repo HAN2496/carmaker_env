@@ -150,6 +150,11 @@ class Trajectory:
         if self.low_env:
             self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
 
+    def manage_traj_data(self, carx):
+        check_point = 0
+        if self.road_type == "Eight_20m":
+
+
     def update_traj_data(self):
         self.traj_data = np.concatenate((self.traj_data, self.b.get_xy_points()))
 
