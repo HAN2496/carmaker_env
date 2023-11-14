@@ -79,7 +79,7 @@ class Data:
     def manage_reward_low(self):
         dist_reward = abs(self.devDist) * 100
         ang_reward = abs(self.devAng) * 500
-        if self.road_type == "DLC":
+        if self.road_type == "DLC" or self.road_type == "SLALOM2":
             col_reward = self.is_car_colliding_with_cone() * 1000
         else:
             col_reward = 0
