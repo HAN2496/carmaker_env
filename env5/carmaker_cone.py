@@ -228,3 +228,5 @@ class Car:
 if __name__ == "__main__":
     road_type = "SLALOM2"
     cone = Cone(road_type=road_type)
+    road = Road(road_type=road_type)
+    road.plot_road()
