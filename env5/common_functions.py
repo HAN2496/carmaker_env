@@ -1,5 +1,7 @@
 import numpy as np
 import sys
+from shapely.geometry import Polygon, Point, LineString, MultiPolygon
+import matplotlib.pyplot as plt
 
 def check_car_pos(car_pos):
     if np.size(car_pos) != 3:
@@ -60,3 +62,30 @@ def find_lookahead_traj(x, y, distances):
             result_points.append(self.traj_data[-1])
 
     return result_points
+
+def create_ellipse(center, major_axis, minor_axis, num_points=100):
+    angle = np.linspace(0, 2*np.pi, num_points)
+    ellipse_x = center[0] + major_axis * np.cos(angle)
+    ellipse_y = center[1] + minor_axis * np.sin(angle)
+    ellipse_points = np.column_stack([ellipse_x, ellipse_y])
+    ellipse = Polygon(ellipse_points)
+    return ellipse
+def make_semiellipse(x0, y0, major, minor_out, cone_dist, direction):
+    circle_out = create_ellipse([x0, y0], major, minor_out)
+    circle_in = Point(x0, y0).buffer(cone_dist)
+    rec = Polygon([[x0 - major, y0], [x0 + major, y0],
+                   [x0 + major, y0 - direction * minor_out], [x0 - major, y0 - direction * minor_out]])
+
+    return circle_out.difference(circle_in).difference(rec)
+
+if __name__ == "__main__":
+    x0, y0 = 0, 0
+    r_in, r_out = 1, 10
+    direction = -1
+
+    a = make_semiellipse(x0, y0, 30, 3, 1, direction)
+    b = create_ellipse((x0, y0), 10, 1)
+
+    plt.plot(*a.exterior.xy)
+    plt.axis('equal')
+    plt.show()
