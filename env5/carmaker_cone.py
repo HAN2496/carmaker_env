@@ -90,6 +90,7 @@ class Cone:
             cone_shape.append(square)
         return np.array(cone_shape)
 
+
 class Road:
     def __init__(self, road_type):
         self.road_type = road_type
@@ -119,17 +120,16 @@ class Road:
 
         y_mid = self.road_width / 2
         cone_dist = 3
-        y_upper = y_mid + 3
-        y_lower = y_mid - 3
-        vertices1 = [[100 + 30 * i, y_mid - (i % 2 - 1) * (DIST_FROM_AXIS + cone_dist)] for i in range(10)]
+        y_upper = y_mid + cone_dist
+        y_lower = y_mid - cone_dist
+        vertices1 = [[100 + 30 * i, y_mid - (i % 2 - 1) * cone_dist - 2 * (i % 2 - 0.5) * np.sqrt(2) * CONER] for i in range(10)]
         vertices_upper = np.array(vertices1 + [[385, + y_upper - DIST_FROM_AXIS], [510, + y_upper - DIST_FROM_AXIS],
                                            [510, 15], [0, 15], [0, + y_upper - DIST_FROM_AXIS],
-                                           [85, + y_upper - DIST_FROM_AXIS], [100, - DIST_FROM_AXIS - 3]])
-        vertices2 = [[100 + 30 * i, y_mid + DIST_FROM_AXIS + y_upper * (i % 2)] for i in range(10)]
-        vertices2 = [[100 + 30 * i, y_mid - (i % 2) * (DIST_FROM_AXIS + cone_dist)] for i in range(10)]
+                                           [85, + y_upper - DIST_FROM_AXIS]])
+        vertices2 = [[100 + 30 * i, y_mid - (i % 2) * cone_dist - 2 * (i % 2 - 0.5) * np.sqrt(2) * CONER] for i in range(10)]
         vertices_under = np.array(vertices2 + [[385, + y_lower + DIST_FROM_AXIS], [510, + y_lower + DIST_FROM_AXIS], [510, self.road_width - 15],
                                            [0, self.road_width - 15], [0, y_lower + DIST_FROM_AXIS],
-                                           [85, y_lower + DIST_FROM_AXIS], [100, y_mid + DIST_FROM_AXIS]])
+                                           [85, y_lower + DIST_FROM_AXIS]])
         self.forbbiden_area1 = Polygon(vertices_upper)
         self.forbbiden_area2 = Polygon(vertices_under)
         self.forbidden_line1 = vertices1
@@ -142,12 +142,11 @@ class Road:
         cone_vertics = np.array(
             [[0, y_upper - DIST_FROM_AXIS], [85, y_upper - DIST_FROM_AXIS]]
             + vertices1
-            +[[385, y_upper - DIST_FROM_AXIS], [510, y_upper - DIST_FROM_AXIS], [510, y_lower + DIST_FROM_AXIS], [385, y_lower + DIST_FROM_AXIS]]
-            +[[100 + 30 * i, y_mid + DIST_FROM_AXIS + y_upper * (i % 2)] for i in range(9, -1, -1)]
+            + [[385, y_upper - DIST_FROM_AXIS], [510, y_upper - DIST_FROM_AXIS], [510, y_lower + DIST_FROM_AXIS], [385, y_lower + DIST_FROM_AXIS]]
+            + vertices2[::-1]
             + [[85, y_lower + DIST_FROM_AXIS], [0, y_lower + DIST_FROM_AXIS]]
         )
         self.cone_boundary = Polygon(cone_vertics)
-
 
     def create_DLC_road(self):
         self.road_length = 161
@@ -176,7 +175,9 @@ class Road:
         plt.plot(*self.road_boundary.exterior.xy, label='road boundary', color='blue')
         plt.plot(*self.forbbiden_area1.exterior.xy, label='forbidden area', color='red')
         plt.plot(*self.forbbiden_area2.exterior.xy, color='red')
-        plt.plot(*self.cone_boundary.exterior.xy, label="Cone Boundary", color='orange')
+        #for cone in self.cone_boundary:
+        #            plt.plot(*cone.exterior.xy)
+#        plt.plot(*self.cone_boundary.exterior.xy, label="Cone Boundary", color='orange')
         plt.fill(*self.cone_boundary.exterior.coords.xy, color='orange', alpha=0.5)
         for idx, cone in enumerate(self.cone.cone_arr):
             x, y = cone[0], cone[1]
@@ -186,6 +187,7 @@ class Road:
                 plt.scatter(x, y, color='blue')
         plt.legend()
         plt.show()
+
 
 class Car:
     def __init__(self):
@@ -222,8 +224,7 @@ class Car:
 
         return car_shape
 
+
 if __name__ == "__main__":
     road_type = "SLALOM2"
     cone = Cone(road_type=road_type)
-    road = Road(road_type=road_type)
-    road.plot_road()

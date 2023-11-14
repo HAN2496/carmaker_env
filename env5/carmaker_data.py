@@ -2,7 +2,7 @@ import numpy as np
 from shapely.geometry import Polygon, Point, LineString
 from shapely import affinity
 import matplotlib.pyplot as plt
-from carmaker_cone import *
+from carmaker_cone import CONE
 import pandas as pd
 from MyBezierCurve import BezierCurve
 
