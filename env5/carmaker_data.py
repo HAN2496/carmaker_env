@@ -194,6 +194,7 @@ class Trajectory:
         norm_yaw = np.mod(caryaw, 2 * np.pi)
         devDist = 30 - np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
         devAng = norm_yaw - np.mod(np.arctan2(cary - 30, carx - 100) + np.pi / 2, 2 * np.pi)
+        devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
         return np.array([devDist, devAng])
 
     def find_traj_points(self, carx):
