@@ -64,7 +64,7 @@ class Data:
         lookahead_traj_abs = self.traj.find_lookahead_traj(self.carx, self.cary, lookahead_sight)
         lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], lookahead_traj_abs).flatten()
 
-        if self.road_type == "SLALOM" or "SLALOM2" or "Eight_20m":
+        if self.road_type == "SLALOM" or "SLALOM2" or "Eight_20m" or "UTurn":
             return np.concatenate(([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
                          self.rl, self.rr, self.fl, self.fr, self.rr_ext, self.rl_ext], lookahead_traj_rel))
 
@@ -81,6 +81,8 @@ class Data:
         ang_reward = abs(self.devAng) * 500
         if self.road_type == "DLC" or self.road_type == "SLALOM2":
             col_reward = self.is_car_colliding_with_cone() * 1000
+        elif self.road_type == "Eight_20m":
+            col_reward = 0
         else:
             col_reward = 0
 
@@ -138,6 +140,8 @@ class Trajectory:
         self.point_num = point_num
         self.low_env = low_env
         self.road_type = road_type
+        self.check_eight = 0
+        self.check_crc = 0
 
         self.traj_data = np.array([[2.9855712, -10]])
 
@@ -149,13 +153,6 @@ class Trajectory:
 
         if self.low_env:
             self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
-
-    def manage_traj_data(self, carx):
-        check_point = 0
-        if self.road_type == "Eight_20m" and check_point ==0:
-            if carx >= 99.9:
-                self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_circle.csv").loc[:, ["traj_tx", "traj_ty"]].values
-
 
     def update_traj_data(self):
         self.traj_data = np.concatenate((self.traj_data, self.b.get_xy_points()))
@@ -175,6 +172,11 @@ class Trajectory:
         return np.array(self.get_ctrl_points())[-1, :]
 
     def calculate_dev(self, carx, cary, caryaw):
+        if self.road_type == "CRC":
+            if self.check_crc != 0:
+                return self.calculate_dev_crc(carx, cary, caryaw)
+            if carx >= 120.27 and cary >= 30:
+                self.check_crc = 1
         arr = np.array(self.traj_data)
         distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
         dist_index = np.argmin(distances)
@@ -184,13 +186,17 @@ class Trajectory:
         dy = arr[dist_index][1] - arr[dist_index - 1][1]
 
         # 분모가 0이 될 수 있는 경우에 대한 예외처리
-
         if dx == 0:
             devAng = np.inf if dy > 0 else -np.inf
         else:
             devAng = dy / dx
 
-        devAng = - np.arctan(devAng / 2) - caryaw
+        devAng = - np.arctan2(devAng) - caryaw
+        return np.array([devDist, devAng])
+
+    def calculate_dev_crc(self, carx, cary, caryaw):
+        devDist = np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
+        devAng = np.pi/2 - np.arctan2(cary-30, carx-100) - caryaw
         return np.array([devDist, devAng])
 
     def find_traj_points(self, carx):
@@ -231,7 +237,7 @@ class Trajectory:
 
 class Test:
     def __init__(self):
-        road_type = "DLC"
+        road_type = "UTurn"
         self.data = Data(road_type=road_type, low_env=False, check=0)
         tmp = np.array([
             0, 0, 21, -10,
@@ -246,6 +252,6 @@ class Test:
         self.data.traj.show_traj_data()
 
 if __name__ == "__main__":
-    road_type = "DLC"
+    road_type = "UTurn"
     traj = Trajectory(low_env=True, road_type=road_type)
     test=Test()

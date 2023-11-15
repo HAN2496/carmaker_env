@@ -19,6 +19,13 @@ x0, y0 = 0, 0
 r_in, r_out = 1, 10
 direction = -1
 
-a = make_semicircle(x0, y0, r_in, r_out, direction)
-plt.plot(*a.exterior.xy)
-plt.show()
+def calculate_dev_crc(carx, cary, caryaw):
+    devDist = np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
+    devAng = np.pi/2 - np.arctan2(cary-30, carx-100) - caryaw
+    return devDist, devAng
+
+x = 100
+y = 30
+yaw = np.pi/2
+
+print(calculate_dev_crc(x, y, yaw))
