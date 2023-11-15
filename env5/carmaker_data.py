@@ -173,10 +173,10 @@ class Trajectory:
 
     def calculate_dev(self, carx, cary, caryaw):
         if self.road_type == "CRC":
+            if carx >= 120.27 and cary >= 30 and self.check_crc == 0:
+                self.check_crc = 1
             if self.check_crc != 0:
                 return self.calculate_dev_crc(carx, cary, caryaw)
-            if carx >= 120.27 and cary >= 30:
-                self.check_crc = 1
         arr = np.array(self.traj_data)
         distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
         dist_index = np.argmin(distances)
