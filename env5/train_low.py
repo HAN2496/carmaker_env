@@ -64,7 +64,7 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    env_num = 1
+    env_num = 2
     road_type = "UTurn"
     comment = "low"
     explanation = "carmaker env low"

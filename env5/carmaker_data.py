@@ -191,7 +191,7 @@ class Trajectory:
         else:
             devAng = dy / dx
 
-        devAng = - np.arctan2(devAng) - caryaw
+        devAng = - np.arctan2(dy, dx) - caryaw
         return np.array([devDist, devAng])
 
     def calculate_dev_crc(self, carx, cary, caryaw):
