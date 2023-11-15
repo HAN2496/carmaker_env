@@ -31,9 +31,13 @@ def calculate_dev(caryaw):
     print('here', norm_yaw)
     devAng = norm_yaw - np.mod(np.arctan2(dy, dx), 2 * np.pi)
     return devAng
+def normalize_angle(angle):
+    y = np.sin(angle)
+    x = np.cos(angle)
+    return np.arctan2(y, x)
 
 x = 100
 y = 60
-yaw = np.pi * -0.1
+yaw = np.pi * - 1
 
-print(calculate_dev(yaw))
+print(normalize_angle(yaw))

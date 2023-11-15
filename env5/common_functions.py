@@ -63,6 +63,11 @@ def find_lookahead_traj(x, y, distances, traj_data):
 
     return result_points
 
+def normalize_angle(angle):
+    y = np.sin(angle)
+    x = np.cos(angle)
+    return np.arctan2(y, x)
+
 def create_ellipse(center, major_axis, minor_axis, num_points=100):
     angle = np.linspace(0, 2*np.pi, num_points)
     ellipse_x = center[0] + major_axis * np.cos(angle)

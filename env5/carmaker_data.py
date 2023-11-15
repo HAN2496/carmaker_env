@@ -185,8 +185,9 @@ class Trajectory:
 
         dx = arr[dist_index][0] - arr[dist_index - 1][0]
         dy = arr[dist_index][1] - arr[dist_index - 1][1]
-
-        devAng = norm_yaw - np.mod(np.arctan2(dy, dx), 2 * np.pi)
+        path_ang = np.mod(np.arctan2(dy, dx), 2 * np.pi)
+        devAng = norm_yaw - path_ang
+        devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
         return np.array([devDist, devAng])
 
     def calculate_dev_crc(self, carx, cary, caryaw):
