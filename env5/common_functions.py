@@ -43,23 +43,23 @@ def calculate_dev(car_pos, traj_data):
     devAng = - np.arctan(devAng) - caryaw
     return np.array([devDist, devAng])
 
-def find_lookahead_traj(x, y, distances):
+def find_lookahead_traj(x, y, distances, traj_data):
     distances = np.array(distances)
     result_points = []
 
-    min_idx = np.argmin(np.sum((self.traj_data - np.array([x, y])) ** 2, axis=1))
+    min_idx = np.argmin(np.sum((traj_data - np.array([x, y])) ** 2, axis=1))
 
     for dist in distances:
         lookahead_idx = min_idx
         total_distance = 0.0
-        while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
-            total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
+        while total_distance < dist and lookahead_idx + 1 < len(traj_data):
+            total_distance += np.linalg.norm(traj_data[lookahead_idx + 1] - traj_data[lookahead_idx])
             lookahead_idx += 1
 
-        if lookahead_idx < len(self.traj_data):
-            result_points.append(self.traj_data[lookahead_idx])
+        if lookahead_idx < len(traj_data):
+            result_points.append(traj_data[lookahead_idx])
         else:
-            result_points.append(self.traj_data[-1])
+            result_points.append(traj_data[-1])
 
     return result_points
 
