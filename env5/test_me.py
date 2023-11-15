@@ -25,9 +25,15 @@ def calculate_dev_crc(carx, cary, caryaw):
     devDist = np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
     devAng = np.mod(np.arctan2(cary - 30, carx - 100) + np.pi / 2, 2 * np.pi) - norm_yaw
     return devDist, devAng
+def calculate_dev(caryaw):
+    norm_yaw = np.mod(caryaw, 2 * np.pi)
+    dx, dy = 1, 0
+    print('here', norm_yaw)
+    devAng = norm_yaw - np.mod(np.arctan2(dy, dx), 2 * np.pi)
+    return devAng
 
 x = 100
 y = 60
-yaw = np.pi * 5
+yaw = np.pi * -0.1
 
-print(calculate_dev_crc(x, y, yaw))
+print(calculate_dev(yaw))

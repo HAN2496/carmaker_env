@@ -172,6 +172,7 @@ class Trajectory:
         return np.array(self.get_ctrl_points())[-1, :]
 
     def calculate_dev(self, carx, cary, caryaw):
+        norm_yaw = np.mod(caryaw, 2 * np.pi)
         if self.road_type == "CRC":
             if carx <= 120.27 and cary >= 30 and self.check_crc == 0:
                 self.check_crc = 1
@@ -185,13 +186,13 @@ class Trajectory:
         dx = arr[dist_index][0] - arr[dist_index - 1][0]
         dy = arr[dist_index][1] - arr[dist_index - 1][1]
 
-        devAng = - np.arctan2(dy, dx) - caryaw
+        devAng = norm_yaw - np.mod(np.arctan2(dy, dx), 2 * np.pi)
         return np.array([devDist, devAng])
 
     def calculate_dev_crc(self, carx, cary, caryaw):
         norm_yaw = np.mod(caryaw, 2 * np.pi)
         devDist = 30 - np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
-        devAng = np.mod(np.arctan2(cary - 30, carx - 100) + np.pi / 2, 2 * np.pi) - norm_yaw
+        devAng = norm_yaw - np.mod(np.arctan2(cary - 30, carx - 100) + np.pi / 2, 2 * np.pi)
         return np.array([devDist, devAng])
 
     def find_traj_points(self, carx):
