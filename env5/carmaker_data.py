@@ -173,7 +173,7 @@ class Trajectory:
 
     def calculate_dev(self, carx, cary, caryaw):
         if self.road_type == "CRC":
-            if carx >= 120.27 and cary >= 30 and self.check_crc == 0:
+            if carx <= 120.27 and cary >= 30 and self.check_crc == 0:
                 self.check_crc = 1
             if self.check_crc != 0:
                 return self.calculate_dev_crc(carx, cary, caryaw)
@@ -185,18 +185,13 @@ class Trajectory:
         dx = arr[dist_index][0] - arr[dist_index - 1][0]
         dy = arr[dist_index][1] - arr[dist_index - 1][1]
 
-        # 분모가 0이 될 수 있는 경우에 대한 예외처리
-        if dx == 0:
-            devAng = np.inf if dy > 0 else -np.inf
-        else:
-            devAng = dy / dx
-
         devAng = - np.arctan2(dy, dx) - caryaw
         return np.array([devDist, devAng])
 
     def calculate_dev_crc(self, carx, cary, caryaw):
-        devDist = np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
-        devAng = np.pi/2 - np.arctan2(cary-30, carx-100) - caryaw
+        norm_yaw = np.mod(caryaw, 2 * np.pi)
+        devDist = 30 - np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
+        devAng = np.mod(np.arctan2(cary - 30, carx - 100) + np.pi / 2, 2 * np.pi) - norm_yaw
         return np.array([devDist, devAng])
 
     def find_traj_points(self, carx):

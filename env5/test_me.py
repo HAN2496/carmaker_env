@@ -20,12 +20,14 @@ r_in, r_out = 1, 10
 direction = -1
 
 def calculate_dev_crc(carx, cary, caryaw):
+    norm_yaw = np.mod(caryaw, 2 * np.pi)
+    #반시계가 +임.
     devDist = np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
-    devAng = np.pi/2 - np.arctan2(cary-30, carx-100) - caryaw
+    devAng = np.mod(np.arctan2(cary - 30, carx - 100) + np.pi / 2, 2 * np.pi) - norm_yaw
     return devDist, devAng
 
 x = 100
-y = 30
-yaw = np.pi/2
+y = 60
+yaw = np.pi * 5
 
 print(calculate_dev_crc(x, y, yaw))
