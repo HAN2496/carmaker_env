@@ -64,7 +64,7 @@ class Data:
         lookahead_traj_abs = self.traj.find_lookahead_traj(self.carx, self.cary, self.caryaw, lookahead_sight)
         lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], lookahead_traj_abs).flatten()
 
-        if self.road_type == "SLALOM" or "SLALOM2" or "Eight_20m" or "UTurn":
+        if self.road_type == "SLALOM" or "SLALOM2" or "Eight_20m" or "UTurn" or "CRC":
             return np.concatenate(([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
                          self.rl, self.rr, self.fl, self.fr, self.rr_ext, self.rl_ext], lookahead_traj_rel))
 
