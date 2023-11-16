@@ -144,7 +144,6 @@ class Trajectory:
         self.road_type = road_type
         self.check_section = 0
 
-        self.kd_tree = KDTree(self.traj_data)
         self.traj_data = np.array([init_car_pos(road_type)])
         self.previous_lookahead_points = []
 
@@ -156,6 +155,8 @@ class Trajectory:
 
         if self.low_env:
             self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+
+        self.kd_tree = KDTree(self.traj_data)
 
     def update_traj_data(self):
         self.traj_data = np.concatenate((self.traj_data, self.b.get_xy_points()))
