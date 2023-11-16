@@ -33,7 +33,7 @@ class Data:
     def _init(self):
         self.test_num = 0
         self.time = 0
-        self.carx, self.cary, self.caryaw, self.carv = 2.9855712, -10, 0, 13.8888889
+        self.carx, self.cary, self.caryaw, self.carv = 2.9855712, 0, 0, 13.8888889
         self.steerAng, self.steerVel, self.steerAcc = 0, 0, 0
         self.devDist, self.devAng = 0, 0
         self.alHori, self.roll = 0, 0
@@ -84,7 +84,7 @@ class Data:
         elif self.road_type == "Eight_20m":
             col_reward = 0
         else:
-            col_reward = 0
+            col_reward = abs(self.alHori) * 1000
 
         e = - col_reward - dist_reward - ang_reward
 
