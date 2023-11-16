@@ -83,6 +83,18 @@ def make_semiellipse(x0, y0, major, minor_out, cone_dist, direction):
 
     return circle_out.difference(circle_in).difference(rec)
 
+def init_car_pos(road_type):
+    if road_type == "CRC":
+        return 2.36088498, -5.5
+    elif road_type == "DLC":
+        return 2.9855712, -10
+    elif road_type == "SLALOM2" or "SLALOM":
+        return 2.9855712, -25.0
+    elif road_type == "UTurn":
+        return 2.3609321776837224, -3.0
+    elif road_type == "Eight_20m":
+        return 0, 6.27E-06
+
 if __name__ == "__main__":
     x0, y0 = 0, 0
     r_in, r_out = 1, 10

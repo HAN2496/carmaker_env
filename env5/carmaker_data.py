@@ -33,7 +33,8 @@ class Data:
     def _init(self):
         self.test_num = 0
         self.time = 0
-        self.carx, self.cary, self.caryaw, self.carv = 2.9855712, 0, 0, 13.8888889
+        self.carx, self.cary = init_car_pos(self.road_type)
+        self.caryaw, self.carv = 0, 13.8888889
         self.steerAng, self.steerVel, self.steerAcc = 0, 0, 0
         self.devDist, self.devAng = 0, 0
         self.alHori, self.roll = 0, 0
@@ -142,7 +143,7 @@ class Trajectory:
         self.road_type = road_type
         self.check_section = 0
 
-        self.traj_data = np.array([[2.9855712, -10]])
+        self.traj_data = np.array([[init_car_pos(road_type)]])
         self.previous_lookahead_points = []
 
         self.b = BezierCurve(0.001)
