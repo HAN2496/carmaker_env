@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from carmaker_cone import *
 import pandas as pd
 from MyBezierCurve import BezierCurve
+from scipy.spatial import KDTree
 
 CONER = 0.2
 CARWIDTH = 1.8
@@ -143,6 +144,7 @@ class Trajectory:
         self.check_section = 0
 
         self.traj_data = np.array([[2.9855712, -10]])
+        self.kd_tree = KDTree(self.traj_data)
         self.previous_lookahead_points = []
 
         self.b = BezierCurve(0.001)
@@ -208,44 +210,40 @@ class Trajectory:
         return points
 
     def find_lookahead_traj(self, carx, cary, caryaw, distances):
-        #유턴과 같은 상황을 대비해 코드 수정
+        car_position = np.array([carx, cary])
         distances = np.array(distances)
         result_points = []
 
-        traj_data = np.array(self.traj_data)
-        car_position = np.array([carx, cary])
+        # KD-Tree를 사용하여 가장 가까운 점 찾기
+        min_idx = self.kd_tree.query(car_position)[1]
 
-        dists_to_car = np.linalg.norm(traj_data - car_position, axis=1)
-        min_idx = np.argmin(dists_to_car)
+        # 각도 차이 계산 최적화
+        car_direction = np.array([np.cos(caryaw), np.sin(caryaw)])
 
         for i, dist in enumerate(distances):
             lookahead_idx = min_idx
             total_distance = 0.0
-            forward_point_found = False  # 전방 포인트 찾았는지 표시
+            forward_point_found = False
 
-            while total_distance < dist and lookahead_idx + 1 < len(traj_data):
-                next_point = traj_data[lookahead_idx + 1]
+            while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
+                next_point = self.traj_data[lookahead_idx + 1]
                 vector_to_next_point = next_point - car_position
-                angle_to_next_point = np.arctan2(vector_to_next_point[1], vector_to_next_point[0])
-                angle_diff = np.arctan2(np.sin(angle_to_next_point - caryaw), np.cos(angle_to_next_point - caryaw))
+                angle_diff = np.arctan2(np.cross(car_direction, vector_to_next_point), np.dot(car_direction, vector_to_next_point))
 
-                if abs(angle_diff) < np.pi / 2:  # 전방 포인트 확인
-                    total_distance += np.linalg.norm(traj_data[lookahead_idx + 1] - traj_data[lookahead_idx])
+                if abs(angle_diff) < np.pi / 2:
+                    total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
                     forward_point_found = True
 
                 lookahead_idx += 1
 
             if forward_point_found:
-                result_points.append(traj_data[lookahead_idx])
+                result_points.append(self.traj_data[lookahead_idx])
             else:
-                # 전방 포인트를 찾지 못한 경우, 같은 인덱스의 이전 포인트 사용
                 if i < len(self.previous_lookahead_points):
                     result_points.append(self.previous_lookahead_points[i])
                 else:
-                    # 이전 데이터가 없는 경우, 현재 위치로 대체
                     result_points.append(car_position)
 
-        # 결과 저장
         self.previous_lookahead_points = result_points
         return np.array(result_points)
 
