@@ -143,12 +143,12 @@ class Trajectory:
         self.road_type = road_type
         self.check_section = 0
 
-        self.traj_data = np.array([[init_car_pos(road_type)]])
+        self.traj_data = np.array([init_car_pos(road_type)])
         self.previous_lookahead_points = []
 
         self.b = BezierCurve(0.001)
         self.b_angle_before = 0
-        self.update_b(2.9855712, -10, 0, 0)
+        self.update_b(init_car_pos(road_type)[0], init_car_pos(road_type)[1], 0, 0)
 
         self.dev = np.array([0, 0])
 
