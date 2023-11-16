@@ -60,8 +60,8 @@ class Data:
         self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
 
     def manage_state_low(self):
-        lookahead_sight = [2 * i for i in range(5)]
-        lookahead_traj_abs = self.traj.find_lookahead_traj(self.carx, self.cary, lookahead_sight)
+        lookahead_sight = [2 * (i + 1) for i in range(5)]
+        lookahead_traj_abs = self.traj.find_lookahead_traj(self.carx, self.cary, self.caryaw, lookahead_sight)
         lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], lookahead_traj_abs).flatten()
 
         if self.road_type == "SLALOM" or "SLALOM2" or "Eight_20m" or "UTurn":
@@ -140,10 +140,10 @@ class Trajectory:
         self.point_num = point_num
         self.low_env = low_env
         self.road_type = road_type
-        self.check_eight = 0
-        self.check_crc = 0
+        self.check_section = 0
 
         self.traj_data = np.array([[2.9855712, -10]])
+        self.previous_lookahead_points = []
 
         self.b = BezierCurve(0.001)
         self.b_angle_before = 0
@@ -174,9 +174,10 @@ class Trajectory:
     def calculate_dev(self, carx, cary, caryaw):
         norm_yaw = np.mod(caryaw, 2 * np.pi)
         if self.road_type == "CRC":
-            if carx <= 120.27 and cary >= 30 and self.check_crc == 0:
-                self.check_crc = 1
-            if self.check_crc != 0:
+            if carx <= 120.27 and cary >= 30 and self.check_section == 0:
+                self.check_section = 1
+                self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_crc.csv").loc[:, ["traj_tx", "traj_ty"]].values
+            if self.check_section != 0:
                 return self.calculate_dev_crc(carx, cary, caryaw)
         arr = np.array(self.traj_data)
         distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
@@ -206,25 +207,48 @@ class Trajectory:
             points.append(self.traj_data[nearest_idx])
         return points
 
-    def find_lookahead_traj(self, x, y, distances):
+    def find_lookahead_traj(self, carx, cary, caryaw, distances):
+        #유턴과 같은 상황을 대비해 코드 수정
         distances = np.array(distances)
         result_points = []
 
-        min_idx = np.argmin(np.sum((self.traj_data - np.array([x, y])) ** 2, axis=1))
+        traj_data = np.array(self.traj_data)
+        car_position = np.array([carx, cary])
 
-        for dist in distances:
+        dists_to_car = np.linalg.norm(traj_data - car_position, axis=1)
+        min_idx = np.argmin(dists_to_car)
+
+        for i, dist in enumerate(distances):
             lookahead_idx = min_idx
             total_distance = 0.0
-            while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
-                total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
+            forward_point_found = False  # 전방 포인트 찾았는지 표시
+
+            while total_distance < dist and lookahead_idx + 1 < len(traj_data):
+                next_point = traj_data[lookahead_idx + 1]
+                vector_to_next_point = next_point - car_position
+                angle_to_next_point = np.arctan2(vector_to_next_point[1], vector_to_next_point[0])
+                angle_diff = np.arctan2(np.sin(angle_to_next_point - caryaw), np.cos(angle_to_next_point - caryaw))
+
+                if abs(angle_diff) < np.pi / 2:  # 전방 포인트 확인
+                    total_distance += np.linalg.norm(traj_data[lookahead_idx + 1] - traj_data[lookahead_idx])
+                    forward_point_found = True
+
                 lookahead_idx += 1
 
-            if lookahead_idx < len(self.traj_data):
-                result_points.append(self.traj_data[lookahead_idx])
+            if forward_point_found:
+                result_points.append(traj_data[lookahead_idx])
             else:
-                result_points.append(self.traj_data[-1])
+                # 전방 포인트를 찾지 못한 경우, 같은 인덱스의 이전 포인트 사용
+                if i < len(self.previous_lookahead_points):
+                    result_points.append(self.previous_lookahead_points[i])
+                else:
+                    # 이전 데이터가 없는 경우, 현재 위치로 대체
+                    result_points.append(car_position)
 
-        return result_points
+        # 결과 저장
+        self.previous_lookahead_points = result_points
+        return np.array(result_points)
+
 
     def show_traj_data(self):
         plt.scatter(self.traj_data[:, 0], self.traj_data[:, 1])
@@ -247,9 +271,9 @@ class Test:
         self.data.put_simul_data(tmp)
         print(self.data.traj.b.get_ctrl_last_point())
         self.data.traj.update_b(self.data.carx, self.data.cary, self.data.caryaw, np.pi/3)
-        self.data.traj.show_traj_data()
 
 if __name__ == "__main__":
     road_type = "UTurn"
     traj = Trajectory(low_env=True, road_type=road_type)
+    print(traj.find_lookahead_traj(10, 0, 0, [0, 2, 4, 8, 10]))
     test=Test()
