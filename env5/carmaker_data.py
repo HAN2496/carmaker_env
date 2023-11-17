@@ -181,6 +181,7 @@ class Trajectory:
             if carx <= 120.27 and cary >= 30 and self.check_section == 0:
                 self.check_section = 1
                 self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_crc.csv").loc[:, ["traj_tx", "traj_ty"]].values
+                self.kd_tree = KDTree(self.traj_data)
             if self.check_section != 0:
                 return self.calculate_dev_crc(carx, cary, caryaw)
         arr = np.array(self.traj_data)
