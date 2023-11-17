@@ -144,19 +144,17 @@ class Trajectory:
         self.road_type = road_type
         self.check_section = 0
 
-        self.traj_data = np.array([init_car_pos(road_type)])
-        self.previous_lookahead_points = []
-
-        self.b = BezierCurve(0.001)
-        self.b_angle_before = 0
-        self.update_b(init_car_pos(road_type)[0], init_car_pos(road_type)[1], 0, 0)
-
         self.dev = np.array([0, 0])
 
         if self.low_env:
             self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        else:
+            self.traj_data = np.array([init_car_pos(road_type)])
+            self.b = BezierCurve(0.001)
+            self.b_angle_before = 0
+            self.update_b(init_car_pos(road_type)[0], init_car_pos(road_type)[1], 0, 0)
 
-        self.kd_tree = KDTree(self.traj_data)
+        self.previous_lookahead_points = []
 
     def update_traj_data(self):
         self.traj_data = np.concatenate((self.traj_data, self.b.get_xy_points()))
@@ -181,7 +179,6 @@ class Trajectory:
             if carx <= 120.27 and cary >= 30 and self.check_section == 0:
                 self.check_section = 1
                 self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_crc.csv").loc[:, ["traj_tx", "traj_ty"]].values
-                self.kd_tree = KDTree(self.traj_data)
             if self.check_section != 0:
                 return self.calculate_dev_crc(carx, cary, caryaw)
         arr = np.array(self.traj_data)
@@ -218,7 +215,7 @@ class Trajectory:
         result_points = []
 
         # KD-Tree를 사용하여 가장 가까운 점 찾기
-        min_idx = self.kd_tree.query(car_position)[1]
+        min_idx = np.argmin(np.sum((self.traj_data - np.array([carx, cary])) ** 2, axis=1))
 
         # 각도 차이 계산 최적화
         car_direction = np.array([np.cos(caryaw), np.sin(caryaw)])
@@ -235,17 +232,13 @@ class Trajectory:
 
                 if abs(angle_diff) < np.pi / 2:
                     total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
-                    forward_point_found = True
 
                 lookahead_idx += 1
 
             if forward_point_found:
                 result_points.append(self.traj_data[lookahead_idx])
             else:
-                if i < len(self.previous_lookahead_points):
-                    result_points.append(self.previous_lookahead_points[i])
-                else:
-                    result_points.append(car_position)
+                result_points.append(self.traj_data[lookahead_idx])
 
         self.previous_lookahead_points = result_points
         return np.array(result_points)
