@@ -58,11 +58,11 @@ class CarMakerEnvB(gym.Env):
         self.dist = 12
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
-        env_action_num = np.size(self.data.manage_state_b())
+        env_action_num = 2
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
-        env_obs_num = 15
+        env_obs_num = np.size(self.data.manage_state_b())
         sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -82,7 +82,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.start()
 
         low_level_env = LowLevelCarMakerEnv(road_type=road_type, check=check, use_low=use_low)
-        self.low_level_model = SAC.load(f"best_model/SLALOM_best_model.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"best_model/SLALOM2_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
