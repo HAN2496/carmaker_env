@@ -152,28 +152,22 @@ class Trajectory:
             self.traj_data = np.array([init_car_pos(road_type)])
             self.b = BezierCurve(0.001)
             self.b_angle_before = 0
-            self.update_b(init_car_pos(road_type)[0], init_car_pos(road_type)[1], 0, 0)
+            self.update_b(0)
 
         self.previous_lookahead_points = []
 
     def update_traj(self):
         if self.low_env == True:
             self.update_traj_low()
-        else:
-            self.update_traj_data()
 
     def update_traj_low(self):
         pass
-    def update_traj_data(self):
-        self.traj_data = np.concatenate((self.traj_data, self.b.get_xy_points()))
 
-    def update_b(self, carx, cary, caryaw, action):
-        self.b.update(
-            [carx, cary, caryaw],
+    def update_b(self, action):
+        self.b.add_curve(
             [6, 6, 6, self.b_angle_before, action]
         )
         self.b_angle_before = action
-        self.update_traj_data()
 
     def get_ctrl_points(self):
         return self.b.p

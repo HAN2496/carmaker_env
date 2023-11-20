@@ -65,8 +65,8 @@ def main():
     """
 
     env_num = 1
-    road_type = "UTurn"
-    comment = "low_ppo"
+    road_type = "SLALOM2"
+    comment = "rws"
     explanation = "carmaker env low"
 
     num_proc = 2
@@ -81,7 +81,7 @@ def main():
 
     input("Program Start.\n")
 
-    model = PPO('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join(f"models/{prefix}/tensorboard"))
+    model = SAC('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join(f"models/{prefix}/tensorboard"))
 #    model = PPO.load("UTurn_env22_best_model.pkl", env=env, verbos=1, tensorboard_log=os.path.join("tensorboard/{}/Additional_study".format(naming)))
 
     try:
