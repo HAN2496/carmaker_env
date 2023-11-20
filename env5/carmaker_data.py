@@ -156,6 +156,14 @@ class Trajectory:
 
         self.previous_lookahead_points = []
 
+    def update_traj(self):
+        if self.low_env == True:
+            self.update_traj_low()
+        else:
+            self.update_traj_data()
+
+    def update_traj_low(self):
+        pass
     def update_traj_data(self):
         self.traj_data = np.concatenate((self.traj_data, self.b.get_xy_points()))
 
@@ -209,6 +217,26 @@ class Trajectory:
             points.append(self.traj_data[nearest_idx])
         return points
 
+    def find_lookahead_traj(self, x, y, distances):
+        distances = np.array(distances)
+        result_points = []
+
+        min_idx = np.argmin(np.sum((self.traj_data - np.array([x, y])) ** 2, axis=1))
+
+        for dist in distances:
+            lookahead_idx = min_idx
+            total_distance = 0.0
+            while total_distance < dist and lookahead_idx + 1 < len(self.traj_data):
+                total_distance += np.linalg.norm(self.traj_data[lookahead_idx + 1] - self.traj_data[lookahead_idx])
+                lookahead_idx += 1
+
+            if lookahead_idx < len(self.traj_data):
+                result_points.append(self.traj_data[lookahead_idx])
+            else:
+                result_points.append(self.traj_data[-1])
+
+        return result_points
+    """
     def find_lookahead_traj(self, carx, cary, caryaw, distances):
         car_position = np.array([carx, cary])
         distances = np.array(distances)
@@ -242,7 +270,7 @@ class Trajectory:
 
         self.previous_lookahead_points = result_points
         return np.array(result_points)
-
+    """
     def find_lookahead_traj_straight(self, carx, axis_y, distances):
         return [[carx + distance, axis_y] for distance in distances]
 
@@ -253,7 +281,9 @@ class Trajectory:
             lookahead_point = carx + dist
             if lookahead_point <= 150:
                 traj.append([lookahead_point, -3])
-            if lookahead_point >150:
+            elif lookahead_point >= 158:
+                pass
+            else:
                 pass
 
         if carx <= 150 - 10 and self.check_section == 0:
