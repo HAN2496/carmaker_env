@@ -50,11 +50,11 @@ labels = ['ipg', 'rl']
 compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']
 titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "Car pos X", "Car pos Y", "Reward"]
 
-"""
+
 #그래프 플롯
 plot_multiple(compare_keys, titles, ['ipg', 'rl'], ipg_rl, rl)
 plot_trajectory(cones, traj, ipg_rl, rl, 'RL')
-"""
+
 #충돌 콘 플롯
 ipg_collision = np.array(check_collision(cones, ipg_rl))
 rl_collision = np.array(check_collision(cones, rl))
