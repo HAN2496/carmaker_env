@@ -217,7 +217,7 @@ class Trajectory:
             points.append(self.traj_data[nearest_idx])
         return points
 
-    def find_lookahead_traj(self, x, y, distances):
+    def find_lookahead_traj(self, x, y, yaw, distances):
         distances = np.array(distances)
         result_points = []
 
