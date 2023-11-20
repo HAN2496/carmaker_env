@@ -247,12 +247,15 @@ class Trajectory:
         return [[carx + distance, axis_y] for distance in distances]
 
     def find_lookahead_traj_UTurn(self, carx, distances):
-        def polynomial_8th_degree(x):
-            return (-1.0175490523457665e-06 * x ** 8 - 4.079379984926502e-05 * x ** 7 -
-                    0.0006161930558133805 * x ** 6 - 0.0041826449689463824 * x ** 5 -
-                    0.010801343060083242 * x ** 4 + 0.0032157711801475025 * x ** 3 -
-                    0.05655170707348099 * x ** 2 - 0.8633890183523221 * x +
-                    155.96414928121055)
+        traj = []
+
+        for dist in distances:
+            lookahead_point = carx + dist
+            if lookahead_point <= 150:
+                traj.append([lookahead_point, -3])
+            if lookahead_point >150:
+                pass
+
         if carx <= 150 - 10 and self.check_section == 0:
             return self.find_lookahead_traj_straight(carx, -3, distances)
         elif carx <= 150 - 10 and self.check_section == 2:
