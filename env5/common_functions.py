@@ -1,3 +1,5 @@
+import pandas as pd
+
 import numpy as np
 import sys
 from shapely.geometry import Polygon, Point, LineString, MultiPolygon
@@ -82,7 +84,6 @@ def make_semiellipse(x0, y0, major, minor_out, cone_dist, direction):
                    [x0 + major, y0 - direction * minor_out], [x0 - major, y0 - direction * minor_out]])
 
     return circle_out.difference(circle_in).difference(rec)
-
 def init_car_pos(road_type):
     if road_type == "CRC":
         return np.array([2.36088498, -5.5])
@@ -95,21 +96,22 @@ def init_car_pos(road_type):
     elif road_type == "Eight_20m":
         return np.array([0, 6.27E-06])
 
-def polynomial_8th_degree(x):
-    return (-1.0175490523457665e-06 * x**8 - 4.079379984926502e-05 * x**7 -
-            0.0006161930558133805 * x**6 - 0.0041826449689463824 * x**5 -
-            0.010801343060083242 * x**4 + 0.0032157711801475025 * x**3 -
-            0.05655170707348099 * x**2 - 0.8633890183523221 * x +
-            155.96414928121055)
+def approximate_UTurn(df):
+    degree = 3
+    coeff = np.polyfit(df[:, 0], df[:, 1], degree)
+    polynomial = np.poly1d(coeff)
+    return polynomial
 
 if __name__ == "__main__":
-    x0, y0 = 0, 0
-    r_in, r_out = 1, 10
-    direction = -1
-
-    a = make_semiellipse(x0, y0, 30, 3, 1, direction)
-    b = create_ellipse((x0, y0), 10, 1)
-
-    plt.plot(*a.exterior.xy)
+    df = pd.read_csv('datafiles/UTurn/datasets_traj_curve.csv').loc[:, ["traj_tx", "traj_ty"]].values
+    x = np.linspace(-5, 15, 10000)
+    y = approximate_UTurn(df)(x)
+    #plt.plot(x, y)
+    #plt.plot(df[:, 0], df[:, 1], color='red')
+    #plt.show()
+    tmp = create_ellipse([150, 5], 8, 8)
+    df = pd.read_csv('datafiles/UTurn/datasets_traj.csv').loc[4042:4589, ["traj_tx", "traj_ty"]].values
+    plt.plot(*tmp.exterior.xy)
+    plt.plot(df[:, 0], df[:, 1], color='red')
     plt.axis('equal')
     plt.show()
