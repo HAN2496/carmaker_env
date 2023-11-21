@@ -11,6 +11,7 @@ import numpy as np
 import warnings
 from carmaker_env_low import CarMakerEnv
 from stable_baselines3 import SAC, PPO
+from typing import Dict
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -116,6 +117,40 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
             episode_returns[ep_idx] = reward_sum
             reward_sum = 0.0
             ep_idx += 1
+    if isinstance(env.observation_space, spaces.Box) and not record_images:
+        observations = np.concatenate(observations).reshape((-1,) + env.observation_space.shape)
+    elif isinstance(env.observation_space, spaces.Discrete):
+        observations = np.array(observations).reshape((-1, 1))
+    elif record_images:
+        observations = np.array(observations)
+
+    if isinstance(env.action_space, spaces.Box):
+        actions = np.concatenate(actions).reshape((-1,) + env.action_space.shape)
+    elif isinstance(env.action_space, spaces.Discrete):
+        actions = np.array(actions).reshape((-1, 1))
+
+    rewards = np.array(rewards)
+    episode_starts = np.array(episode_starts[:-1])
+
+    assert len(observations) == len(actions)
+
+    numpy_dict = {
+        'actions': actions,
+        'obs': observations,
+        'rewards': rewards,
+        'episode_returns': episode_returns,
+        'episode_starts': episode_starts
+    }  # type: Dict[str, np.ndarray]
+
+    for key, val in numpy_dict.items():
+        print(key, val.shape)
+
+    if save_path is not None:
+        np.savez(save_path, **numpy_dict)
+
+    env.close()
+
+    return numpy_dict
 def make_env(rank, road_type, seed=0):
 
     def _init():
