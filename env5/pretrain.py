@@ -98,7 +98,7 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
     while ep_idx < n_episodes:
         obs_ = obs
         observations.append(obs_)
-        action = model(obs)
+        action = model.predict(obs)
 
         obs, reward, done, _ = env.step(action)
 
