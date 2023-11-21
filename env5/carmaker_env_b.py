@@ -90,6 +90,8 @@ class CarMakerEnvB(gym.Env):
 
     def _initial_state(self):
         self.test_num = 0
+        self.traj._init_traj_data()
+        self.data._init()
         return np.zeros(self.observation_space.shape)
 
     def reset(self):

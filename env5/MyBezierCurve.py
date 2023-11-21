@@ -44,7 +44,7 @@ class BezierCurve:
     def add_curve(self, action):
         x0 = np.array(self.curves[-1].nodes[:,-1])  # 마지막 곡선의 마지막 컨트롤 포인트
         x0 = np.append(x0, self.last_angle)  # psi0 값 (임시로 0)
-        action = action + [self.last_angle]
+        action = action + [0]
         self.update(x0, action)
 
 # 사용 예시

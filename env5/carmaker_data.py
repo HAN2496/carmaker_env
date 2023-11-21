@@ -46,6 +46,7 @@ class Data:
 
         self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
 
+
     def put_simul_data(self, arr):
         self.simul_data = arr
         self.test_num = arr[0]
@@ -146,22 +147,19 @@ class Trajectory:
 
         self.dev = np.array([0, 0])
 
+        self._init_traj_data()
+        self.previous_lookahead_points = []
+
+    def _init_traj_data(self):
         if self.low_env:
-            self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+            self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
+                             ["traj_tx", "traj_ty"]].values
         else:
             self.traj_data = np.array([init_car_pos(road_type)])
             self.b = BezierCurve(0.001)
             self.b_angle_before = 0
             self.update_b(0)
 
-        self.previous_lookahead_points = []
-
-    def update_traj(self):
-        if self.low_env == True:
-            self.update_traj_low()
-
-    def update_traj_low(self):
-        pass
 
     def update_b(self, action):
         self.b.add_curve(
