@@ -98,7 +98,7 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
     while ep_idx < n_episodes:
         obs_ = obs
         observations.append(obs_)
-        action = model.predict(obs)
+        action, _states = model.predict(obs, deterministic=True)
 
         obs, reward, done, _ = env.step(action)
 
@@ -111,12 +111,23 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
         idx += 1
         if done:
             obs = env.reset()
+
+            print(f"New observation after reset: {obs}")
+
+            # 에피소드별 총 보상 기록
+            print(f"Episode {ep_idx} finished. Total reward: {reward_sum}")
+
+            # 현재 에피소드의 마지막 액션 및 상태 기록
+            print(f"Last action: {action}, Last observation: {obs_}")
+
             # Reset the state in case of a recurrent policy
             state = None
 
             episode_returns[ep_idx] = reward_sum
             reward_sum = 0.0
             ep_idx += 1
+            print(f"observation: {np.shape(observations)}, reward: {np.shape(actions)}")
+
     if isinstance(env.observation_space, spaces.Box) and not record_images:
         observations = np.concatenate(observations).reshape((-1,) + env.observation_space.shape)
     elif isinstance(env.observation_space, spaces.Discrete):
