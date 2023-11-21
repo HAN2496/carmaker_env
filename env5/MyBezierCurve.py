@@ -3,16 +3,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 class BezierCurve:
-    def __init__(self, dt):
+    def __init__(self, carx, cary, dt):
         self.dt = dt
         self.curves = []  # 여러 베지어 곡선을 저장할 리스트
         self.update(
-            np.zeros((3,)),
+            [carx, cary, 0],
             [1, 1, 1, 0.0, 0.0]
         )
         self.last_angle = 0
 
     def update(self, x0, action):
+        action = action
         new_p = [np.array(x0[:2])]
 
         angles = x0[-1] + np.cumsum([0] + action[3:5])
@@ -46,13 +47,33 @@ class BezierCurve:
         x0 = np.append(x0, self.last_angle)  # psi0 값 (임시로 0)
         action = action + [0]
         self.update(x0, action)
+    def get_first_point(self):
+        last_curve = self.curves[-1]
+        first_point = last_curve.nodes[:, 0]
+        return first_point
+
+    def get_last_point(self):
+        last_curve = self.curves[-1]
+        last_point = last_curve.nodes[:, -1]
+        return last_point
+
+    def get_xy_points(self, carx):
+        t = np.arange(0, 1, self.dt)
+        points = []
+        for curve in self.curves:
+            curve_points = curve.evaluate_multi(t).T
+            points.append(curve_points)
+        concatenated_points = np.vstack(points)
+        return np.array(concatenated_points)
 
 # 사용 예시
 if __name__ == '__main__':
     B = BezierCurve(0.001)
-    B.add_curve([5, 5, 5, 0])
-    B.show_curve()
     B.add_curve([5, 5, 5, np.pi/3])
-    B.show_curve()
+    #B.show_curve()
+    B.add_curve([5, 5, 5, np.pi/3])
+    #B.show_curve()
     B.add_curve([5, 5, 5, np.pi/6])
+    print(B.get_xy_points())
     B.show_curve()
+

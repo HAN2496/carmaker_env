@@ -45,6 +45,7 @@ class Data:
         self.wheel_steer_ext = np.array([0, 0])
 
         self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
+        self.traj._init_traj()
 
 
     def put_simul_data(self, arr):
@@ -147,41 +148,37 @@ class Trajectory:
 
         self.dev = np.array([0, 0])
 
-        self._init_traj_data()
+        self._init_traj()
         self.previous_lookahead_points = []
 
-    def _init_traj_data(self):
+    def _init_traj(self):
         if self.low_env:
             self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
                              ["traj_tx", "traj_ty"]].values
         else:
-            self.traj_data = np.array([init_car_pos(road_type)])
-            self.b = BezierCurve(0.001)
-            self.b_angle_before = 0
-            self.update_b(0)
+            x, y = init_car_pos(self.road_type)
+            self.traj_data = BezierCurve(x-1, y, 0.1)
 
-
-    def update_b(self, action):
-        self.b.add_curve(
-            [6, 6, 6, self.b_angle_before, action]
+    def update_traj(self, action):
+        action = action * np.pi / 12
+        self.traj_data.add_curve(
+            [6, 6, 6, action]
         )
-        self.b_angle_before = action
-
-    def get_ctrl_points(self):
-        return self.b.p
-
-    def get_ctrl_last_point(self):
-        return np.array(self.get_ctrl_points())[-1, :]
 
     def calculate_dev(self, carx, cary, caryaw):
         norm_yaw = np.mod(caryaw, 2 * np.pi)
-        if self.road_type == "CRC":
+        if self.road_type == "CRC" and self.low_env:
             if carx <= 120.27 and cary >= 30 and self.check_section == 0:
                 self.check_section = 1
                 self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_crc.csv").loc[:, ["traj_tx", "traj_ty"]].values
             if self.check_section != 0:
                 return self.calculate_dev_crc(carx, cary, caryaw)
-        arr = np.array(self.traj_data)
+        if self.low_env:
+            arr = np.array(self.traj_data)
+        else:
+            arr = self.traj_data.get_xy_points(carx)
+            print(f"carx: {carx}")
+            print(arr)
         distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
         dist_index = np.argmin(distances)
         devDist = distances[dist_index]
@@ -191,6 +188,7 @@ class Trajectory:
         path_ang = np.mod(np.arctan2(dy, dx), 2 * np.pi)
         devAng = norm_yaw - path_ang
         devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
+        print(f"Traj: {arr[dist_index]}")
         return np.array([devDist, devAng])
 
     def calculate_dev_crc(self, carx, cary, caryaw):
@@ -227,7 +225,8 @@ class Trajectory:
             else:
                 result_points.append(self.traj_data[-1])
 
-        return result_points
+        return np.array(result_points)
+
     """
     def find_lookahead_traj(self, carx, cary, caryaw, distances):
         car_position = np.array([carx, cary])
@@ -292,20 +291,26 @@ class Trajectory:
 class Test:
     def __init__(self):
         road_type = "UTurn"
+        carx, cary, caryaw = 4, -10, 0
         self.data = Data(road_type=road_type, low_env=False, check=0)
+        print('--')
         tmp = np.array([
-            0, 0, 21, -10,
+            0, 0, carx, cary,
             0, 0, 0, 0,
             0, 0, 0, 0,
             0, 0, 0, 0,
             0
         ])
         self.data.put_simul_data(tmp)
-        print(self.data.traj.b.get_ctrl_last_point())
-        self.data.traj.update_b(self.data.carx, self.data.cary, self.data.caryaw, np.pi/3)
+        print('---')
+        self.data.traj.update_traj(np.pi/3)
+        print(f"carx: {self.data.carx}, cary: {self.data.cary}")
+        print('----')
+        print(f"here: {self.data.traj.calculate_dev(carx, cary, caryaw)}")
+        self.data.traj.traj_data.show_curve()
 
 if __name__ == "__main__":
     road_type = "UTurn"
-    traj = Trajectory(low_env=True, road_type=road_type)
-    print(traj.find_lookahead_traj(10, 0, 0, [0, 2, 4, 8, 10]))
+    #traj = Trajectory(low_env=True, road_type=road_type)
+    #print(traj.find_lookahead_traj(10, 0, 0, [0, 2, 4, 8, 10]))
     test=Test()
