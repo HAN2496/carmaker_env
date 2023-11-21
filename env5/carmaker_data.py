@@ -99,7 +99,7 @@ class Data:
 
     def manage_reward_b(self):
         car_shape = Car().shape_car(self.carx, self.cary, self.caryaw)
-        trajx, trajy = self.traj.find_traj_points(self.carx)
+        trajx, trajy = self.traj.find_traj_point()
         traj_shape = Point(trajx, trajy)
 
         car_col_reward, traj_col_reward = 0, 0
@@ -157,13 +157,15 @@ class Trajectory:
                              ["traj_tx", "traj_ty"]].values
         else:
             x, y = init_car_pos(self.road_type)
-            self.traj_data = BezierCurve(x-1, y, 0.1)
+            self.b = BezierCurve(x, y, 0.02)
+            self.traj_data = self.b.get_xy_points(x)
 
-    def update_traj(self, action):
-        action = action * np.pi / 12
-        self.traj_data.add_curve(
+    def update_traj(self, carx, action):
+        action = action * np.pi / 6
+        self.b.add_curve(
             [6, 6, 6, action]
         )
+        self.traj_data = self.b.get_xy_points(carx)
 
     def calculate_dev(self, carx, cary, caryaw):
         norm_yaw = np.mod(caryaw, 2 * np.pi)
@@ -176,9 +178,8 @@ class Trajectory:
         if self.low_env:
             arr = np.array(self.traj_data)
         else:
-            arr = self.traj_data.get_xy_points(carx)
-            print(f"carx: {carx}")
-            print(arr)
+            arr = self.b.get_xy_points(carx)
+
         distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
         dist_index = np.argmin(distances)
         devDist = distances[dist_index]
@@ -198,6 +199,9 @@ class Trajectory:
         devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
         return np.array([devDist, devAng])
 
+    def find_traj_point(self):
+        return self.b.get_last_point()
+
     def find_traj_points(self, carx):
         points = []
         distances = [self.point_interval * i for i in range(self.point_num)]
@@ -205,7 +209,7 @@ class Trajectory:
             x_diff = np.abs(self.traj_data[:, 0] - (carx + distance))
             nearest_idx = np.argmin(x_diff)
             points.append(self.traj_data[nearest_idx])
-        return points
+        return np.array(points)
 
     def find_lookahead_traj(self, x, y, yaw, distances):
         distances = np.array(distances)
