@@ -10,8 +10,6 @@
 import numpy as np
 import warnings
 from carmaker_env_low import CarMakerEnv
-from stable_baselines.gail import generate_expert_traj
-from stable_baselines.common.vec_env import VecEnv, VecFrameStack
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from stable_baselines3.common.utils import set_random_seed
@@ -19,7 +17,6 @@ from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
 from stable_baselines3.common.vec_env import VecMonitor
 from gym import spaces
-from stable_baselines.common.base_class import _UnvecWrapper
 import os
 import torch
 import logging
@@ -71,10 +68,6 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
     image_ext = 'jpg'
     if record_images:
         # We save images as jpg or png, that have only 3/4 color channels
-        if isinstance(env, VecFrameStack) and env.n_stack == 4:
-            # assert env.n_stack < 5, "The current data recorder does no support"\
-            #                          "VecFrameStack with n_stack > 4"
-            image_ext = 'png'
 
         folder_path = os.path.dirname(save_path)
         image_folder = os.path.join(folder_path, image_folder)
@@ -85,10 +78,6 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
         print("=" * 10)
 
     is_vec_env = False
-    if isinstance(env, VecEnv) and not isinstance(env, _UnvecWrapper):
-        is_vec_env = True
-        if env.num_envs > 1:
-            warnings.warn("You are using multiple envs, only the data from the first one will be recorded.")
 
     model.learn(n_timesteps)
     actions = []
@@ -105,8 +94,7 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
     # state and mask for recurrent policies
     state, mask = None, None
 
-    if is_vec_env:
-        mask = [True for _ in range(env.num_envs)]
+
     while ep_idx < n_episodes:
         obs_ = obs[0] if is_vec_env else obs
         observations.append(obs_)
@@ -115,11 +103,6 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
         obs, reward, done, _ = env.step(action)
 
         # Use only first env
-        if is_vec_env:
-            mask = [done[0] for _ in range(env.num_envs)]
-            action = np.array([action[0]])
-            reward = np.array([reward[0]])
-            done = np.array([done[0]])
 
         actions.append(action)
         rewards.append(reward)
@@ -127,10 +110,9 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
         reward_sum += reward
         idx += 1
         if done:
-            if not is_vec_env:
-                obs = env.reset()
-                # Reset the state in case of a recurrent policy
-                state = None
+            obs = env.reset()
+            # Reset the state in case of a recurrent policy
+            state = None
 
             episode_returns[ep_idx] = reward_sum
             reward_sum = 0.0
