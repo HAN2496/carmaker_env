@@ -43,6 +43,7 @@ else:
 
 def generate_expert(model, save_path=None, env=None, n_timesteps=0,
                          n_episodes=100, image_folder='recorded_images'):
+    print('here')
 
     # Sanity check
     assert (isinstance(env.observation_space, spaces.Box) or
@@ -132,12 +133,12 @@ def main():
     num_proc = 2
     prefix = 'pretrain'
 
-    env = make_env(0, road_type=road_type)
+    env = make_env(0, road_type=road_type)()
 
     input("Program Start.\n")
 
     model = SAC('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join(f"tensorboard/{prefix}"))
-    generate_expert_traj(model, 'expert_carmaker', n_timesteps=int(1e5), n_episodes=10)
+    generate_expert(model, 'expert_carmaker', n_timesteps=int(1e5), n_episodes=10)
 
 
 
