@@ -77,8 +77,6 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
         print("Image shape: {}".format(obs_space.shape))
         print("=" * 10)
 
-    is_vec_env = False
-
     model.learn(n_timesteps)
     actions = []
     observations = []
@@ -96,7 +94,7 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
 
 
     while ep_idx < n_episodes:
-        obs_ = obs[0] if is_vec_env else obs
+        obs_ = obs
         observations.append(obs_)
         action = model(obs)
 
