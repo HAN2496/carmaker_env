@@ -32,3 +32,7 @@ State는?
 구상은?
 1. policy b
  - state로 전방 cone 데이터, kappa값 (결정되어있음)
+---
+.npz
+stable baselinse3 expert data - pre-Training (Behavior Cloning)
+.pretrain
