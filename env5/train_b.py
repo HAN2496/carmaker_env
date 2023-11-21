@@ -8,7 +8,7 @@
 4. 학습이 완료된 후 웨이트 파일(e.g. model.pkl)을 저장한다.
 """
 import sys
-from SLALOM_env_b1 import CarMakerEnvB
+from carmaker_env_b import CarMakerEnvB as CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -43,10 +43,10 @@ class Args:
         self.prefix = prefix
         self.alg = alg
 
-def make_env(rank, seed=0):
+def make_env(rank, road_type, seed=0):
 
     def _init():
-        env = CarMakerEnvB(host='127.0.0.1', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnv(road_type=road_type, port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
         env.seed(seed + rank)
 
         return env
@@ -63,19 +63,19 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    env_num = 2
-    road_type = "SLALOM"
-    comment = "b"
-    explanation = "simplify reward"
+    env_num = 1
+    road_type = "SLALOM2"
+    comment = "rws_b"
+    explanation = "env b"
 
-    num_proc = 1
+    num_proc = 2
     naming = f"env{env_num}_{comment}"
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')
 
     bestRewardCallback = getBestRewardCallback(args)
 
-    env = SubprocVecEnv([make_env(i) for i in range(num_proc)])
+    env = SubprocVecEnv([make_env(i, road_type=road_type) for i in range(num_proc)])
     env = VecMonitor(env, f"models/{prefix}")
 
     input("Program Start.\n")
@@ -87,7 +87,8 @@ def main():
         custom_logger.info(f"[{prefix}]")
         custom_logger.info(f" --> {explanation}")
         logging.info(f"{prefix} - Training Start")
-        model.learn(total_timesteps=10000*400, log_interval=50, callback=bestRewardCallback)
+        model.learn(total_timesteps=10000*300, log_interval=50, callback=bestRewardCallback)
+
 
     except KeyboardInterrupt:
         logging.info(f"{prefix} - Keyboard Interrupt")
