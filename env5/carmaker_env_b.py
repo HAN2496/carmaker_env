@@ -52,9 +52,8 @@ class CarMakerEnvB(gym.Env):
         self.check = check
         self.use_low = False
         self.road_type = road_type
-        self.data = Data(road_type=road_type, low_env=use_low, check=check)
-        self.traj = Trajectory(road_type=road_type, low_env=use_low)
-        self.last_carx = self.data.carx
+        self.data = Data(road_type=road_type, low_env=use_low, check=check, show=True)
+        self.traj_end_x = self.data.traj.get_last_traj_x()
         self.dist = self.data.traj.get_last_traj_x_distance()
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
@@ -90,7 +89,6 @@ class CarMakerEnvB(gym.Env):
 
     def _initial_state(self):
         self.test_num = 0
-        self.traj._init_traj()
         self.data._init()
         self.last_carx = self.data.carx
         return np.zeros(self.observation_space.shape)
@@ -128,11 +126,11 @@ class CarMakerEnvB(gym.Env):
             self.sim_started = True
 
         tmp = 2
-        while self.data.carx - self.last_carx < self.data.traj.last_traj_x_dist:
-            print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
+        while self.traj_end_x - self.data.carx > 1:
+            #print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
             self.low_level_obs = self.data.manage_state_low()
             steering_changes = self.low_level_model.predict(self.low_level_obs)
-            action_to_sim = np.append(steering_changes[0], self.test_num)
+            action_to_sim = np.append(self.test_num, steering_changes[0])
 
             # Action 값 전송 / State 값 수신
             self.action_queue.put(action_to_sim)
@@ -140,6 +138,7 @@ class CarMakerEnvB(gym.Env):
 
             if self.check == 0:
                 self.data.render()
+
             if state == False:
                 state = self._initial_state()
                 done = True
@@ -147,10 +146,12 @@ class CarMakerEnvB(gym.Env):
                 state = np.array(state)  # 어레이 변환
                 self.data.put_simul_data(state)
 
+
         blevel_action = action[0]
         self.data.traj.update_traj(self.data.carx, blevel_action)
-        self.last_carx = self.data.carx
+        self.traj_end_x = self.data.traj.get_last_traj_x()
 
+        state = self.data.manage_state_b()
         # 리워드 계산
         reward = self.data.manage_reward_b()
         info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
@@ -166,7 +167,7 @@ class CarMakerEnvB(gym.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    road_type = "DLC"
+    road_type = "SLALOM2"
     env = CarMakerEnvB(road_type=road_type, simul_path='test_IPG', check=0)
     act_lst = []
     next_state_lst = []

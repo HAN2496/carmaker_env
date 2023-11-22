@@ -8,7 +8,7 @@ class BezierCurve:
         self.curves = []  # 여러 베지어 곡선을 저장할 리스트
         self.update(
             [carx - 1, cary, 0],
-            [6, 6, 6, 0.0, 0.0]
+            [1, 1, 1, 0.0, 0.0]
         )
         self.last_angle = 0
 
@@ -34,7 +34,7 @@ class BezierCurve:
             # 각 곡선의 컨트롤 포인트 시각화
             ctrl_points = np.array(curve.nodes).T
             plt.scatter(ctrl_points[:, 0], ctrl_points[:, 1], color='red', facecolors='none')
-            plt.plot(ctrl_points[:, 0], ctrl_points[:, 1], color='orange')
+#            plt.plot(ctrl_points[:, 0], ctrl_points[:, 1], color='orange')
             for x, y in ctrl_points:
                 plt.text(x + 0.1, y + 0.1, f'({x:.2f}, {y:.2f})', ha='center', va='bottom')
 
@@ -71,7 +71,8 @@ class BezierCurve:
 # 사용 예시
 if __name__ == '__main__':
     B = BezierCurve(1, 0, 0.001)
-    B.add_curve([5, 5, 5, np.pi/3])
+    B.show_curve()
+    B.add_curve([1, 1, 1, 0])
     B.show_curve()
     B.add_curve([5, 5, 5, np.pi/3])
     #B.show_curve()
