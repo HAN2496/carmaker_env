@@ -43,7 +43,7 @@ else:
     print("No GPU available, using CPU.")
 
 def generate_expert(model, save_path=None, env=None, n_timesteps=0,
-                         n_episodes=100, image_folder='recorded_images'):
+                         n_episodes=5, image_folder='recorded_images'):
     print('here')
 
     # Sanity check
@@ -127,41 +127,44 @@ def generate_expert(model, save_path=None, env=None, n_timesteps=0,
             reward_sum = 0.0
             ep_idx += 1
             print(f"observation: {np.shape(observations)}, reward: {np.shape(actions)}")
+            if ep_idx == n_episodes - 2:
+                if isinstance(env.observation_space, spaces.Box) and not record_images:
+                    observations = np.concatenate(observations).reshape((-1,) + env.observation_space.shape)
+                elif isinstance(env.observation_space, spaces.Discrete):
+                    observations = np.array(observations).reshape((-1, 1))
+                elif record_images:
+                    observations = np.array(observations)
 
-    if isinstance(env.observation_space, spaces.Box) and not record_images:
-        observations = np.concatenate(observations).reshape((-1,) + env.observation_space.shape)
-    elif isinstance(env.observation_space, spaces.Discrete):
-        observations = np.array(observations).reshape((-1, 1))
-    elif record_images:
-        observations = np.array(observations)
+                if isinstance(env.action_space, spaces.Box):
+                    actions = np.concatenate(actions).reshape((-1,) + env.action_space.shape)
+                elif isinstance(env.action_space, spaces.Discrete):
+                    actions = np.array(actions).reshape((-1, 1))
 
-    if isinstance(env.action_space, spaces.Box):
-        actions = np.concatenate(actions).reshape((-1,) + env.action_space.shape)
-    elif isinstance(env.action_space, spaces.Discrete):
-        actions = np.array(actions).reshape((-1, 1))
+                rewards = np.array(rewards)
+                episode_starts = np.array(episode_starts[:-1])
 
-    rewards = np.array(rewards)
-    episode_starts = np.array(episode_starts[:-1])
+                assert len(observations) == len(actions)
 
-    assert len(observations) == len(actions)
+                numpy_dict = {
+                    'actions': actions,
+                    'obs': observations,
+                    'rewards': rewards,
+                    'episode_returns': episode_returns,
+                    'episode_starts': episode_starts
+                }  # type: Dict[str, np.ndarray]
 
-    numpy_dict = {
-        'actions': actions,
-        'obs': observations,
-        'rewards': rewards,
-        'episode_returns': episode_returns,
-        'episode_starts': episode_starts
-    }  # type: Dict[str, np.ndarray]
+                for key, val in numpy_dict.items():
+                    print(key, val.shape)
 
-    for key, val in numpy_dict.items():
-        print(key, val.shape)
+                os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                if save_path is not None:
+                    np.savez(save_path, **numpy_dict)
 
-    if save_path is not None:
-        np.savez(save_path, **numpy_dict)
-
-    env.close()
+                env.close()
+                print("Saved")
 
     return numpy_dict
+
 def make_env(rank, road_type, seed=0):
 
     def _init():
@@ -183,7 +186,7 @@ def main():
     input("Program Start.\n")
 
     model = SAC('MlpPolicy', env, verbose=1, tensorboard_log=os.path.join(f"tensorboard/{prefix}"))
-    generate_expert(model, f'{road_type}/expert_carmaker', env, n_timesteps=int(1e5), n_episodes=10)
+    generate_expert(model, f'{road_type}/expert_carmaker', env, n_timesteps=int(1e5), n_episodes=100)
 
 
 
