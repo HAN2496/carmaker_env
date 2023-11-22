@@ -6,18 +6,20 @@ from carmaker_cone import *
 import pandas as pd
 from MyBezierCurve import BezierCurve
 from scipy.spatial import KDTree
+import pygame
 
 CONER = 0.2
 CARWIDTH = 1.8
 CARLENGTH = 4
 DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
-XSIZE, YSZIE = 10, 10
+XSIZE, YSIZE = 10, 10
 
 class Data:
-    def __init__(self, road_type, low_env, check):
+    def __init__(self, road_type, low_env, check, show=True):
         self.road_type = road_type
         self.low_env = low_env
         self.check = check
+        self.show = show
 
         self.cone = Cone(road_type=road_type)
         self.road = Road(road_type=road_type)
@@ -28,6 +30,11 @@ class Data:
             self.XSIZE, self.YSIZE = 2, 10
         elif self.road_type == "SLALOM" or self.road_type == "SLALOM2":
             self.XSIZE, self.YSIZE = 10, 10
+
+        if self.show and self.check == 0:
+            pygame.init()
+            self.screen = pygame.display.set_mode((self.road.road_length * XSIZE, - self.road.road_width * YSIZE))
+            pygame.display.set_caption("B level Environment")
 
         self._init()
 
@@ -47,6 +54,8 @@ class Data:
         self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
         self.traj._init_traj()
 
+        if self.check == 0:
+            self.render()
 
     def put_simul_data(self, arr):
         self.simul_data = arr
@@ -137,6 +146,54 @@ class Data:
             return 1
         return 0
 
+    def render(self, mode='human'):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        self.screen.fill((128, 128, 128))
+
+        before_cone = (0, 0)
+        for idx, cone in enumerate(self.cone.cone_shape):
+            x, y = cone.centroid.coords[0]
+            pygame.draw.circle(self.screen, (255, 140, 0), (int(x * XSIZE), int(-y * YSIZE)), 5)
+
+        for trajx, trajy in self.traj.find_traj_points(self.carx):
+            pygame.draw.circle(self.screen, (0, 128, 0), (trajx * XSIZE, - trajy * YSIZE), 5)
+
+        car_color = (255, 0, 0)
+
+        half_length = self.car.length * XSIZE / 2.0
+        half_width = self.car.width * YSIZE / 2.0
+
+        corners = [
+            (-half_length, -half_width),
+            (-half_length, half_width),
+            (half_length, half_width),
+            (half_length, -half_width)
+        ]
+
+        rotated_corners = []
+        for x, y in corners:
+            x_rot = x * np.cos(-self.caryaw) - y * np.sin(-self.caryaw) + self.carx * XSIZE
+            y_rot = x * np.sin(-self.caryaw) + y * np.cos(-self.caryaw) - self.cary * YSIZE
+            rotated_corners.append((x_rot, y_rot))
+
+        pygame.draw.polygon(self.screen, car_color, rotated_corners)
+
+        font = pygame.font.SysFont("arial", 15, True, True)
+        x, y = self.traj.find_traj_point()
+        text_str = f"Traj : ({round(x, 1)}, {round(y, 1)})"
+        text_surface = font.render(text_str, True, (255, 255, 255))
+
+        # 텍스트 이미지의 위치 계산 (우측 하단)
+        text_x = self.road.road_length * XSIZE - text_surface.get_width() - XSIZE
+        text_y = - self.road.road_width * YSIZE - text_surface.get_height() - YSIZE
+
+        # 렌더링된 이미지를 화면에 그리기
+        self.screen.blit(text_surface, (text_x, text_y))
+
+        pygame.display.flip()
 
 class Trajectory:
     def __init__(self, low_env, road_type, point_interval=2, point_num=5):
@@ -150,6 +207,7 @@ class Trajectory:
 
         self._init_traj()
         self.previous_lookahead_points = []
+        self.last_traj_x_dist = 0
 
     def _init_traj(self):
         if self.low_env:
@@ -160,6 +218,9 @@ class Trajectory:
             self.b = BezierCurve(x, y, 0.02)
             self.traj_data = self.b.get_xy_points(x)
 
+    def get_last_traj_x_distance(self):
+        self.last_traj_x_dist = self.b.curves[-1].nodes[0, -1] - self.b.curves[-1].nodes[0, 0]
+        return self.b.curves[-1].nodes[0, -1] - self.b.curves[-1].nodes[0, 0]
     def update_traj(self, carx, action):
         action = action * np.pi / 6
         self.b.add_curve(
@@ -189,7 +250,7 @@ class Trajectory:
         path_ang = np.mod(np.arctan2(dy, dx), 2 * np.pi)
         devAng = norm_yaw - path_ang
         devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
-        print(f"Traj: {arr[dist_index]}")
+        print(f"Dev: {devDist, devAng}")
         return np.array([devDist, devAng])
 
     def calculate_dev_crc(self, carx, cary, caryaw):
