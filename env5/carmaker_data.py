@@ -40,6 +40,7 @@ class Data:
         self._init()
 
     def _init(self):
+        print("Initializing data...")
         self.test_num = 0
         self.time = 0
         self.carx, self.cary = init_car_pos(self.road_type)
@@ -57,11 +58,10 @@ class Data:
 
         if self.check == 0 and self.show:
             self.render()
-
+        print("Data initialized.")  # 로그 추가
     def put_simul_data(self, arr):
-        print(self.test_num)
         self.simul_data = arr
-        self.test_num = arr[0]
+        self.test_num += 1
         self.time = arr[1]
         self.carx, self.cary, self.caryaw, self.carv = arr[2:6]
         self.steerAng, self.steerVel, self.steerAcc = arr[6:9]
