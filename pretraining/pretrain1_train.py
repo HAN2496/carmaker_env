@@ -59,7 +59,7 @@ def main():
     prefix = 'pretrain'
     env = make_env(0, road_type=road_type)()
 
-    input("Program Start.\n")
+    print("Program Start.\n")
 
     model = SAC('MlpPolicy', env, verbose=1)
     dataset = ExpertDataset(expert_path='DLC/expert_carmaker.npz',

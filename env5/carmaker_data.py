@@ -12,7 +12,7 @@ CONER = 0.2
 CARWIDTH = 1.8
 CARLENGTH = 4
 DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
-XSIZE, YSIZE = 10, 10
+XSIZE, YSIZE = 1, 3
 
 class Data:
     def __init__(self, road_type, low_env, check, show=False):
@@ -59,6 +59,7 @@ class Data:
             self.render()
 
     def put_simul_data(self, arr):
+        print(self.test_num)
         self.simul_data = arr
         self.test_num = arr[0]
         self.time = arr[1]
@@ -72,6 +73,9 @@ class Data:
         self.wheel_steer_ext = arr[15:]
 
         self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
+
+        if self.test_num % 150 == 0 and self.check == 0:
+            print(f"Time: {self.time}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}] Reward : [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
 
     def manage_state_low(self):
         lookahead_sight = [2 * (i + 1) for i in range(5)]
@@ -101,9 +105,6 @@ class Data:
             col_reward = abs(self.alHori) * 1000
 
         e = - col_reward - dist_reward - ang_reward
-
-        if self.test_num % 150 == 0 and self.check == 0:
-            print(f"Time: {self.time}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}] Reward : [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
 
         return e
 
@@ -219,13 +220,17 @@ class Trajectory:
             self.b = BezierCurve(x, y, 0.02)
             self.traj_data = self.b.get_xy_points(x)
 
+    def get_last_traj_x(self):
+        self.last_traj_x_dist = self.b.curves[-1].nodes[0, -1]
+        return self.b.curves[-1].nodes[0, -1]
+
     def get_last_traj_x_distance(self):
         self.last_traj_x_dist = self.b.curves[-1].nodes[0, -1] - self.b.curves[-1].nodes[0, 0]
         return self.b.curves[-1].nodes[0, -1] - self.b.curves[-1].nodes[0, 0]
     def update_traj(self, carx, action):
         action = action * np.pi / 6
         self.b.add_curve(
-            [6, 6, 6, action]
+            [1, 1, 1, action]
         )
         self.traj_data = self.b.get_xy_points(carx)
 
@@ -251,7 +256,6 @@ class Trajectory:
         path_ang = np.mod(np.arctan2(dy, dx), 2 * np.pi)
         devAng = norm_yaw - path_ang
         devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
-        print(f"Dev: {devDist, devAng}")
         return np.array([devDist, devAng])
 
     def calculate_dev_crc(self, carx, cary, caryaw):

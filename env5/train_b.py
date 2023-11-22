@@ -46,7 +46,7 @@ class Args:
 def make_env(rank, road_type, seed=0):
 
     def _init():
-        env = CarMakerEnv(road_type=road_type, port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnv(road_type=road_type, check=rank, port=10000 + rank)  # 모니터 같은거 씌워줘야 할거임
         env.seed(seed + rank)
 
         return env
@@ -94,12 +94,14 @@ def main():
         logging.info(f"{prefix} - Keyboard Interrupt")
         print("Learning interrupted. Will save the model now.")
 
+
     finally:
+        """
         print("Saving model..")
         logging.info(f"{prefix} - Training End")
         model.save(f"models/{prefix}_last.pkl")
         print("Model saved.")
-
+        """
 
 if __name__ == '__main__':
     main()
