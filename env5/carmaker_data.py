@@ -15,7 +15,7 @@ DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
 XSIZE, YSIZE = 10, 10
 
 class Data:
-    def __init__(self, road_type, low_env, check, show=True):
+    def __init__(self, road_type, low_env, check, show=False):
         self.road_type = road_type
         self.low_env = low_env
         self.check = check
@@ -36,6 +36,7 @@ class Data:
             self.screen = pygame.display.set_mode((self.road.road_length * XSIZE, - self.road.road_width * YSIZE))
             pygame.display.set_caption("B level Environment")
 
+
         self._init()
 
     def _init(self):
@@ -54,7 +55,7 @@ class Data:
         self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
         self.traj._init_traj()
 
-        if self.check == 0:
+        if self.check == 0 and self.show:
             self.render()
 
     def put_simul_data(self, arr):
