@@ -2,10 +2,9 @@ import os
 from stable_baselines3 import PPO
 from carmaker_env_low import CarMakerEnv
 from stable_baselines3.common.vec_env import SubprocVecEnv
-from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.common.utils import set_random_seed
-
-from stable_baselines3.common import save_traj
+from imitation.data import rollout
+from imitation.algorithms import bc
 import os
 import torch
 
@@ -35,11 +34,23 @@ road_type = "YourRoadType"
 env = SubprocVecEnv([make_env(i, road_type=road_type) for i in range(num_proc)])
 
 expert_model = PPO('MlpPolicy', env, verbose=1)
-expert_model.learn(total_timesteps=10000)
+
+# 전문가 데이터 생성
+transitions = rollout.generate_transitions(expert_model, env, n_timesteps=10000)
+dataset = rollout.transitions_to_dataset(transitions)
 
 
-# Evaluate the policy and save the trajectories
-eval_env = make_env(0, road_type=road_type)()
-save_path = "./expert_data"
-os.makedirs(save_path, exist_ok=True)
-save_traj(eval_env, expert_model, save_path, n_eval_episodes=100)
+pretrained_model = PPO("MlpPolicy", env, verbose=1)
+
+# 전문가 데이터를 사용하여 모델 사전 학습
+bc_trainer = bc.BC(
+    observation_space=env.observation_space,
+    action_space=env.action_space,
+    expert_data=dataset,
+    policy=pretrained_model.policy
+)
+
+bc_trainer.learn(total_timesteps=10000)
+
+# 사전 학습된 모델 저장
+pretrained_model.save("pretrained_sac_model")
