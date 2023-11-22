@@ -55,7 +55,7 @@ class CarMakerEnvB(gym.Env):
         self.data = Data(road_type=road_type, low_env=use_low, check=check)
         self.traj = Trajectory(road_type=road_type, low_env=use_low)
         self.last_carx = self.data.carx
-        self.dist = 12
+        self.dist = self.data.traj.get_last_traj_x_distance()
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 1
@@ -92,6 +92,7 @@ class CarMakerEnvB(gym.Env):
         self.test_num = 0
         self.traj._init_traj()
         self.data._init()
+        self.last_carx = self.data.carx
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
@@ -126,7 +127,8 @@ class CarMakerEnvB(gym.Env):
             self.status_queue.put("start")
             self.sim_started = True
 
-        while self.data.carx - self.last_carx < self.dist:
+        tmp = 2
+        while self.data.carx - self.last_carx < self.data.traj.last_traj_x_dist:
             print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
             self.low_level_obs = self.data.manage_state_low()
             steering_changes = self.low_level_model.predict(self.low_level_obs)
@@ -136,12 +138,14 @@ class CarMakerEnvB(gym.Env):
             self.action_queue.put(action_to_sim)
             state = self.state_queue.get()
 
+            if self.check == 0:
+                self.data.render()
             if state == False:
                 state = self._initial_state()
                 done = True
-
-            state = np.array(state)  # 어레이 변환
-            self.data.put_simul_data(state)
+            else:
+                state = np.array(state)  # 어레이 변환
+                self.data.put_simul_data(state)
 
         blevel_action = action[0]
         self.data.traj.update_traj(self.data.carx, blevel_action)
@@ -154,12 +158,15 @@ class CarMakerEnvB(gym.Env):
 
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
 
+        if self.check == 0:
+            self.data.render()
+
         return state, reward, done, info
 
 
 if __name__ == "__main__":
     # 환경 테스트
-    road_type = "SLALOM"
+    road_type = "DLC"
     env = CarMakerEnvB(road_type=road_type, simul_path='test_IPG', check=0)
     act_lst = []
     next_state_lst = []
