@@ -12,7 +12,7 @@ CONER = 0.2
 CARWIDTH = 1.8
 CARLENGTH = 4
 DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
-XSIZE, YSIZE = 1, 3
+XSIZE, YSIZE = 10, 10
 
 class Data:
     def __init__(self, road_type, low_env, check, show=False):
@@ -270,7 +270,7 @@ class Trajectory:
 
     def find_traj_points(self, carx):
         points = []
-        distances = [self.point_interval * i for i in range(self.point_num)]
+        distances = [self.point_interval * (i+1) for i in range(self.point_num)]
         for distance in distances:
             x_diff = np.abs(self.traj_data[:, 0] - (carx + distance))
             nearest_idx = np.argmin(x_diff)
