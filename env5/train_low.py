@@ -66,7 +66,7 @@ def main():
 
     env_num = 1
     road_type = "SLALOM2"
-    comment = "rws"
+    comment = "test"
     explanation = "carmaker env low"
 
     num_proc = 2
@@ -93,7 +93,7 @@ def main():
 
     except KeyboardInterrupt:
         logging.info(f"{prefix} - Keyboard Interrupt")
-        print("Learning interrupted. Will save the model now.")
+        print("Learning interrupted. Not save model.")
 
     finally:
         print("Saving model..")

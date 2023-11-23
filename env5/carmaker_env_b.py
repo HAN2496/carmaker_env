@@ -52,9 +52,8 @@ class CarMakerEnvB(gym.Env):
         self.check = check
         self.use_low = False
         self.road_type = road_type
-        self.data = Data(road_type=road_type, low_env=use_low, check=check)
-        self.traj = Trajectory(road_type=road_type, low_env=use_low)
-        self.last_carx = self.data.carx
+        self.data = Data(road_type=road_type, low_env=use_low, check=check, show=True)
+        self.traj_end_x = self.data.traj.get_last_traj_x()
         self.dist = self.data.traj.get_last_traj_x_distance()
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
@@ -63,6 +62,7 @@ class CarMakerEnvB(gym.Env):
 
         # Env의 observation 개수와 simulink observation 개수
         env_obs_num = np.size(self.data.manage_state_b())
+        print(f"Init obs size: {env_obs_num}")
         sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -81,7 +81,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
         self.cm_thread.start()
 
-        low_level_env = LowLevelCarMakerEnv(road_type=road_type, check=check, use_low=use_low)
+        low_level_env = LowLevelCarMakerEnv(road_type=road_type, check=check, use_low=False)
         self.low_level_model = SAC.load(f"best_model/SLALOM2_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
@@ -89,14 +89,11 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.join()
 
     def _initial_state(self):
-        self.test_num = 0
-        self.traj._init_traj()
         self.data._init()
         self.last_carx = self.data.carx
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
-        self.data._init()
         # 초기화 코드
         if self.sim_initiated == True:
             # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
@@ -114,7 +111,6 @@ class CarMakerEnvB(gym.Env):
         Policy b action : traj points -> array(list)
         low_level_obs에 cary, carv 들어가고, car_dev랑 lookahead는 action(신규)에서 가져온 trj 정보로
         """
-        self.test_num += 1
         done = False
         tmp = 0
 
@@ -127,12 +123,12 @@ class CarMakerEnvB(gym.Env):
             self.status_queue.put("start")
             self.sim_started = True
 
-        tmp = 2
-        while self.data.carx - self.last_carx < self.data.traj.last_traj_x_dist:
-            print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
+
+        while self.traj_end_x - self.data.carx > 1:
+            #print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
             self.low_level_obs = self.data.manage_state_low()
             steering_changes = self.low_level_model.predict(self.low_level_obs)
-            action_to_sim = np.append(steering_changes[0], self.test_num)
+            action_to_sim = np.append(self.data.test_num, steering_changes[0])
 
             # Action 값 전송 / State 값 수신
             self.action_queue.put(action_to_sim)
@@ -140,6 +136,7 @@ class CarMakerEnvB(gym.Env):
 
             if self.check == 0:
                 self.data.render()
+
             if state == False:
                 state = self._initial_state()
                 done = True
@@ -147,16 +144,21 @@ class CarMakerEnvB(gym.Env):
                 state = np.array(state)  # 어레이 변환
                 self.data.put_simul_data(state)
 
+
         blevel_action = action[0]
         self.data.traj.update_traj(self.data.carx, blevel_action)
-        self.last_carx = self.data.carx
+        self.traj_end_x = self.data.traj.get_last_traj_x()
 
+        state = self.data.manage_state_b()
         # 리워드 계산
         reward = self.data.manage_reward_b()
         info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
                              "alHori", "roll", "rl", "rr", "fl", "fr"])
 
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
+
+        if state.any() == False:
+            reward = 0.0
 
         if self.check == 0:
             self.data.render()
@@ -166,7 +168,7 @@ class CarMakerEnvB(gym.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    road_type = "DLC"
+    road_type = "SLALOM2"
     env = CarMakerEnvB(road_type=road_type, simul_path='test_IPG', check=0)
     act_lst = []
     next_state_lst = []

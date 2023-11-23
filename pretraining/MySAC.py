@@ -15,8 +15,7 @@ from stable_baselines3.common.type_aliases import GymEnv, MaybeCallback, Schedul
 from stable_baselines3.common.utils import get_parameters_by_name, polyak_update
 from stable_baselines3.sac.policies import Actor, CnnPolicy, MlpPolicy, MultiInputPolicy, SACPolicy
 
-from stable_baselines.common.buffers import ReplayBuffer
-from stable_baselines.sac.policies import SACPolicy
+from stable_baselines3.sac.policies import SACPolicy
 
 SelfSAC = TypeVar("SelfSAC", bound="SAC")
 
