@@ -29,6 +29,9 @@ def to_relative_coordinates(car_pos, arr):
 def calculate_dev(car_pos, traj_data):
     check_car_pos(car_pos)
     carx, cary, caryaw = car_pos
+
+    norm_yaw = np.mod(caryaw, 2 * np.pi)
+
     arr = np.array(traj_data)
     distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
     dist_index = np.argmin(distances)
@@ -36,13 +39,9 @@ def calculate_dev(car_pos, traj_data):
 
     dx = arr[dist_index][0] - arr[dist_index - 1][0]
     dy = arr[dist_index][1] - arr[dist_index - 1][1]
-
-    if dx == 0:
-        devAng = np.inf if dy > 0 else -np.inf
-    else:
-        devAng = dy / dx
-
-    devAng = - np.arctan(devAng) - caryaw
+    path_ang = np.mod(np.arctan2(dy, dx), 2 * np.pi)
+    devAng = norm_yaw - path_ang
+    devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
     return np.array([devDist, devAng])
 
 def find_lookahead_traj(x, y, distances, traj_data):

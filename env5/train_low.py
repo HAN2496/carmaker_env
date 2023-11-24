@@ -64,13 +64,12 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    env_num = 1
     road_type = "DLC"
     comment = "rws"
     explanation = "carmaker env low"
 
     num_proc = 1
-    naming = f"env{env_num}_{comment}"
+    naming = f"env_{comment}"
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')
 
