@@ -62,6 +62,8 @@ class BezierCurve:
             last_point = curve.nodes[0, -1]
             if first_point < x < last_point or last_point < x < first_point:
                 check_curves.append(curve)
+        if len(check_curves) == 0:
+            check_curves = self.curves
         for curve in check_curves:
             curve_points = curve.evaluate_multi(t).T
             points.append(curve_points)
