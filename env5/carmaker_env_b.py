@@ -44,7 +44,7 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnvB(gym.Env):
-    def __init__(self, road_type, check=2, port=10001, simul_path='pythonCtrl_JX1', use_low=False):
+    def __init__(self, road_type, check=2, port=10001, simul_path='pythonCtrl_JX1'):
         # Action과 State의 크기 및 형태를 정의.
         matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
         host = '127.0.0.1'
@@ -52,7 +52,7 @@ class CarMakerEnvB(gym.Env):
         self.check = check
         self.use_low = False
         self.road_type = road_type
-        self.data = Data(road_type=road_type, low_env=use_low, check=check, show=True)
+        self.data = Data(road_type=road_type, low_env=self.use_low, check=check, show=True)
         self.traj_end_x = self.data.traj.get_last_traj_x()
         self.dist = self.data.traj.get_last_traj_x_distance()
 
@@ -82,7 +82,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.start()
 
         low_level_env = LowLevelCarMakerEnv(road_type=road_type, check=check, use_low=False)
-        self.low_level_model = SAC.load(f"best_model/SLALOM2_best_model.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"best_model/DLC_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
@@ -125,7 +125,6 @@ class CarMakerEnvB(gym.Env):
 
 
         while self.traj_end_x - self.data.carx > 12:
-            print(self.traj_end_x, self.data.carx)
             #print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
             self.low_level_obs = self.data.manage_state_low()
             steering_changes = self.low_level_model.predict(self.low_level_obs)

@@ -12,7 +12,7 @@ CONER = 0.2
 CARWIDTH = 1.8
 CARLENGTH = 4
 DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
-XSIZE, YSIZE = 1, 3
+XSIZE, YSIZE = 10, 10
 
 class Data:
     def __init__(self, road_type, low_env, check, show=False):
