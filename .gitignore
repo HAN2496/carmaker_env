@@ -3,9 +3,5 @@ tensorboard/
 __pycache__/
 .idea/
 train.py
-<<<<<<< HEAD
-Log.txt
-=======
 Log.txt
 *.npz
->>>>>>> 9cb65c1806165dcf03ae7a413eca3b898f7fc0b1
