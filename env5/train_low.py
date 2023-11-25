@@ -68,7 +68,7 @@ def main():
     comment = "rws"
     explanation = "carmaker env low"
 
-    num_proc = 1
+    num_proc = 2
     naming = f"env_{comment}"
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')

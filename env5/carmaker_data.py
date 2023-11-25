@@ -255,6 +255,8 @@ class Trajectory:
             return np.array([cary + 10, caryaw])
         elif 75.5 <= carx <= 86.5:
             return np.array([cary + 6.485, caryaw])
+        elif 99 <= carx:
+            return np.array([cary + 10.385, caryaw])
         else:
             arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj1.csv").loc[:, ["traj_tx", "traj_ty"]].values
             return calculate_dev([carx, cary, caryaw], arr)
