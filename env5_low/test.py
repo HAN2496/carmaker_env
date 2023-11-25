@@ -13,12 +13,12 @@ from stable_baselines3 import SAC
 
 if __name__ == '__main__':
     road_type = "DLC"
-    data_name = 'RL'
-    comment = "4_no_rws"
+    data_name = 'IPG'
+    comment = "rws_check"
     prefix = data_name + "_" + comment
 
 
-    env = CarMakerEnv(port=9999, check=0)
+    env = CarMakerEnv(port=9999, simul_path='pythonCtrl_IPG', check=0)
     model = SAC.load(f"best_model/DLC_env4_best_model_no_rws.pkl", env=env)
     print("Model loaded.")
 

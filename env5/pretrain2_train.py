@@ -9,7 +9,7 @@ from stable_baselines3.common.utils import set_random_seed
 def make_env(rank,road_type, seed=0):
 
     def _init():
-        env = CarMakerEnv(road_type=road_type, simul_path='pythonCtrl_JX1', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnv(road_type=road_type, port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
         env.seed(seed + rank)
 
         return env
@@ -52,6 +52,8 @@ def main():
 
     # 이제 모델 훈련
     model.learn(total_timesteps=100000)
+    model.save(f"pretrain_result_model.pkl")
+    print("Learning Finished.")
 
 
 if __name__ == '__main__':
