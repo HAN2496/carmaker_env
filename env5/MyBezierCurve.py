@@ -8,7 +8,7 @@ class BezierCurve:
         self.curves = []  # 여러 베지어 곡선을 저장할 리스트
         self.update(
             [carx - 1, cary, 0],
-            [1, 1, 1, 0.0, 0.0]
+            [6, 6, 6, 0.0, 0.0]
         )
         self.last_angle = 0
 
@@ -53,15 +53,17 @@ class BezierCurve:
         last_point = last_curve.nodes[:, -1]
         return last_point
 
-    def get_xy_points(self, carx):
+    def get_xy_points(self, x):
         t = np.arange(0, 1, self.dt)
         points = []
         check_curves= []
         for curve in self.curves:
             first_point = curve.nodes[0, 0]
             last_point = curve.nodes[0, -1]
-            if first_point < carx < last_point or last_point < carx < first_point:
+            if first_point < x < last_point or last_point < x < first_point:
                 check_curves.append(curve)
+        if len(check_curves) == 0:
+            check_curves = self.curves
         for curve in check_curves:
             curve_points = curve.evaluate_multi(t).T
             points.append(curve_points)

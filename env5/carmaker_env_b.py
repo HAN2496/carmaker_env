@@ -124,7 +124,8 @@ class CarMakerEnvB(gym.Env):
             self.sim_started = True
 
 
-        while self.traj_end_x - self.data.carx > 1:
+        while self.traj_end_x - self.data.carx > 12:
+            print(self.traj_end_x, self.data.carx)
             #print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
             self.low_level_obs = self.data.manage_state_low()
             steering_changes = self.low_level_model.predict(self.low_level_obs)
@@ -140,6 +141,7 @@ class CarMakerEnvB(gym.Env):
             if state == False:
                 state = self._initial_state()
                 done = True
+                break
             else:
                 state = np.array(state)  # 어레이 변환
                 self.data.put_simul_data(state)
@@ -168,7 +170,7 @@ class CarMakerEnvB(gym.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    road_type = "SLALOM2"
+    road_type = "DLC"
     env = CarMakerEnvB(road_type=road_type, simul_path='test_IPG', check=0)
     act_lst = []
     next_state_lst = []

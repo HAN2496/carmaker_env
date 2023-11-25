@@ -40,7 +40,6 @@ class Data:
         self._init()
 
     def _init(self):
-        print("Initializing data...")
         self.test_num = 0
         self.time = 0
         self.carx, self.cary = init_car_pos(self.road_type)
@@ -54,11 +53,11 @@ class Data:
         self.wheel_steer_ext = np.array([0, 0])
 
         self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
+
         self.traj._init_traj()
 
         if self.check == 0 and self.show:
             self.render()
-        print("Data initialized.")  # 로그 추가
     def put_simul_data(self, arr):
         self.simul_data = arr
         self.test_num += 1
@@ -71,6 +70,7 @@ class Data:
         self.steer = arr[6:9]
         self.wheel_steer = arr[11:15]
         self.wheel_steer_ext = arr[15:]
+
 
         self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
 
@@ -235,46 +235,60 @@ class Trajectory:
         self.traj_data = self.b.get_xy_points(carx)
 
     def calculate_dev(self, carx, cary, caryaw):
-        norm_yaw = np.mod(caryaw, 2 * np.pi)
-        if self.road_type == "CRC" and self.low_env:
-            if carx <= 120.27 and cary >= 30 and self.check_section == 0:
-                self.check_section = 1
-                self.traj_data = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj_crc.csv").loc[:, ["traj_tx", "traj_ty"]].values
-            if self.check_section != 0:
-                return self.calculate_dev_crc(carx, cary, caryaw)
         if self.low_env:
-            arr = np.array(self.traj_data)
+            return self.calculate_dev_low(carx, cary, caryaw)
         else:
-            arr = self.b.get_xy_points(carx)
+            return self.calculate_dev_b(carx, cary, caryaw)
 
-        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
-        dist_index = np.argmin(distances)
-        devDist = distances[dist_index]
+    def calculate_dev_low(self, carx, cary, caryaw):
+        if self.road_type == "DLC":
+            return self.calculate_dev_DLC(carx, cary, caryaw)
+        elif self.road_type == "SLALOM2":
+            return self.calculate_dev_SLALOM2(carx, cary, caryaw)
 
-        dx = arr[dist_index][0] - arr[dist_index - 1][0]
-        dy = arr[dist_index][1] - arr[dist_index - 1][1]
-        path_ang = np.mod(np.arctan2(dy, dx), 2 * np.pi)
-        devAng = norm_yaw - path_ang
-        devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
-        return np.array([devDist, devAng])
+    def calculate_dev_b(self, carx, cary, caryaw):
+        arr = self.b.get_xy_points(carx)
+        return calculate_dev([carx, cary, caryaw], arr)
+
+    def calculate_dev_DLC(self, carx, cary, caryaw):
+        if carx <= 62:
+            return np.array([cary + 10, caryaw])
+        elif 75.5 <= carx <= 86.5:
+            return np.array([cary + 6.485, caryaw])
+        else:
+            arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj1.csv").loc[:, ["traj_tx", "traj_ty"]].values
+            return calculate_dev([carx, cary, caryaw], arr)
+
+    def calculate_dev_SLALOM2(self, carx, cary, caryaw):
+        if carx <= 85:
+            return np.array([cary + 25, caryaw])
+        elif carx >= 400:
+            return np.array([cary + 25, caryaw])
+        else:
+            arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj1.csv").loc[:, ["traj_tx", "traj_ty"]].values
+            return calculate_dev([carx, cary, caryaw], arr)
 
     def calculate_dev_crc(self, carx, cary, caryaw):
-        norm_yaw = np.mod(caryaw, 2 * np.pi)
-        devDist = 30 - np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
-        devAng = norm_yaw - np.mod(np.arctan2(cary - 30, carx - 100) + np.pi / 2, 2 * np.pi)
-        devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
-        return np.array([devDist, devAng])
+        if carx <= 100:
+            return np.array([cary, caryaw])
+        else:
+            norm_yaw = np.mod(caryaw, 2 * np.pi)
+            devDist = 30 - np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
+            devAng = norm_yaw - np.mod(np.arctan2(cary - 30, carx - 100) + np.pi / 2, 2 * np.pi)
+            devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
+            return np.array([devDist, devAng])
 
     def find_traj_point(self):
         return self.b.get_last_point()
 
     def find_traj_points(self, carx):
         points = []
-        distances = [self.point_interval * i for i in range(self.point_num)]
+        distances = [self.point_interval * (i+1) for i in range(self.point_num)]
         for distance in distances:
-            x_diff = np.abs(self.traj_data[:, 0] - (carx + distance))
+            check_traj = self.b.get_xy_points(carx+distance)
+            x_diff = np.abs(check_traj[:, 0] - (carx + distance))
             nearest_idx = np.argmin(x_diff)
-            points.append(self.traj_data[nearest_idx])
+            points.append(check_traj[nearest_idx])
         return np.array(points)
 
     def find_lookahead_traj(self, x, y, yaw, distances):
