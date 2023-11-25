@@ -10,11 +10,16 @@ from stable_baselines3.common.buffers import ReplayBuffer
 from carmaker_env_low import CarMakerEnv
 from stable_baselines3.common.utils import set_random_seed
 
+class Args:
+    def __init__(self, prefix, alg):
+        self.prefix = prefix
+        self.alg = alg
+
 def make_env(rank,road_type, seed=0):
 
     def _init():
         #IPG로 돌리기
-        env = CarMakerEnv(road_type=road_type, simul_path='test_IPG', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnv(road_type=road_type, simul_path='pythonCtrl_pretrain', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
         env.seed(seed + rank)
 
         return env
@@ -27,13 +32,16 @@ def main():
 
     prefix = 'pretrain'
 
+    args = Args(prefix=prefix, alg='sac')
+
     env = make_env(0, road_type=road_type)()
+    env = Monitor(env, f"models/{prefix}")
 
     print("Program Start.\n")
 
     #expert 학습 시작
     expert_model = SAC('MlpPolicy', env, verbose=1)
-    expert_model.learn(total_timesteps=100)
+    expert_model.learn(total_timesteps=20 * 10000)
 
     print("Expert learning finished. Expert data will be collected.")
 
@@ -45,7 +53,7 @@ def main():
     expert_info = []
     obs = env.reset()
 
-    buffer_size = 100000
+    buffer_size = 10 * 10000
     for _ in range(buffer_size):
         action = expert_model.predict(obs, deterministic=True)
         obs, reward, done, info = env.step(action[0])

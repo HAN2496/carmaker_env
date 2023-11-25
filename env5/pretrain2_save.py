@@ -45,7 +45,7 @@ def main():
     expert_info = []
     obs = env.reset()
 
-    buffer_size = 100000
+    buffer_size = 50 * 10000
     for _ in range(buffer_size):
         action = expert_model.predict(obs, deterministic=True)
         obs, reward, done, info = env.step(action[0])

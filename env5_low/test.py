@@ -16,9 +16,8 @@ if __name__ == '__main__':
     data_name = 'RL'
     comment = "4_no_rws"
     prefix = data_name + "_" + comment
-
-
     env = CarMakerEnv(port=9999, check=0)
+
     model = SAC.load(f"best_model/DLC_env4_best_model_no_rws.pkl", env=env)
     print("Model loaded.")
 
