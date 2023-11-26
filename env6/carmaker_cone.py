@@ -77,9 +77,9 @@ class Lane:
 
     def plot(self, show=True):
         x, y = self.upper_shape.xy
-        plt.plot(x, y, color='blue', linewidth=3, label='Upper Lane')
+        plt.plot(x, y, color='black', linewidth=3, label='Upper Lane')
         x, y = self.lower_shape.xy
-        plt.plot(x, y, color='red', linewidth=3, label='Lower Lane')
+        plt.plot(x, y, color='black', linewidth=3, label='Lower Lane')
         x, y = self.boundary_shape.exterior.coords.xy
         plt.fill(x, y, color='blue', label = "Lane Boundary", alpha=0.3)
         if show:
@@ -100,8 +100,8 @@ class Road:
             self.create_road_SLALOM2()
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM2")
-        self.road_shape = self.create_road_shape(self.length, self.width)
-        self.forbidden_area = self.road_shape.difference(self.lane.boundary_shape)
+        self.shape = self.create_road_shape(self.length, self.width)
+        self.forbidden_area = self.shape.difference(self.lane.boundary_shape)
 
     def create_road_DLC(self):
         self.length = 161
@@ -114,10 +114,10 @@ class Road:
     def create_road_shape(self, x, y):
         return Polygon([(0, 0), (x, 0), (x, y), (0, y)])
 
-    def plot(self):
+    def plot(self, show=True):
         self.cone.plot(show=False)
         self.lane.plot(show=False)
-        x, y = self.road_shape.exterior.xy
+        x, y = self.shape.exterior.xy
         plt.plot(x, y, label='Road', color='black')
         for idx, poly in enumerate(self.forbidden_area.geoms):
             x, y = poly.exterior.coords.xy
@@ -125,8 +125,9 @@ class Road:
                 plt.fill(x, y, color='Pink', label = "Forbidden Area", alpha=0.3)
             else:
                 plt.fill(x, y, color='Pink', alpha=0.3)
-        plt.legend()
-        plt.show()
+        if show:
+            plt.legend()
+            plt.show()
 
 
 class Car:
@@ -148,6 +149,9 @@ class Car:
         self.cary += np.sin(self.caryaw) * self.carv * 0.01
 
     def shape_car(self, carx, cary, caryaw):
+        self.carx = carx
+        self.cary = cary
+        self.caryaw = caryaw
         half_length = self.length / 2.0
         half_width = self.width / 2.0
 
@@ -163,6 +167,7 @@ class Car:
         car_shape = affinity.translate(car_shape, carx, cary)
 
         return car_shape
+
 
 if __name__ == "__main__":
     road_type = "DLC"

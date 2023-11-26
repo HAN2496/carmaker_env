@@ -2,6 +2,9 @@ import bezier
 import numpy as np
 import matplotlib.pyplot as plt
 
+"""
+action에 의해 넣을때는 add_curve만 쓰면 됨 ㅇㅇ.
+"""
 class BezierCurve:
     def __init__(self, carx, cary, dt):
         self.dt = dt
@@ -25,23 +28,6 @@ class BezierCurve:
         self.curves.append(new_curve)
         self.last_angle = angles[-1]  # 마지막 각도 업데이트
 
-    def show_curve(self):
-        for curve in self.curves:
-            t = np.arange(0, 1+self.dt, self.dt)
-            points = curve.evaluate_multi(t)
-            plt.plot(*points)
-
-            # 각 곡선의 컨트롤 포인트 시각화
-            ctrl_points = np.array(curve.nodes).T
-            plt.scatter(ctrl_points[:, 0], ctrl_points[:, 1], color='red', facecolors='none')
-#            plt.plot(ctrl_points[:, 0], ctrl_points[:, 1], color='orange')
-            for x, y in ctrl_points:
-                plt.text(x + 0.1, y + 0.1, f'({x:.2f}, {y:.2f})', ha='center', va='bottom')
-
-        plt.title("Bezier Curve And Control Points")
-        plt.axis('equal')
-        plt.show()
-
     def add_curve(self, action):
         x0 = np.array(self.curves[-1].nodes[:,-1])  # 마지막 곡선의 마지막 컨트롤 포인트
         x0 = np.append(x0, self.last_angle)  # psi0 값 (임시로 0)
@@ -52,6 +38,23 @@ class BezierCurve:
         last_curve = self.curves[-1]
         last_point = last_curve.nodes[:, -1]
         return last_point
+
+    def get_last_xy_points(self):
+        t = np.arange(0, 1 + self.dt, self.dt)
+        points = []
+        curve_points = self.curves[-1].evaluate_multi(t).T
+        points.append(curve_points)
+        concatenated_points = np.vstack(points)
+        return np.array(concatenated_points)
+
+    def get_all_xy_points(self):
+        t = np.arange(0, 1, self.dt)
+        points = []
+        for curve in self.curves:
+            curve_points = curve.evaluate_multi(t).T
+            points.append(curve_points)
+        concatenated_points = np.vstack(points)
+        return np.array(concatenated_points)
 
     def get_xy_points(self, x):
         t = np.arange(0, 1, self.dt)
@@ -70,6 +73,22 @@ class BezierCurve:
         concatenated_points = np.vstack(points)
         return np.array(concatenated_points)
 
+    def show_curve(self):
+        for curve in self.curves:
+            t = np.arange(0, 1+self.dt, self.dt)
+            points = curve.evaluate_multi(t)
+            plt.plot(*points)
+
+            # 각 곡선의 컨트롤 포인트 시각화
+            ctrl_points = np.array(curve.nodes).T
+            plt.scatter(ctrl_points[:, 0], ctrl_points[:, 1], color='red', facecolors='none')
+#            plt.plot(ctrl_points[:, 0], ctrl_points[:, 1], color='orange')
+            for x, y in ctrl_points:
+                plt.text(x + 0.1, y + 0.1, f'({x:.2f}, {y:.2f})', ha='center', va='bottom')
+
+        plt.title("Bezier Curve And Control Points")
+        plt.axis('equal')
+        plt.show()
 # 사용 예시
 if __name__ == '__main__':
     B = BezierCurve(1, 0, 0.001)

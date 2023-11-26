@@ -1,12 +1,19 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point, LineString
+import pandas as pd
 
 CONER = 0.2
 CARWIDTH = 1.8
 CARLENGTH = 4
 DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
 SLALOM2_Y = -25
+
+GRAY = (128, 128, 128)
+RED = (255, 0, 0)
+ORANGE = (255, 144, 0)
+GREEN = (0, 128, 0)
+WHITE = (255, 255, 255)
 
 """
 Cone 관련 함수들
@@ -95,3 +102,20 @@ def to_relative_coordinates(car_pos, arr):
 """
 Trajectory 관련 함수
 """
+def calculate_dev(car_pos, traj_data):
+    check_car_pos(car_pos)
+    carx, cary, caryaw = car_pos
+
+    norm_yaw = np.mod(caryaw, 2 * np.pi)
+
+    arr = np.array(traj_data)
+    distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+    dist_index = np.argmin(distances)
+    devDist = distances[dist_index]
+
+    dx = arr[dist_index][0] - arr[dist_index - 1][0]
+    dy = arr[dist_index][1] - arr[dist_index - 1][1]
+    path_ang = np.mod(np.arctan2(dy, dx), 2 * np.pi)
+    devAng = norm_yaw - path_ang
+    devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
+    return np.array([devDist, devAng])

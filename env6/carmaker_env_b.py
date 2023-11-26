@@ -9,14 +9,9 @@ import numpy as np
 from cm_control import CMcontrolNode
 import threading
 from queue import Queue
-import pandas as pd
 import time
 from carmaker_env_low import CarMakerEnv as LowLevelCarMakerEnv
 from stable_baselines3 import PPO, SAC
-from scipy.interpolate import interp1d
-from shapely.geometry import Polygon, Point, LineString
-from SLALOM_cone import Road, Car, Cone
-import pygame
 from carmaker_data import Data, Trajectory
 from common_functions import *
 
@@ -104,7 +99,7 @@ class CarMakerEnvB(gym.Env):
         self.sim_started = False
 
         if self.check == 0:
-            self.data.render("reset")
+            self.data.render()
         return self._initial_state()
 
     def step(self, action):
@@ -137,7 +132,7 @@ class CarMakerEnvB(gym.Env):
             low_state = self.state_queue.get()
 
             if self.check == 0:
-                self.data.render("In While")
+                self.data.render()
 
             if low_state == False:
                 print("DONE: in while")
@@ -152,11 +147,11 @@ class CarMakerEnvB(gym.Env):
         self.data.traj.update_traj(self.data.carx, blevel_action)
         self.traj_end_x = self.data.traj.get_last_traj_x()
 
-        state = self.data.manage_state_b()
+        state, info = self.data.manage_state_b()
         # 리워드 계산
         reward = self.data.manage_reward_b()
-        info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
-                             "alHori", "roll", "rl", "rr", "fl", "fr"])
+        info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "alHori", "roll",
+                             "rl", "rr", "fl", "fr", "rl_ext", "rr_ext"])
 
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
 
