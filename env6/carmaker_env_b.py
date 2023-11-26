@@ -39,17 +39,15 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnvB(gym.Env):
-    def __init__(self, road_type, check=2, port=10001, simul_path='pythonCtrl_JX1'):
+    def __init__(self, road_type, env_num=2, port=10001, simul_path='pythonCtrl_JX1'):
         # Action과 State의 크기 및 형태를 정의.
         matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
         host = '127.0.0.1'
 
-        self.check = check
-        self.use_low = False
+        self.env_num = env_num
         self.road_type = road_type
-        self.data = Data(road_type=road_type, low_env=self.use_low, check=check, show=True)
+        self.data = Data(road_type=road_type, low=False, env_num=env_num)
         self.traj_end_x = self.data.traj.get_last_traj_x()
-        self.dist = self.data.traj.get_last_traj_x_distance()
         self.check_while = 0
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
@@ -76,7 +74,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
         self.cm_thread.start()
 
-        low_level_env = LowLevelCarMakerEnv(road_type=road_type, check=check, use_low=False)
+        low_level_env = LowLevelCarMakerEnv(road_type=road_type, check=env_num, use_low=False)
         self.low_level_model = SAC.load(f"best_model/DLC_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
@@ -158,7 +156,7 @@ class CarMakerEnvB(gym.Env):
 if __name__ == "__main__":
     # 환경 테스트
     road_type = "DLC"
-    env = CarMakerEnvB(road_type=road_type, simul_path='test_IPG', check=0)
+    env = CarMakerEnvB(road_type=road_type, simul_path='test_IPG', env_num=0)
     act_lst = []
     next_state_lst = []
     info_lst = []

@@ -32,7 +32,7 @@ class Data:
         self._init()
 
     def _init(self):
-        x, y = init_car_pos(road_type=road_type)
+        x, y = init_car_pos(road_type=self.road_type)
         arr = [
             0, 0, x, y, 0, 13.8889,
             0, 0, 0,

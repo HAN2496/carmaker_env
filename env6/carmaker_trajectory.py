@@ -24,6 +24,9 @@ class Trajectory:
         )
         self.arr = np.concatenate((self.arr, self.b.get_last_xy_points()), axis=0)
 
+    def get_last_traj_x(self):
+        self.last_traj_x_dist = self.b.curves[-1].nodes[0, -1]
+        return self.b.curves[-1].nodes[0, -1]
     def find_lookahead_traj(self, x, y, distances):
         distances = np.array(distances)
         result_points = []
@@ -91,7 +94,7 @@ class Trajectory:
             return np.array([devDist, devAng])
 
     def plot(self, show=True):
-        for idx, (x, y) in enumerate(self.traj_data):
+        for idx, (x, y) in enumerate(self.arr):
             if idx == 0:
                 plt.scatter(x, y, s=5, color='red', label='Trajectory')
             elif idx % 50 == 0 and self.low:
@@ -106,6 +109,9 @@ if __name__ == "__main__":
     road_type, low = "DLC", False
     traj = Trajectory(road_type=road_type, low=low)
     traj.update_traj(10, 1)
+    print(traj.get_last_traj_x())
     traj.update_traj(20, -1)
+    print(traj.get_last_traj_x())
     traj.update_traj(30, -1)
+    print(traj.get_last_traj_x())
     traj.plot()

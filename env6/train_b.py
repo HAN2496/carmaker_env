@@ -44,7 +44,7 @@ class Args:
 def make_env(rank, road_type, seed=0):
 
     def _init():
-        env = CarMakerEnv(road_type=road_type, check=rank, port=10000 + rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnv(road_type=road_type, env_num=rank, port=10000 + rank)  # 모니터 같은거 씌워줘야 할거임
         env.seed(seed + rank)
 
         return env
