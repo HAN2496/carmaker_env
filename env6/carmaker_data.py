@@ -93,7 +93,8 @@ class Data:
                              "rl", "rr", "fl", "fr", "rl_ext", "rr_ext"])
         info = {key: value for key, value in zip(info_key, self.simul_data)}
         done =self.manage_done_b()
-        return state, info, done
+        reward = self.manage_reward_b()
+        return state, reward, done, info
 
     def manage_state_b(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()

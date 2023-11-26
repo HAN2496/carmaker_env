@@ -147,13 +147,7 @@ class CarMakerEnvB(gym.Env):
         self.data.traj.update_traj(self.data.carx, blevel_action)
         self.traj_end_x = self.data.traj.get_last_traj_x()
 
-        state, info = self.data.manage_state_b()
-        # 리워드 계산
-        reward = self.data.manage_reward_b()
-        info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "alHori", "roll",
-                             "rl", "rr", "fl", "fr", "rl_ext", "rr_ext"])
-
-        info = {key: value for key, value in zip(info_key, self.data.simul_data)}
+        state, reward, done, info = self.data.manage_b()
 
         if done == True:
             reward = 0.0
