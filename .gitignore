@@ -1,5 +1,4 @@
 **/models/**/*.pkl
-tensorboard/
 __pycache__/
 .idea/
 train.py
