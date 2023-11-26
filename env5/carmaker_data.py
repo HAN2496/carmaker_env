@@ -126,10 +126,11 @@ class Data:
         return e
 
     def manage_state_b(self):
+        car_state = np.array([self.steerAng, self.steerVel, self.caryaw, self.devDist, self.devAng])
         traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], self.traj.find_traj_points(self.carx)).flatten()
         cones_abs = self.cone.cone_arr[self.cone.cone_arr[:, 0] > self.carx][:3]
         cones_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], cones_abs).flatten()
-        return np.concatenate((traj_rel, cones_rel))
+        return np.concatenate((car_state, traj_rel, cones_rel))
 
     def is_car_colliding_with_cone(self):
         car_shape = Car().shape_car(self.carx, self.cary, self.caryaw)
@@ -228,7 +229,7 @@ class Trajectory:
         self.last_traj_x_dist = self.b.curves[-1].nodes[0, -1] - self.b.curves[-1].nodes[0, 0]
         return self.b.curves[-1].nodes[0, -1] - self.b.curves[-1].nodes[0, 0]
     def update_traj(self, carx, action):
-        action = action * np.pi / 6
+        action = action * 0.1
         self.b.add_curve(
             [1, 1, 1, action]
         )
