@@ -52,11 +52,8 @@ def main():
 
     # 이제 모델 훈련
     model.learn(total_timesteps=100000)
-<<<<<<< HEAD
-=======
     model.save(f"pretrain_result_model.pkl")
     print("Learning Finished.")
->>>>>>> 9cb65c1806165dcf03ae7a413eca3b898f7fc0b1
 
 
 if __name__ == '__main__':
