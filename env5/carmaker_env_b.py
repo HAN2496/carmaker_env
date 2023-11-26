@@ -91,6 +91,7 @@ class CarMakerEnvB(gym.Env):
     def _initial_state(self):
         self.data._init()
         self.last_carx = self.data.carx
+        self.check_while = 0
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
@@ -166,9 +167,6 @@ class CarMakerEnvB(gym.Env):
 
         if done == True:
             reward = 0.0
-
-        if self.check == 0:
-            self.data.render()
 
         self.check_while = 0
         return state, reward, done, info
