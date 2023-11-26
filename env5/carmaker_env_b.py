@@ -140,7 +140,6 @@ class CarMakerEnvB(gym.Env):
                 self.data.render("In While")
 
             if low_state == False:
-                print("DONE: in while")
                 state = self._initial_state()
                 done = True
                 break
@@ -152,6 +151,7 @@ class CarMakerEnvB(gym.Env):
         self.data.traj.update_traj(self.data.carx, blevel_action)
         self.traj_end_x = self.data.traj.get_last_traj_x()
 
+        print(f"Traj shape: {np.shape(self.data.traj.traj_data)}")
         state = self.data.manage_state_b()
         # 리워드 계산
         reward = self.data.manage_reward_b()

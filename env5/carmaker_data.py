@@ -187,8 +187,7 @@ class Data:
 
         font = pygame.font.SysFont("arial", 15, True, True)
         x, y = self.traj.find_traj_point()
-        #text_str = f"Traj : ({round(x, 1)}, {round(y, 1)})"
-        text_str = f"NUM: {test}"
+        text_str = f"Traj : ({round(x, 1)}, {round(y, 1)})"
         text_surface = font.render(text_str, True, (255, 255, 255))
 
         # 텍스트 이미지의 위치 계산 (우측 하단)
