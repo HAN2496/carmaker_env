@@ -104,7 +104,7 @@ class CarMakerEnvB(gym.Env):
         self.sim_started = False
 
         if self.check == 0:
-            self.data.render()
+            self.data.render("reset")
         return self._initial_state()
 
     def step(self, action):
@@ -139,7 +139,7 @@ class CarMakerEnvB(gym.Env):
             low_state = self.state_queue.get()
 
             if self.check == 0:
-                self.data.render()
+                self.data.render("In While")
 
             if low_state == False:
                 state = self._initial_state()

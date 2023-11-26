@@ -58,7 +58,7 @@ class Data:
         self.traj._init_traj()
 
         if self.check == 0 and self.show:
-            self.render()
+            self.render("In reset")
     def put_simul_data(self, arr):
         self.simul_data = arr
         self.test_num += 1
@@ -150,7 +150,7 @@ class Data:
             return 1
         return 0
 
-    def render(self, mode='human'):
+    def render(self, test, mode='human'):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -187,7 +187,8 @@ class Data:
 
         font = pygame.font.SysFont("arial", 15, True, True)
         x, y = self.traj.find_traj_point()
-        text_str = f"Traj : ({round(x, 1)}, {round(y, 1)})"
+        #text_str = f"Traj : ({round(x, 1)}, {round(y, 1)})"
+        text_str = f"NUM: {test}"
         text_surface = font.render(text_str, True, (255, 255, 255))
 
         # 텍스트 이미지의 위치 계산 (우측 하단)
