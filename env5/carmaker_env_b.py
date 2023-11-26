@@ -55,6 +55,7 @@ class CarMakerEnvB(gym.Env):
         self.data = Data(road_type=road_type, low_env=self.use_low, check=check, show=True)
         self.traj_end_x = self.data.traj.get_last_traj_x()
         self.dist = self.data.traj.get_last_traj_x_distance()
+        self.check_while = 0
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 1
@@ -62,7 +63,6 @@ class CarMakerEnvB(gym.Env):
 
         # Env의 observation 개수와 simulink observation 개수
         env_obs_num = np.size(self.data.manage_state_b())
-        print(f"Init obs size: {env_obs_num}")
         sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
@@ -102,6 +102,8 @@ class CarMakerEnvB(gym.Env):
             self.state_queue.queue.clear()
         self.sim_started = False
 
+        if self.check == 0:
+            self.data.render()
         return self._initial_state()
 
     def step(self, action):
@@ -125,6 +127,7 @@ class CarMakerEnvB(gym.Env):
 
 
         while self.traj_end_x - self.data.carx > 12:
+            self.check_while  = 1
             #print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
             self.low_level_obs = self.data.manage_state_low()
             steering_changes = self.low_level_model.predict(self.low_level_obs)
@@ -132,19 +135,22 @@ class CarMakerEnvB(gym.Env):
 
             # Action 값 전송 / State 값 수신
             self.action_queue.put(action_to_sim)
-            state = self.state_queue.get()
+            low_state = self.state_queue.get()
 
             if self.check == 0:
                 self.data.render()
 
-            if state == False:
+            if low_state == False:
                 state = self._initial_state()
                 done = True
                 break
             else:
-                state = np.array(state)  # 어레이 변환
-                self.data.put_simul_data(state)
+                low_state = np.array(low_state)  # 어레이 변환
+                self.data.put_simul_data(low_state)
 
+        if self.check_while == 0:
+            state = self._initial_state()
+            done = True
 
         blevel_action = action[0]
         self.data.traj.update_traj(self.data.carx, blevel_action)
@@ -158,12 +164,13 @@ class CarMakerEnvB(gym.Env):
 
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
 
-        if state.any() == False:
+        if done == True:
             reward = 0.0
 
         if self.check == 0:
             self.data.render()
 
+        self.check_while = 0
         return state, reward, done, info
 
 

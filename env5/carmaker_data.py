@@ -51,6 +51,7 @@ class Data:
         self.steer = np.array([0, 0, 0])
         self.wheel_steer = np.array([0, 0, 0, 0])
         self.wheel_steer_ext = np.array([0, 0])
+        self.done = False
 
         self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
 

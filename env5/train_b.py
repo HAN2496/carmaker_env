@@ -7,7 +7,6 @@
     3-1. total_timesteps 수를 변화시켜 충분히 학습하도록 한다.
 4. 학습이 완료된 후 웨이트 파일(e.g. model.pkl)을 저장한다.
 """
-import sys
 from carmaker_env_b import CarMakerEnvB as CarMakerEnv
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
@@ -17,7 +16,6 @@ from stable_baselines3.common.utils import set_random_seed
 import os
 import torch
 import logging
-from datetime import datetime
 
 logging.basicConfig(filename='Log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 custom_logger = logging.getLogger('customLogger')
