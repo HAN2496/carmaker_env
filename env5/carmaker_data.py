@@ -58,7 +58,7 @@ class Data:
         self.traj._init_traj()
 
         if self.check == 0 and self.show:
-            self.render("In reset")
+            self.render("In data reset")
     def put_simul_data(self, arr):
         self.simul_data = arr
         self.test_num += 1

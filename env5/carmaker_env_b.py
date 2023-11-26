@@ -142,16 +142,13 @@ class CarMakerEnvB(gym.Env):
                 self.data.render("In While")
 
             if low_state == False:
+                print("DONE: in while")
                 state = self._initial_state()
                 done = True
                 break
             else:
                 low_state = np.array(low_state)  # 어레이 변환
                 self.data.put_simul_data(low_state)
-
-        if self.check_while == 0:
-            state = self._initial_state()
-            done = True
 
         blevel_action = action[0]
         self.data.traj.update_traj(self.data.carx, blevel_action)
@@ -168,7 +165,6 @@ class CarMakerEnvB(gym.Env):
         if done == True:
             reward = 0.0
 
-        self.check_while = 0
         return state, reward, done, info
 
 
