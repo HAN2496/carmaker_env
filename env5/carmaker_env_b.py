@@ -126,9 +126,7 @@ class CarMakerEnvB(gym.Env):
             self.status_queue.put("start")
             self.sim_started = True
 
-
-        while self.traj_end_x - self.data.carx > 12:
-            self.check_while  = 1
+        for _ in range(10):
             #print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
             self.low_level_obs = self.data.manage_state_low()
             steering_changes = self.low_level_model.predict(self.low_level_obs)
