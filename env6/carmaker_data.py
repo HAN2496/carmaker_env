@@ -69,7 +69,7 @@ class Data:
         car_data = np.array([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
                              self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext])
         if self.road_type == "DLC":
-            cones_rel = self.get_cones_rel(pos=0)
+            cones_rel = self.get_cones_rel(pos=[-2, 2])
             return np.concatenate((car_data, cones_rel, lookahead_traj_rel))
         else:
             return np.concatenate((car_data, lookahead_traj_rel))
