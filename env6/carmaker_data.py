@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.spatial import KDTree
 import pygame
 from carmaker_trajectory import Trajectory
+import time
 
 class Data:
     def __init__(self, road_type, low=True, env_num=2):
@@ -113,7 +114,7 @@ class Data:
             forbidden_reward = -10000
         else:
             forbidden_reward = 0
-        if not self.road.cone.shape.intersects(last_shape):
+        if not self.road.lane.boundary_shape.intersects(last_shape):
             cones_reward = +100
         else:
             cones_reward = 0
@@ -182,7 +183,11 @@ class Data:
         self.screen.fill(GRAY)
 
         #차량 렌더링
-        rotated_corners = list(self.car_shape.exterior.coords)
+        rotated_corners = []
+        for x, y in self.car_shape.exterior.coords:
+            x_screen = x * self.XSIZE
+            y_screen = -y * self.YSIZE
+            rotated_corners.append((int(x_screen), int(y_screen)))
         pygame.draw.polygon(self.screen, RED, rotated_corners)
 
         #콘 렌더링
@@ -235,7 +240,34 @@ class Data:
 
 if __name__ == "__main__":
     road_type, low = "DLC", False
-    data = Data(road_type=road_type, low=low)
-    data.test(100, -10)
+    data = Data(road_type=road_type, low=low, env_num=0)
+    #data.test(100, -10)
     print(data.get_cones_rel([-3, 2]))
     data.plot()
+
+    running = True
+    start_time = time.time()
+    duration = 10  # 렌더링을 실행할 시간(초)
+
+    pos = 2
+    while running:
+        # 현재 시간과 시작 시간의 차이가 duration보다 크면 루프를 종료합니다.
+        if time.time() - start_time > duration:
+            running = False
+
+        # 테스트 데이터 업데이트
+        data.test(pos, -10)
+
+        # 이벤트 처리
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        # 렌더링 실행
+        data.render()
+
+        # 프레임 갱신을 위한 짧은 지연
+        time.sleep(0.1)
+        pos += 1
+
+    pygame.quit()

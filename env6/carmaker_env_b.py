@@ -75,7 +75,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread.start()
 
         low_level_env = LowLevelCarMakerEnv(road_type=road_type, low=False, env_num=env_num)
-        self.low_level_model = SAC.load(f"best_model/DLC_best_model.pkl", env=low_level_env)
+        self.low_level_model = SAC.load(f"best_model/DLC_test_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 
     def __del__(self):
@@ -129,7 +129,7 @@ class CarMakerEnvB(gym.Env):
             self.action_queue.put(action_to_sim)
             low_state = self.state_queue.get()
 
-            if self.check == 0:
+            if self.env_num == 0:
                 self.data.render()
 
             if low_state == False:
