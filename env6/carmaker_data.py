@@ -69,7 +69,7 @@ class Data:
         car_data = np.array([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
                              self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext])
         if self.road_type == "DLC":
-            cones_rel = self.get_cones_rel(pos=[-2, 2])
+            cones_rel = self.get_cones_rel(pos=0)
             return np.concatenate((car_data, cones_rel, lookahead_traj_rel))
         else:
             return np.concatenate((car_data, lookahead_traj_rel))
@@ -142,8 +142,10 @@ class Data:
 
     def get_cones_rel(self, pos):
         if pos == 0:
-            cones_abs = self.road.cone.arr[self.road.cone.arr[:, 0] > self.carx][:4]
-            cones_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], cones_abs).flatten()
+            ahead_cones = self.road.cone.arr[self.road.cone.arr[:, 0] > self.carx][:1]
+            behind_cones = self.road.cone.arr[self.road.cone.arr[:, 0] <= self.carx][:1]
+            closest_cones = np.vstack((behind_cones, ahead_cones))
+            cones_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], closest_cones).flatten()
             return cones_rel
         """
         pos: [a, b]
@@ -232,7 +234,7 @@ class Data:
             self.render()
 
 if __name__ == "__main__":
-    road_type, low = "SLALOM", False
+    road_type, low = "DLC", False
     data = Data(road_type=road_type, low=low)
     data.test(100, -10)
     print(data.get_cones_rel([-3, 2]))

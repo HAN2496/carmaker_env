@@ -46,7 +46,7 @@ class CarMakerEnv(gym.Env):
         self.check = check
         self.use_low = use_low
         self.road_type = road_type
-        self.data = Data(road_type=road_type, low_env=use_low, check=check)
+        self.data = Data(road_type=road_type, low=low, env_num=check)
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
