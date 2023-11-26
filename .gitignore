@@ -1,4 +1,4 @@
-models/
+**/models/**/*.pkl
 tensorboard/
 __pycache__/
 .idea/
