@@ -126,6 +126,7 @@ class Trajectory:
             return np.array([devDist, devAng])
 
     def save(self):
+        pass
     def plot(self, show=True):
         max_idx = len(self.xy) - 1
         for idx, (x, y) in enumerate(self.xy):
