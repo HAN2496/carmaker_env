@@ -52,7 +52,7 @@ class CarMakerEnvB(gym.Env):
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
         env_action_num = 2
-        sim_action_num = env_action_num + 1
+        sim_action_num = 2
 
         # Env의 observation 개수와 simulink observation 개수
         env_obs_num = np.size(self.data.manage_state_b())
