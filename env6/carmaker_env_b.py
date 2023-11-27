@@ -141,7 +141,7 @@ class CarMakerEnvB(gym.Env):
                 low_state = np.array(low_state)  # 어레이 변환
                 self.data.put_simul_data(low_state)
 
-        blevel_action1, blevel_action2 = action[0]
+        blevel_action1, blevel_action2 = action
         self.data.traj.update_traj(self.data.carx, blevel_action1, blevel_action2)
         self.traj_end = self.data.traj.end_point
 
