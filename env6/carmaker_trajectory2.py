@@ -12,6 +12,7 @@ class Trajectory:
         self._init_traj()
 
     def _init_traj(self):
+        print('here')
         if self.low:
             self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
                              ["traj_tx", "traj_ty"]].values
@@ -23,11 +24,12 @@ class Trajectory:
             self.end_point = self.b.get_xy_point(1)
             self.xy = self.b.get_xy_points()
     def update_traj(self, car_pos, action):
+        #print("Update")
         carx, cary, caryaw = car_pos
         action1 = action[0] #/ np.pi
         action2 = action[1] #/ np.pi
         self.b.update(
-            [carx, cary, caryaw],
+            [carx + 12, cary, caryaw],
             [1, 1, 1, action1, action2]
         )
         self.connect_traj()
@@ -35,8 +37,6 @@ class Trajectory:
         self.start_point = [p0, p1]
         self.xy = np.concatenate((self.xy, self.b.get_xy_points()), axis=0)
         self.end_point = self.b.get_xy_point(1)
-        print(self.end_point)
-
     def connect_traj(self):
         p0, p1 = self.start_point[0], self.start_point[1]
         p2, p3, _, _ = self.b.get_ctrl_points()
@@ -70,6 +70,15 @@ class Trajectory:
                 result_points.append(self.xy[-1])
 
         return np.array(result_points)
+
+    def find_traj_points(self, carx):
+        points = []
+        distances = [2 * (i+1) for i in range(5)]
+        for distance in distances:
+            x_diff = np.abs(self.xy[:, 0] - (carx + distance))
+            nearest_idx = np.argmin(x_diff)
+            points.append(self.xy[nearest_idx])
+        return np.array(points)
 
     def calculate_dev(self, carx, cary, caryaw):
         if self.low:
@@ -116,6 +125,7 @@ class Trajectory:
             devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
             return np.array([devDist, devAng])
 
+    def save(self):
     def plot(self, show=True):
         max_idx = len(self.xy) - 1
         for idx, (x, y) in enumerate(self.xy):
@@ -139,20 +149,22 @@ class Trajectory:
 if __name__ == "__main__":
     road_type, low = "DLC", False
     traj = Trajectory(road_type=road_type, low=low)
-    #traj.plot()
+    traj.plot()
     traj.update_traj(
-        [0, -2, 0],
-        [0.1, -0.01]
+        [3, -10, 0],
+        [1, -1]
     )
     #traj.plot()
     traj.update_traj(
-        [1, -3, 0],
-        [0, 0]
+        [5, -10, 0],
+        [-1, 1]
     )
-    # traj.plot()
+    #traj.plot()
 
     traj.update_traj(
-        [4, -5, 0],
+        [6, -10, 0],
         [1, 1]
     )
+    traj.plot()
+    traj._init_traj()
     traj.plot()

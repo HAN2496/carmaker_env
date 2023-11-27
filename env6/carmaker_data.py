@@ -9,11 +9,11 @@ import time
 class Data:
     def __init__(self, road_type, low=True, env_num=2):
         self.road_type = road_type
+        self.low = low
+        self.env_num = env_num
         self.car = Car()
         self.road = Road(road_type=road_type)
         self.traj = Trajectory(road_type=road_type, low=low)
-        self.low = low
-        self.env_num = env_num
         self.test_num = 0
 
         self.do_render = False
@@ -21,14 +21,10 @@ class Data:
             self.do_render = True
 
         if self.road_type == "DLC":
-            self.XSIZE, self.YSIZE = 10, 10
+            self.XSIZE, self.YSIZE = 9, 9
         elif self.road_type == "SLALOM" or self.road_type == "SLALOM2":
             self.XSIZE, self.YSIZE = 2, 5
 
-        if self.do_render:
-            pygame.init()
-            self.screen = pygame.display.set_mode((self.road.length * self.XSIZE, - self.road.width * self.YSIZE))
-            pygame.display.set_caption("B level Environment")
 
         self._init()
 
@@ -43,8 +39,14 @@ class Data:
         self.put_simul_data(arr)
 
         if self.do_render:
+            pygame.init()
+            self.screen = pygame.display.set_mode((self.road.length * self.XSIZE, - self.road.width * self.YSIZE))
+            pygame.display.set_caption("B level Environment")
+
+        if self.do_render:
             self.render()
 
+        self.traj._init_traj()
         self.devDist, self.devAng = 0, 0
         self.get_lookahead_traj_abs()
 
@@ -71,11 +73,10 @@ class Data:
     def manage_state_low(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()
         car_data = np.array([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
-                             self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext])
+                             self.rl, self.rr, self.fl, self.fr, self.rr_ext, self.rl_ext])
 
         if self.road_type == "DLC":
-            cones_rel = self.get_cones_rel(pos=[-2, 2])
-            return np.concatenate((car_data, cones_rel, lookahead_traj_rel))
+            return np.concatenate((car_data, lookahead_traj_rel))
         else:
             return np.concatenate((car_data, lookahead_traj_rel))
 
@@ -104,9 +105,9 @@ class Data:
     def manage_state_b(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()
         car_data = np.array([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
-                             self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext])
+                             self.rl, self.rr, self.fl, self.fr])
         if self.road_type == "DLC":
-            cones_rel = self.get_cones_rel(pos=[-2, 2])
+            cones_rel = self.get_cones_rel(pos=[0, 4])
             return np.concatenate((car_data, cones_rel, lookahead_traj_rel))
         else:
             return np.concatenate((car_data, lookahead_traj_rel))
@@ -122,10 +123,10 @@ class Data:
             cones_reward = +100
         else:
             cones_reward = 0
-        if not self.is_car_in_lane():
-            car_reward = -10000
-        else:
+        if self.is_car_in_lane():
             car_reward = 0
+        else:
+            car_reward = -10000
 
         e = forbidden_reward + cones_reward + car_reward
         return e
@@ -139,7 +140,7 @@ class Data:
 
     def get_lookahead_traj_abs(self):
         lookahead_sight = [2 * (i + 1) for i in range(5)]
-        self.lookahead_traj_abs = self.traj.find_lookahead_traj(self.carx, self.cary, lookahead_sight)
+        self.lookahead_traj_abs = self.traj.find_traj_points(self.carx)
 
     def get_lookahead_traj_rel(self):
         lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], self.lookahead_traj_abs).flatten()
@@ -177,22 +178,14 @@ class Data:
 
     def is_car_in_lane(self):
         if self.road.lane.boundary_shape.contains(self.car_shape):
-            return 0
-        return 1
+            return 1
+        return 0
 
     def render(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
         self.screen.fill(GRAY)
-
-        #차량 렌더링
-        rotated_corners = []
-        for x, y in self.car_shape.exterior.coords:
-            x_screen = x * self.XSIZE
-            y_screen = -y * self.YSIZE
-            rotated_corners.append((int(x_screen), int(y_screen)))
-        pygame.draw.polygon(self.screen, RED, rotated_corners)
 
         #콘 렌더링
         for idx, cone in enumerate(self.road.cone.shape):
@@ -201,12 +194,14 @@ class Data:
 
         #Trajectory Points 렌더링
         traj_abs = self.lookahead_traj_abs
-        for trajx, trajy in traj_abs:
-            pygame.draw.circle(self.screen, GREEN, (trajx * self.XSIZE, - trajy * self.YSIZE), 5)
+        for idx, (trajx, trajy) in enumerate(traj_abs):
+            if idx % 1 == 0:
+                pygame.draw.circle(self.screen, GREEN, (trajx * self.XSIZE, - trajy * self.YSIZE), 5)
 
         #텍스트 렌더링. 여기서는 마지막 포인트 렌더링 했음 ㅇㅇ.
         font = pygame.font.SysFont("arial", 15, True, True)
-        x, y = traj_abs[-1]
+
+        x, y = self.traj.end_point
         text_str = f"Traj : ({round(x, 1)}, {round(y, 1)})"
         text_surface = font.render(text_str, True, WHITE)
 
@@ -214,6 +209,25 @@ class Data:
         text_y = - self.road.width * self.YSIZE - text_surface.get_height() - self.YSIZE
 
         self.screen.blit(text_surface, (text_x, text_y))
+
+        #차량 렌더링
+        half_length = self.car.length * self.XSIZE / 2.0
+        half_width = self.car.width * self.YSIZE / 2.0
+
+        corners = [
+            (-half_length, -half_width),
+            (-half_length, half_width),
+            (half_length, half_width),
+            (half_length, -half_width)
+        ]
+
+        rotated_corners = []
+        for x, y in corners:
+            x_rot = x * np.cos(-self.caryaw) - y * np.sin(-self.caryaw) + self.carx * self.XSIZE
+            y_rot = x * np.sin(-self.caryaw) + y * np.cos(-self.caryaw) - self.cary * self.YSIZE
+            rotated_corners.append((x_rot, y_rot))
+
+        pygame.draw.polygon(self.screen, RED, rotated_corners)
 
         pygame.display.flip()
 
@@ -238,7 +252,8 @@ class Data:
             0, 0, 0, 0, 0, 0
         ]
         self.put_simul_data(arr)
-
+        action = [1, -1]
+        self.traj.update_traj([self.carx, self.cary, self.caryaw], action)
         if self.do_render:
             self.render()
 
@@ -248,6 +263,41 @@ if __name__ == "__main__":
     #data.test(100, -10)
     print(data.get_cones_rel([-3, 2]))
     data.plot()
+
+    running = True
+    start_time = time.time()
+    duration = 10  # 렌더링을 실행할 시간(초)
+
+
+    pos = 2
+    while running:
+        data.test(pos, -10)
+        # 현재 시간과 시작 시간의 차이가 duration보다 크면 루프를 종료합니다.
+        if time.time() - start_time > duration:
+            running = False
+
+        # 테스트 데이터 업데이트
+        data.test(pos, -10)
+
+        # 이벤트 처리
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+
+        # 렌더링 실행
+        data.render()
+        print(data.manage_reward_b())
+        print(data.traj.xy[-1])
+        print(data.manage_done_b())
+        # 프레임 갱신을 위한 짧은 지연
+        time.sleep(0.1)
+        pos += 1
+
+    pygame.quit()
+
+
+
+    data._init()
 
     running = True
     start_time = time.time()
@@ -269,9 +319,11 @@ if __name__ == "__main__":
 
         # 렌더링 실행
         data.render()
-
+        print(data.traj.xy[-1])
+        print(data.manage_reward_b())
         # 프레임 갱신을 위한 짧은 지연
         time.sleep(0.1)
         pos += 1
 
     pygame.quit()
+

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
 
 # python == 3.7
 # bezier == 2021.2.12
@@ -40,7 +38,7 @@ class BezierReference:
         self.p_curve = bezier.Curve(np.asfortranarray(self.p).T, degree=3)
         self.p = np.array(self.p)
 
-    def update_with_endpoints(self, start_data, end_data, scale=1):
+    def update_with_endpoints(self, start_data, end_data, scale=2):
         """
         start_data: 시작점 데이터 [x, y, angle] - 위치와 기울기 각도 (라디안).
         end_data: 끝점 데이터 [x, y, angle] - 위치와 기울기 각도 (라디안).
@@ -97,7 +95,7 @@ if __name__ == '__main__':
     B = BezierReference([0,0,0], 0.01)
     B.update(
         [0, 0, 0],  # x0: 시작 위치
-        [1, 1, 1, 0, 0]  # action: 제어점 설정
+        [1, 1, 1, 1, -1]  # action: 제어점 설정
     )
     print(B.get_xy_point(1))
     B.show_curve()

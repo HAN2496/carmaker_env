@@ -55,9 +55,9 @@ class Lane:
     def create_lane(self):
         if self.road_type == "DLC":
             upper_arr = np.array([(0, -8.885 - CONER), (62, -8.885 - CONER), (62, -5.085 - CONER),
-                               (99, -5.085 - CONER), (99, -8.885 - CONER), (161, -8.85 - CONER)])
+                               (99, -5.085 - CONER), (99, -8.885 - CONER), (200, -8.85 - CONER)])
             lower_arr = np.array([(0, -11.115 + CONER), (75.5, -11.115 + CONER), (75.5, -7.885 + CONER),
-                               (86.5, -7.885 + CONER), (86.5, -11.885 + CONER), (161, -11.885 + CONER)])
+                               (86.5, -7.885 + CONER), (86.5, -11.885 + CONER), (200, -11.885 + CONER)])
 
         elif self.road_type == "SLALOM2":
             upper_arr = np.array([[0, -25 + DIST_FROM_AXIS], [85, -25 + DIST_FROM_AXIS]] + \
@@ -104,11 +104,11 @@ class Road:
         self.forbidden_area = self.shape.difference(self.lane.boundary_shape)
 
     def create_road_DLC(self):
-        self.length = 161
+        self.length = 200
         self.width = -20
 
     def create_road_SLALOM2(self):
-        self.length = 500
+        self.length = 550
         self.width = SLALOM2_Y * 2
 
     def create_road_shape(self, x, y):
