@@ -36,7 +36,6 @@ class Data:
             self.screen = pygame.display.set_mode((self.road.road_length * XSIZE, - self.road.road_width * YSIZE))
             pygame.display.set_caption("B level Environment")
 
-
         self._init()
 
     def _init(self):

@@ -3,7 +3,7 @@ from carmaker_cone import *
 import pandas as pd
 from scipy.spatial import KDTree
 import pygame
-from carmaker_trajectory import Trajectory
+from carmaker_trajectory2 import Trajectory
 import time
 
 class Data:
@@ -65,10 +65,14 @@ class Data:
         self.get_lookahead_traj_abs()
         self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
 
+        if self.test_num % 150 == 0 and self.low == 0:
+            print(f"Time: {self.time}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}] Reward : [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
+
     def manage_state_low(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()
         car_data = np.array([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
                              self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext])
+
         if self.road_type == "DLC":
             cones_rel = self.get_cones_rel(pos=[-2, 2])
             return np.concatenate((car_data, cones_rel, lookahead_traj_rel))
@@ -129,9 +133,9 @@ class Data:
     def manage_done_b(self):
         x, y = self.lookahead_traj_abs[-1]
         if self.road.shape.intersects(Point(x, y)):
-            return True
-        else:
             return False
+        else:
+            return True
 
     def get_lookahead_traj_abs(self):
         lookahead_sight = [2 * (i + 1) for i in range(5)]

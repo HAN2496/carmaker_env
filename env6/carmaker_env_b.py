@@ -47,11 +47,11 @@ class CarMakerEnvB(gym.Env):
         self.env_num = env_num
         self.road_type = road_type
         self.data = Data(road_type=road_type, low=False, env_num=env_num)
-        self.traj_end_x = self.data.traj.get_last_traj_x()
+        self.traj_end = self.data.traj.end_point
         self.check_while = 0
 
         #env에서는 1개의 action, simulink는 connect를 위해 1개가 추가됨
-        env_action_num = 1
+        env_action_num = 2
         sim_action_num = env_action_num + 1
 
         # Env의 observation 개수와 simulink observation 개수
@@ -119,7 +119,7 @@ class CarMakerEnvB(gym.Env):
             self.status_queue.put("start")
             self.sim_started = True
 
-        for _ in range(10):
+        while self.traj_end[0] - self.data.carx > 12:
             #print(f"carx: {self.data.carx}, last carx: {self.last_carx}")
             self.low_level_obs = self.data.manage_state_low()
             steering_changes = self.low_level_model.predict(self.low_level_obs)
@@ -141,9 +141,9 @@ class CarMakerEnvB(gym.Env):
                 low_state = np.array(low_state)  # 어레이 변환
                 self.data.put_simul_data(low_state)
 
-        blevel_action = action[0]
-        self.data.traj.update_traj(self.data.carx, blevel_action)
-        self.traj_end_x = self.data.traj.get_last_traj_x()
+        blevel_action1, blevel_action2 = action[0]
+        self.data.traj.update_traj(self.data.carx, blevel_action1, blevel_action2)
+        self.traj_end = self.data.traj.end_point
 
         state, reward, done, info = self.data.manage_b()
 
