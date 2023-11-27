@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     env = CarMakerEnv(port=9999, road_type=road_type, simul_path='pythonCtrl_IPG', use_low=True, check=0)
 #    model = SAC.load(f"best_model/1519999_Check_model.pkl", env=env)
-    model = SAC.load(f"best_model/SLALOM2_best_model.pkl", env=env)
+    model = SAC.load(f"best_model/DLC_best_model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()
@@ -31,7 +31,7 @@ if __name__ == '__main__':
         action = model.predict(obs)
         obs, reward, done, info = env.step(action[0])
         info_lst.append(info)
-        action_lst.append(action[0])
+        action_lst.append(info[-1])
         reward_lst.append(reward)
         if done:
             df1 = pd.DataFrame(data=reward_lst)

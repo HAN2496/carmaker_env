@@ -102,7 +102,8 @@ class Data:
 
         e = - col_reward - dist_reward - ang_reward
 
-        if self.test_num % 150 == 0 and self.check == 0:
+
+        if self.test_num % 400 == 0 and self.check == 0:
             print(f"Time: {self.time}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}] Reward : [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
 
         return e

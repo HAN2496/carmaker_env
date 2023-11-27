@@ -11,7 +11,7 @@ import random
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 80
-data_num = 6
+data_num = 18
 BUFFER_SIZE = 8 * data_num
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -30,11 +30,11 @@ try:
         i+=1
         # 데이터 전송
         a = random.randrange(-1, 1)
-        data_to_send = [0, 0]
+        data_to_send = [i, 0]
         data = struct.pack('!2d', *data_to_send)
 
         conn.send(data)
-        print("Data sent:", data_to_send)
+        #print("Data sent:", data_to_send)
 
         # 데이터 수신
         received_data = conn.recv(BUFFER_SIZE)
@@ -44,7 +44,7 @@ try:
 
         try:
             unpacked_data = struct.unpack('!%dd' % data_num, received_data)
-            #print("Received data:", unpacked_data[:])
+            print("Received data:", unpacked_data[0:2])
         except:
             print("except: ", received_data)
 

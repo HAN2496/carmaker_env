@@ -1,79 +1,62 @@
 """
-Pretrain 데이터 저장하는 코드
+학습 후 테스트하는 코드 예제
+1. 카메이커 연동 환경을 불러온다
+2. 학습에 사용한 RL 모델(e.g. PPO)에 학습된 웨이트 파일(e.g. model.pkl)을 로드한다.
+3. 테스트를 수행한다.
 """
 
-import gym
-import numpy as np
-from stable_baselines3 import SAC
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.buffers import ReplayBuffer
 from carmaker_env_low import CarMakerEnv
-from stable_baselines3.common.utils import set_random_seed
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from stable_baselines3 import SAC
 
-class Args:
-    def __init__(self, prefix, alg):
-        self.prefix = prefix
-        self.alg = alg
-
-def make_env(rank,road_type, seed=0):
-
-    def _init():
-        #IPG로 돌리기
-        env = CarMakerEnv(road_type=road_type, simul_path='pythonCtrl_pretrain', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
-        env.seed(seed + rank)
-
-        return env
-
-    set_random_seed(seed)
-    return _init
-
-def main():
+if __name__ == '__main__':
     road_type = "DLC"
+    data_name = 'IPG'
+    comment = "rws"
+    prefix = data_name + "_" + comment
 
-    prefix = 'pretrain'
 
-    args = Args(prefix=prefix, alg='sac')
-
-    env = make_env(0, road_type=road_type)()
-    env = Monitor(env, f"models/{prefix}")
-
-    print("Program Start.\n")
-
-    #expert 학습 시작
-    expert_model = SAC('MlpPolicy', env, verbose=1)
-    expert_model.learn(total_timesteps=20 * 10000)
-
-    print("Expert learning finished. Expert data will be collected.")
-
-    # expert 데이터 수집
-    expert_actions = []
-    expert_observations = []
-    expert_reward = []
-    expert_done = []
-    expert_info = []
-    obs = env.reset()
+    env = CarMakerEnv(port=9999, road_type=road_type, simul_path='pythonCtrl_pretrain', use_low=True, check=0)
+#    model = SAC.load(f"best_model/1519999_Check_model.pkl", env=env)
+    model = SAC.load(f"best_model/DLC_best_model.pkl", env=env)
+    print("Model loaded.")
 
     buffer_size = 10 * 10000
-    for _ in range(buffer_size):
-        action = expert_model.predict(obs, deterministic=True)
+    obs = env.reset()
+    action_lst = []
+    reward_lst = []
+    obs_lst = []
+    info_lst = []
+    done_lst = []
+    step_num = 0
+    done2 = False
+    while True:
+
+        action = model.predict(obs)
         obs, reward, done, info = env.step(action[0])
-        expert_observations.append(obs)
-        expert_reward.append(reward)
-        expert_done.append(done)
-        expert_actions.append(action[0])
-        expert_info.append(info)
+
+        action_lst.append(info["action"])
+        obs_lst.append(obs)
+        reward_lst.append(reward)
+        done_lst.append(done)
+        info_lst.append(info)
         if done:
+            print(f"Step Number: {step_num}")
             obs = env.reset()
+            break
+
+    expert_obs_lst = []
+    expert_action_lst = []
+    expert_reward_lst = []
+    expert_done_lst = []
+    expert_info_lst = []
 
     np.savez('expert_data.npz',
              buffer_size=buffer_size,
-             observations=np.array(expert_observations),
-             actions=np.array(expert_actions),
-             rewards=np.array(expert_reward),
-             dones=np.array(expert_done),
-             infos=expert_info)
-
-    print("Expert data saved.")
-
-if __name__ == '__main__':
-    main()
+             observations=np.array(obs_lst),
+             actions=np.array(action_lst),
+             rewards=np.array(reward_lst),
+             dones=np.array(done_lst),
+             infos=info_lst)

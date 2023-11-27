@@ -130,10 +130,18 @@ class CarMakerEnv(gym.Env):
 
         # 리워드 계산
         reward = self.data.manage_reward_low()
-        info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
-                             "alHori", "roll", "rl", "rr", "fl", "fr"])
-        info = {key: value for key, value in zip(info_key, self.data.simul_data)}
-
+        info_key = np.array([
+            "num", "time", "x", "y", "yaw",
+            "carv", "ang", "vel", "acc",
+            "alHori", "roll", "rl", "rr", "fl", "fr",
+            "rl_ext", "rr_ext"])
+        data = np.array([
+            self.data.test_num, self.data.time, self.data.carx, self.data.cary, self.data.caryaw,
+            self.data.carv, self.data.steerAng, self.data.steerVel, self.data.steerAcc,
+            self.data.alHori, self.data.roll, self.data.rl, self.data.rr, self.data.fl, self.data.fr,
+            self.data.rl_ext, self.data.rr_ext
+        ])
+        info = {key: value for key, value in zip(info_key, data)}
         return state, reward, done, info
 
 
