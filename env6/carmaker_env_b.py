@@ -142,7 +142,8 @@ class CarMakerEnvB(gym.Env):
                 self.data.put_simul_data(low_state)
 
         blevel_action1, blevel_action2 = action
-        self.data.traj.update_traj(self.data.carx, blevel_action1, blevel_action2)
+        print(action)
+        self.data.traj.update_traj([self.data.carx, self.data.cary, self.data.caryaw], action)
         self.traj_end = self.data.traj.end_point
 
         state, reward, done, info = self.data.manage_b()

@@ -22,8 +22,6 @@ class Trajectory:
             self.start_point = [p0, p1]
             self.end_point = self.b.get_xy_point(1)
             self.xy = self.b.get_xy_points()
-            self.tmp2 = self.xy
-
     def update_traj(self, car_pos, action):
         carx, cary, caryaw = car_pos
         action1 = action[0] #/ np.pi
