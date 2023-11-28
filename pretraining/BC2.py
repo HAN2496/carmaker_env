@@ -1,35 +1,14 @@
-import os
-import numpy as np
-from stable_baselines3 import SAC
-from stable_baselines3.common.buffers import ReplayBuffer
-
 from carmaker_env_low import CarMakerEnv
-
 from stable_baselines3.common.utils import set_random_seed
-from stable_baselines3.common.monitor import Monitor
-
-from callbacks import getBestRewardCallback
-
 from stable_baselines3.common.vec_env import DummyVecEnv
-
 import numpy as np
-import gymnasium as gym
-from stable_baselines3.common.evaluation import evaluate_policy
-
 from imitation.algorithms import bc
-from imitation.data import rollout
-from imitation.data.wrappers import RolloutInfoWrapper
-from imitation.policies.serialize import load_policy
-from imitation.util.util import make_vec_env
-from imitation.algorithms.bc import BC
 from imitation.data import rollout, types
 import torch
+import pandas as pd
 
 # 디바이스 설정
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-
-
 class Args:
     def __init__(self, prefix, alg):
         self.prefix = prefix
@@ -62,7 +41,7 @@ next_obs = []
 
 
 
-for idx in range(2019):
+for idx in range(data_len):
     data_idx = idx % data_len
     next_obs_data = observations[data_idx + 1] if data_idx < data_len - 1 else observations[data_len - 1]
     next_obs.append(next_obs_data)
@@ -100,6 +79,8 @@ transitions = types.Transitions(
 env = make_env(0, road_type=road_type)()
 vec_env = DummyVecEnv([lambda: env])
 
+input("Program Start.\n")
+
 rng = np.random.default_rng(0)
 model = bc.BC(
     observation_space=env.observation_space,
@@ -108,14 +89,31 @@ model = bc.BC(
     rng=rng
 )
 
-model.train(n_epochs=10 * 10000)
+model.train(n_epochs=10 * 100,
+            reset_tensorboard=True)
 
 
 # 훈련된 모델을 사용하여 환경 테스트
 print("Now test START!")
 obs = vec_env.reset()
-for _ in range(1000):
+action_lst = []
+reward_lst = []
+info_lst = []
+while True:
     action, _ = model.policy.predict(obs, deterministic=True)
-    obs, _, done, _ = vec_env.step(action)
-    if done:
+    observation, reward, terminated, truncated, info = vec_env.step(action)
+    info_lst.append(info)
+    action_lst.append(action)
+    reward_lst.append(reward)
+    if terminated:
+        df1 = pd.DataFrame(data=reward_lst)
+        df1.to_csv(f'datafiles/pretrain_test/reward.csv')
+        df3 = pd.DataFrame(data=info_lst)
+        df3.to_csv(f'datafiles/pretrain_test/_info.csv', index=False)
+        df4 = pd.DataFrame(data=action_lst)
+        df4.to_csv(f'datafiles/pretrain_test/_action.csv', index=False)
+        print("Episode Finished. Data saved.")
         obs = vec_env.reset()
+        break
+
+vec_env.close()
