@@ -34,5 +34,5 @@ for idx in range(buffer_size):
     new_next_observation.append(new_observations[data_idx])
 
 print(len(new_observations))
-if new_observations[0] == new_observations[2019]:
+if (new_observations[0] == new_observations[4039]).all():
     print('here')
