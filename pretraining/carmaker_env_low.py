@@ -142,6 +142,7 @@ class CarMakerEnv(gym.Env):
             self.data.rl_ext, self.data.rr_ext
         ])
         info = {key: value for key, value in zip(info_key, data)}
+        print(state[0])
         return state, reward, done, info
 
 
