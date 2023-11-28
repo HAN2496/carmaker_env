@@ -59,6 +59,9 @@ infos = expert_data['infos']
 
 data_len = len(observations)
 next_obs = []
+
+
+
 for idx in range(2019):
     data_idx = idx % data_len
     next_obs_data = observations[data_idx + 1] if data_idx < data_len - 1 else observations[data_len - 1]
@@ -84,7 +87,7 @@ model = bc.BC(
     rng=rng
 )
 
-model.train(n_epochs=100)
+model.train(n_epochs=10)
 
 
 # 훈련된 모델을 사용하여 환경 테스트
