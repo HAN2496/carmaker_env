@@ -44,7 +44,7 @@ road_type = "DLC"
 
 comment = 'pretrain'
 rng = np.random.default_rng()
-env = make_env(0, road_type=road_type)()
+env = make_env(1, road_type=road_type)()
 vec_env = DummyVecEnv([lambda: env])
 
 expert_model = SAC("MlpPolicy", vec_env, verbose=1)
