@@ -44,13 +44,13 @@ road_type = "DLC"
 
 comment = 'pretrain'
 rng = np.random.default_rng()
-env = make_env(1, road_type=road_type)()
+env = make_env(0, road_type=road_type)()
 vec_env = DummyVecEnv([lambda: env])
 
 expert_model = SAC("MlpPolicy", vec_env, verbose=1)
 
-model = SAC.load(f"best_model/DLC_best_model.pkl", env=env)
-transitions = rollout.generate_transitions(expert_model, vec_env, n_timesteps=2, rng=rng)
+model = SAC.load(f"best_model/DLC_best_model.pkl", env=vec_env)
+transitions = rollout.generate_transitions(expert_model, vec_env, n_timesteps=2000, rng=rng)
 dataset = rollout.flatten_trajectories(transitions)
 
 # Step 3: Behavioral Cloning을 통한 학습
