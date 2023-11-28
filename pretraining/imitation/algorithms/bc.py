@@ -119,12 +119,18 @@ class BehaviorCloningLossCalculator:
             A BCTrainingMetrics object with the loss and all the components it
             consists of.
         """
+
+
         tensor_obs = types.map_maybe_dict(
             util.safe_to_tensor,
             types.maybe_unwrap_dictobs(obs),
         )
         acts = util.safe_to_tensor(acts)
 
+        import torch
+        if torch.cuda.is_available():
+            tensor_obs = tensor_obs.to('cuda')
+            acts = acts.to('cuda')
         # policy.evaluate_actions's type signatures are incorrect.
         # See https://github.com/DLR-RM/stable-baselines3/issues/1679
         (_, log_prob, entropy) = policy.evaluate_actions(

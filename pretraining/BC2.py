@@ -28,6 +28,13 @@ import torch
 # 디바이스 설정
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+import tensorflow as tf
+if tf.config.list_physical_devices('GPU'):
+    print("GPU is available")
+else:
+    print("GPU not available")
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
 
 class Args:
