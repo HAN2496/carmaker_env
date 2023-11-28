@@ -1,12 +1,3 @@
-<<<<<<< HEAD
-import gym
-import numpy as np
-from stable_baselines3 import SAC
-from stable_baselines3.common.env_util import make_vec_env
-from stable_baselines3.common.buffers import ReplayBuffer
-from carmaker_env_low import CarMakerEnv
-from stable_baselines3.common.utils import set_random_seed
-=======
 import os
 import numpy as np
 from stable_baselines3 import SAC
@@ -20,8 +11,6 @@ class Args:
     def __init__(self, prefix, alg):
         self.prefix = prefix
         self.alg = alg
->>>>>>> 9cb65c1806165dcf03ae7a413eca3b898f7fc0b1
-
 def make_env(rank,road_type, seed=0):
 
     def _init():

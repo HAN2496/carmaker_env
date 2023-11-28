@@ -68,6 +68,27 @@ for idx in range(2019):
     next_obs.append(next_obs_data)
 next_observations = np.array(next_obs)
 
+
+new_observations = []
+new_actions = []
+new_rewards = []
+new_dones = []
+new_infos = []
+new_next_observation = []
+
+data_len = len(observations)
+for idx in range(buffer_size):
+    data_idx = idx % data_len
+    new_observations.append(observations[data_idx])
+    new_actions.append(actions[data_idx])
+    new_rewards.append(rewards[data_idx])
+    new_dones.append(dones[data_idx])
+    new_infos.append(infos[data_idx])
+    new_next_observation.append(new_observations[data_idx])
+
+
+
+
 transitions = types.Transitions(
     obs=observations,
     acts=actions,
@@ -87,7 +108,7 @@ model = bc.BC(
     rng=rng
 )
 
-model.train(n_epochs=10)
+model.train(n_epochs=10 * 10000)
 
 
 # 훈련된 모델을 사용하여 환경 테스트
