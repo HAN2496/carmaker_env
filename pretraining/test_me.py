@@ -1,31 +1,49 @@
 import numpy as np
 import gymnasium as gym
-from stable_baselines3 import PPO
+from stable_baselines3 import SAC
 from stable_baselines3.common.evaluation import evaluate_policy
 from stable_baselines3.ppo import MlpPolicy
 
 from imitation.algorithms.adversarial.gail import GAIL
 from imitation.data import rollout
 from imitation.data.wrappers import RolloutInfoWrapper
-from imitation.policies.serialize import load_policy
+from imitation.policies.serialize import load_stable_baselines_model
 from imitation.rewards.reward_nets import BasicRewardNet
 from imitation.util.networks import RunningNorm
 from imitation.util.util import make_vec_env
+from stable_baselines3.common.utils import set_random_seed
+from carmaker_env_low_pretrain import CarMakerEnv
+
+class Args:
+    def __init__(self, prefix, alg):
+        self.prefix = prefix
+        self.alg = alg
+
+def make_env(rank, road_type, seed=0):
+
+    def _init():
+        env = CarMakerEnv(road_type=road_type, port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
+        env.seed(seed + rank)
+
+        return env
+
+    set_random_seed(seed)
+    return _init
 
 SEED = 42
 
-env = make_vec_env(
-    "seals:seals/CartPole-v0",
-    rng=np.random.default_rng(SEED),
-    n_envs=8,
-    post_wrappers=[lambda env, _: RolloutInfoWrapper(env)],  # to compute rollouts
+road_type = 'DLC'
+
+env = make_env(0, road_type=road_type)()
+
+expert = load_stable_baselines_model(
+    SAC,
+    path = "DLC_best_model.pkl",
+    venv=env
 )
-expert = load_policy(
-    "ppo-huggingface",
-    organization="HumanCompatibleAI",
-    env_name="seals-CartPole-v0",
-    venv=env,
-)
+
+env.observation_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(22,), dtype=np.float32)
+env.action_space = gym.spaces.Box(low=-1.0, high=1.0, shape=(1,), dtype=np.float32)
 
 rollouts = rollout.rollout(
     expert,
@@ -34,16 +52,7 @@ rollouts = rollout.rollout(
     rng=np.random.default_rng(SEED),
 )
 
-learner = PPO(
-    env=env,
-    policy=MlpPolicy,
-    batch_size=64,
-    ent_coef=0.0,
-    learning_rate=0.0004,
-    gamma=0.95,
-    n_epochs=5,
-    seed=SEED,
-)
+learner = SAC("MlpPolicy", env, verbose=1)
 reward_net = BasicRewardNet(
     observation_space=env.observation_space,
     action_space=env.action_space,

@@ -5,11 +5,11 @@
 3. 테스트를 수행한다.
 """
 
-from carmaker_env_low import CarMakerEnv
+from carmaker_env_low_pretrain import CarMakerEnv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from stable_baselines3 import SAC
+from stable_baselines import SAC
 
 if __name__ == '__main__':
     road_type = "DLC"
@@ -53,7 +53,7 @@ if __name__ == '__main__':
     expert_done_lst = []
     expert_info_lst = []
 
-    np.savez('expert_data.npz',
+    np.savez('expert_data.zip',
              buffer_size=buffer_size,
              observations=np.array(obs_lst),
              actions=np.array(action_lst),
