@@ -31,6 +31,7 @@ def main():
 
     comment = 'pretrain'
 
+
     prefix = road_type + "/" + comment
     args = Args(prefix=prefix, alg='sac')
 

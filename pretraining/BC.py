@@ -3,7 +3,7 @@ import numpy as np
 from stable_baselines3 import SAC
 from stable_baselines3.common.buffers import ReplayBuffer
 
-from carmaker_env_low_pretrain import CarMakerEnv
+from carmaker_env_low import CarMakerEnv
 
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.monitor import Monitor
@@ -43,14 +43,14 @@ def make_env(rank,road_type, seed=0):
 road_type = "DLC"
 
 comment = 'pretrain'
-rng = np.random.default_rng()
+rng = np.random.default_rng(0)
 env = make_env(0, road_type=road_type)()
 vec_env = DummyVecEnv([lambda: env])
 
-expert_model = SAC("MlpPolicy", vec_env, verbose=1)
+#expert_model = SAC("MlpPolicy", vec_env, verbose=1)
 
-model = SAC.load(f"best_model/DLC_best_model.pkl", env=vec_env)
-transitions = rollout.generate_transitions(expert_model, vec_env, n_timesteps=2000, rng=rng)
+expert_model = SAC.load(f"best_model/DLC_best_model.pkl", env=vec_env)
+transitions = rollout.generate_transitions(expert_model, vec_env, n_timesteps=2, rng=rng)
 dataset = rollout.flatten_trajectories(transitions)
 
 # Step 3: Behavioral Cloning을 통한 학습
