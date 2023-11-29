@@ -71,9 +71,8 @@ class Trajectory:
 
         return np.array(result_points)
 
-    def find_traj_points(self, carx):
+    def find_traj_points(self, carx, distances):
         points = []
-        distances = [2 * (i+1) for i in range(5)]
         for distance in distances:
             x_diff = np.abs(self.xy[:, 0] - (carx + distance))
             nearest_idx = np.argmin(x_diff)

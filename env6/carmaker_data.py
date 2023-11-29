@@ -75,10 +75,8 @@ class Data:
         car_data = np.array([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
                              self.rl, self.rr, self.fl, self.fr, self.rr_ext, self.rl_ext])
 
-        if self.road_type == "DLC":
-            return np.concatenate((car_data, lookahead_traj_rel))
-        else:
-            return np.concatenate((car_data, lookahead_traj_rel))
+
+        return np.concatenate((car_data, lookahead_traj_rel))
 
     def manage_reward_low(self):
         dist_reward = abs(self.devDist) * 100
@@ -140,7 +138,7 @@ class Data:
 
     def get_lookahead_traj_abs(self):
         lookahead_sight = [2 * (i + 1) for i in range(5)]
-        self.lookahead_traj_abs = self.traj.find_traj_points(self.carx)
+        self.lookahead_traj_abs = self.traj.find_traj_points(self.carx, lookahead_sight)
 
     def get_lookahead_traj_rel(self):
         lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], self.lookahead_traj_abs).flatten()
