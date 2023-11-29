@@ -76,7 +76,8 @@ class Trajectory:
             return self.calculate_dev_SLALOM2(carx, cary, caryaw)
 
     def calculate_dev_b(self, carx, cary, caryaw):
-        pass
+        if self.road_type == "DLC":
+            return self.calculate_dev_DLC(carx, cary, caryaw)
 
     def calculate_dev_DLC(self, carx, cary, caryaw):
         if carx <= 62:

@@ -46,7 +46,7 @@ class CarMakerEnvB(gym.Env):
 
         self.env_num = env_num
         self.road_type = road_type
-        self.data = Data(road_type=road_type, low=False, env_num=env_num)
+        self.data = Data(road_type=road_type, low=False, env_num=env_num, show=True)
         self.traj_end = self.data.traj.end_point
         self.check_while = 0
 
@@ -84,6 +84,8 @@ class CarMakerEnvB(gym.Env):
     def _initial_state(self):
         self.data._init()
         self.check_while = 0
+        if self.env_num == 0:
+            self.data.render()
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
@@ -93,10 +95,8 @@ class CarMakerEnvB(gym.Env):
             self.status_queue.put("stop")
             self.action_queue.queue.clear()
             self.state_queue.queue.clear()
-        self.sim_started = False
 
-        if self.env_num == 0:
-            self.data.render()
+        self.sim_started = False
         return self._initial_state()
 
     def step(self, action):
@@ -119,7 +119,10 @@ class CarMakerEnvB(gym.Env):
             self.status_queue.put("start")
             self.sim_started = True
 
-        while self.traj_end[0] - self.data.carx > 12:
+
+        for _ in range(10):
+
+            #print("In while")
             #print(f"In while: {round(self.traj_end[0], 2)}, {round(self.data.carx, 2)}")
             self.low_level_obs = self.data.manage_state_low()
             steering_changes = self.low_level_model.predict(self.low_level_obs)
@@ -134,24 +137,33 @@ class CarMakerEnvB(gym.Env):
 
             if low_state == False:
                 #print("DONE: in while")
-                low_state = self._initial_state()
+                state = self._initial_state()
                 done = True
                 break
             else:
                 low_state = np.array(low_state)  # 어레이 변환
                 self.data.put_simul_data(low_state)
-        #print(f"Out while: {round(self.traj_end[0], 2)}, {round(self.data.carx, 2)}")
+                if b_done:
+                    #print("DONE: in Else")
+                    state = self._initial_state()
+                    done = True
+                    break
+
+        #print("Out while")
 
         self.data.traj.update_traj([self.data.carx, self.data.cary, self.data.caryaw], action)
         self.traj_end = self.data.traj.end_point
 
         state, reward, b_done, info = self.data.manage_b()
 
-        if done or b_done:
+        if done:
+           # print("DONE: Out while")
             done = True
             state = self._initial_state()
             reward = 0.0
 
+        if self.env_num == 0:
+            self.data.render()
         return state, reward, done, info
 
 
@@ -164,7 +176,8 @@ if __name__ == "__main__":
     info_lst = []
 
 
-    for i in range(3):
+    for i in range(10):
+        print(i)
         # 환경 초기화
         state = env.reset()
 

@@ -3,8 +3,8 @@
 cm_control.py에 구현된 기능을 이용
 """
 
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 import numpy as np
 from cm_control import CMcontrolNode
 import threading
@@ -142,7 +142,8 @@ class CarMakerEnv(gym.Env):
             self.data.rl_ext, self.data.rr_ext, self.data.action
         ])
         info = {key: value for key, value in zip(info_key, data)}
-        return state, reward, done, info
+        truncated= False
+        return state, reward, done, truncated, info
 
 
     def getReward(self, time):

@@ -7,7 +7,7 @@ class Trajectory:
         self.road_type = road_type
         self.low = low
         self._init_traj()
-
+        self.end_point = []
     def _init_traj(self):
         if self.low:
             self.arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
@@ -16,9 +16,9 @@ class Trajectory:
             x, y = init_car_pos(self.road_type)
             self.b = BezierCurve(x, y, 0.02)
             self.arr = self.b.get_all_xy_points()
-
+            self.end_point = self.b.get_last_point()
     def update_traj(self, carx, action):
-        action = action / np.pi / 12
+        action = action[0] / np.pi / 12
         self.b.add_curve(
             [1, 1, 1, action]
         )
@@ -46,6 +46,13 @@ class Trajectory:
                 result_points.append(self.arr[-1])
 
         return np.array(result_points)
+    def find_traj_points(self, carx, distances):
+        points = []
+        for distance in distances:
+            x_diff = np.abs(self.arr[:, 0] - (carx + distance))
+            nearest_idx = np.argmin(x_diff)
+            points.append(self.arr[nearest_idx])
+        return np.array(points)
 
     def calculate_dev(self, carx, cary, caryaw):
         if self.low:

@@ -46,7 +46,7 @@ class CarMakerEnv(gym.Env):
         self.env_num = env_num
         self.use_low = low
         self.road_type = road_type
-        self.data = Data(road_type=road_type, env_num=env_num, low=low)
+        self.data = Data(road_type=road_type, env_num=env_num, low=low, show=low)
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
@@ -82,10 +82,9 @@ class CarMakerEnv(gym.Env):
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
-        if self.env_num == 0:
-            self.data.render()
         if self.use_low == True:
-            # 초기화 코드
+            if self.env_num == 0:
+                self.data.render()            # 초기화 코드
             if self.sim_initiated == True:
                 # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
                 self.status_queue.put("stop")
@@ -136,7 +135,7 @@ class CarMakerEnv(gym.Env):
         info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
                              "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
-        if self.env_num == 0:
+        if self.use_low and self.env_num == 0:
             self.data.render()
         return state, reward, done, info
 

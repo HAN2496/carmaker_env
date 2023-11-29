@@ -7,7 +7,7 @@ from carmaker_trajectory3 import Trajectory
 import time
 
 class Data:
-    def __init__(self, road_type, low=True, env_num=2):
+    def __init__(self, road_type, low=True, env_num=2, show=False):
         self.road_type = road_type
         self.low = low
         self.env_num = env_num
@@ -17,7 +17,7 @@ class Data:
         self.test_num = 0
 
         self.do_render = False
-        if env_num == 0 and low:
+        if env_num == 0 and show:
             self.do_render = True
 
         if self.road_type == "DLC":
@@ -115,7 +115,6 @@ class Data:
         last_shape = Point(last_point[0], last_point[1])
         if not self.road.lane.boundary_shape.intersects(last_shape):
             forbidden_reward = -10000
-            print("")
         else:
             forbidden_reward = 0
         if not self.road.lane.boundary_shape.intersects(last_shape):
@@ -200,16 +199,16 @@ class Data:
 
         #텍스트 렌더링. 여기서는 마지막 포인트 렌더링 했음 ㅇㅇ.
         font = pygame.font.SysFont("arial", 15, True, True)
-        """
-        x, y = self.traj.end_point
-        text_str = f"Traj : ({round(x, 1)}, {round(y, 1)})"
+
+        x = self.carv
+        text_str = f"Velocity : ({round(x, 1)})"
         text_surface = font.render(text_str, True, WHITE)
 
         text_x = self.road.length * self.XSIZE - text_surface.get_width() - self.XSIZE
         text_y = - self.road.width * self.YSIZE - text_surface.get_height() - self.YSIZE
 
         self.screen.blit(text_surface, (text_x, text_y))
-        """
+
         #차량 렌더링
         half_length = self.car.length * self.XSIZE / 2.0
         half_width = self.car.width * self.YSIZE / 2.0
