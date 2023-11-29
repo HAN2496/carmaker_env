@@ -26,7 +26,6 @@ class BezierReference:
             action[2]: Length between node 3 and node 2.
             action[3]: Angle difference between edge 01 and edge 12.
             action[4]: Angle difference between edge 01 and edge 23.
-            action[5]: A parameter for the time profile curve, bounded by [0, 1].
         '''
 
         self.x0 = x0
@@ -93,16 +92,18 @@ class BezierReference:
 
 if __name__ == '__main__':
     B = BezierReference([0,0,0], 0.01)
-    """
+
     B.update(
         [0, 0, 0],  # x0: 시작 위치
-        [1, 1, 1, 1, -1]  # action: 제어점 설정
+        [6, 6, 6, np.pi/3, np.pi/2]  # action: 제어점 설정
     )
     print(B.get_xy_point(1))
+
+    B.show_curve()
     """
-    #B.show_curve()
     B.update_with_endpoints(
-        [0, 0, 0],
-        [1, 1, np.pi/3]
+        [0, 0, np.pi/3],
+        [12, 0, np.pi/3]
     )
     B.show_curve()
+    """

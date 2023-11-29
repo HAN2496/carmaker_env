@@ -3,7 +3,7 @@ from carmaker_cone import *
 import pandas as pd
 from scipy.spatial import KDTree
 import pygame
-from carmaker_trajectory2 import Trajectory
+from carmaker_trajectory3 import Trajectory
 import time
 
 class Data:
@@ -115,6 +115,7 @@ class Data:
         last_shape = Point(last_point[0], last_point[1])
         if not self.road.lane.boundary_shape.intersects(last_shape):
             forbidden_reward = -10000
+            print("")
         else:
             forbidden_reward = 0
         if not self.road.lane.boundary_shape.intersects(last_shape):
