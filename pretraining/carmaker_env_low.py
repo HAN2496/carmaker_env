@@ -74,10 +74,6 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-    def seed(self, seed=None):
-        random.seed(seed)
-        np.random.seed(seed)
-
     def __del__(self):
         self.cm_thread.join()
 

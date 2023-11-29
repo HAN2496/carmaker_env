@@ -605,47 +605,36 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)
 
     def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4, val_interval=None):
-        """
-        Pretrain the model using behavior cloning: supervised learning given an expert dataset.
-        """
+
         train_loss = 0.0
         continuous_actions = isinstance(self.action_space, spaces.Box)
-        discrete_actions = isinstance(self.action_space, spaces.Discrete)
 
-        print(discrete_actions, continuous_actions)
-        assert discrete_actions or continuous_actions, 'Only Discrete and Box action spaces are supported'
 
         if val_interval is None:
             val_interval = max(1, n_epochs // 10)
 
-        if continuous_actions:
-            # Define loss function for continuous actions
-            loss_function = F.mse_loss
-        else:
-            # Define loss function for discrete actions
-            loss_function = F.cross_entropy
+
+        loss_function = F.mse_loss
 
         optimizer = torch.optim.Adam(self.policy.parameters(), lr=learning_rate)
 
         for epoch_idx in range(n_epochs):
             train_loss = 0.0
             for expert_obs, expert_actions in dataset.train_loader:
-                # Convert data to PyTorch tensors
+                # PyTorch tensors로
                 expert_obs = torch.as_tensor(expert_obs, dtype=torch.float32)
-                expert_actions = torch.as_tensor(expert_actions, dtype=torch.long if discrete_actions else torch.float32)
+                expert_actions = torch.as_tensor(torch.float32)
 
                 # Forward pass
-                if continuous_actions:
-                    predicted_actions = self.policy(expert_obs)
-                else:
-                    predicted_actions = self.policy.get_action_logits(expert_obs)
-                    expert_actions = expert_actions.squeeze(1)  # Reshape for PyTorch
 
-                # Compute loss
+                predicted_actions = self.policy(expert_obs)
+
+
+                # loss
                 loss = loss_function(predicted_actions, expert_actions)
                 train_loss += loss.item()
 
-                # Backward pass and optimize
+                # Backward pass, optimize
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -654,20 +643,18 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
             if (epoch_idx + 1) % val_interval == 0:
                 val_loss = 0.0
-                # 검증 루프 시작
+
                 for expert_obs, expert_actions in dataset.val_loader:
                     expert_obs = torch.as_tensor(expert_obs, dtype=torch.float32)
-                    expert_actions = torch.as_tensor(expert_actions, dtype=torch.long if discrete_actions else torch.float32)
+                    expert_actions = torch.as_tensor(torch.float32)
 
-                    # Forward pass without gradient calculation
                     with torch.no_grad():
                         if continuous_actions:
                             predicted_actions = self.policy(expert_obs)
                         else:
                             predicted_actions = self.policy.get_action_logits(expert_obs)
-                            expert_actions = expert_actions.squeeze(1)  # Reshape for PyTorch
+                            expert_actions = expert_actions.squeeze(1)
 
-                        # Compute loss
                         val_loss += loss_function(predicted_actions, expert_actions).item()
 
                 val_loss /= len(dataset.val_loader)

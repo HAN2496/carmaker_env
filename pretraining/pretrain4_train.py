@@ -3,7 +3,7 @@ import numpy as np
 from stable_baselines3 import SAC
 from stable_baselines3.common.buffers import ReplayBuffer
 
-from carmaker_env_low_pretrain import CarMakerEnv
+from carmaker_env_low import CarMakerEnv
 
 from stable_baselines3.common.utils import set_random_seed
 from stable_baselines3.common.monitor import Monitor
