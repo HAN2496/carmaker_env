@@ -3,8 +3,8 @@
 cm_control.py에 구현된 기능을 이용
 """
 
-import gymnasium as gym
-from gymnasium import spaces
+import gym as gym
+from gym import spaces
 import random
 import numpy as np
 from cm_control import CMcontrolNode

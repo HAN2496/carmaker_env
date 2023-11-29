@@ -17,7 +17,7 @@ class Data:
         self.test_num = 0
 
         self.do_render = False
-        if env_num == 0 and not low:
+        if env_num == 0 and low:
             self.do_render = True
 
         if self.road_type == "DLC":
@@ -49,6 +49,7 @@ class Data:
         self.traj._init_traj()
         self.devDist, self.devAng = 0, 0
         self.get_lookahead_traj_abs()
+        self.reward = 0
 
     def put_simul_data(self, arr):
         self.simul_data = arr
@@ -63,19 +64,17 @@ class Data:
         self.wheel_steer = arr[11:15]
         self.wheel_steer_ext = arr[15:]
 
-        self.devDist, self.devAng = 0, 0
+        self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
         self.get_lookahead_traj_abs()
         self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
 
-        if self.test_num % 150 == 0 and self.low == 0:
+        if self.test_num % 150 == 0 and self.env_num == 0:
             print(f"Time: {self.time}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}] Reward : [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
 
     def manage_state_low(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()
         car_data = np.array([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
-                             self.rl, self.rr, self.fl, self.fr, self.rr_ext, self.rl_ext])
-
-
+                             self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext])
         return np.concatenate((car_data, lookahead_traj_rel))
 
     def manage_reward_low(self):
@@ -89,6 +88,7 @@ class Data:
             col_reward = abs(self.alHori) * 1000
 
         e = - col_reward - dist_reward - ang_reward
+        self.reward = e
         return e
 
     def manage_b(self):
@@ -128,6 +128,7 @@ class Data:
             car_reward = -10000
 
         e = forbidden_reward + cones_reward + car_reward
+        self.reward=e
         return e
 
     def manage_done_b(self):
@@ -199,7 +200,7 @@ class Data:
 
         #텍스트 렌더링. 여기서는 마지막 포인트 렌더링 했음 ㅇㅇ.
         font = pygame.font.SysFont("arial", 15, True, True)
-
+        """
         x, y = self.traj.end_point
         text_str = f"Traj : ({round(x, 1)}, {round(y, 1)})"
         text_surface = font.render(text_str, True, WHITE)
@@ -208,7 +209,7 @@ class Data:
         text_y = - self.road.width * self.YSIZE - text_surface.get_height() - self.YSIZE
 
         self.screen.blit(text_surface, (text_x, text_y))
-
+        """
         #차량 렌더링
         half_length = self.car.length * self.XSIZE / 2.0
         half_width = self.car.width * self.YSIZE / 2.0

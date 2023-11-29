@@ -46,7 +46,7 @@ class CarMakerEnv(gym.Env):
         self.env_num = env_num
         self.use_low = low
         self.road_type = road_type
-        self.data = Data(road_type=road_type, env_num=env_num)
+        self.data = Data(road_type=road_type, env_num=env_num, low=low)
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
@@ -77,10 +77,13 @@ class CarMakerEnv(gym.Env):
         self.cm_thread.join()
 
     def _initial_state(self):
+        self.data._init()
         self.test_num = 0
         return np.zeros(self.observation_space.shape)
 
     def reset(self):
+        if self.env_num == 0:
+            self.data.render()
         if self.use_low == True:
             # 초기화 코드
             if self.sim_initiated == True:
@@ -133,7 +136,8 @@ class CarMakerEnv(gym.Env):
         info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
                              "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
-
+        if self.env_num == 0:
+            self.data.render()
         return state, reward, done, info
 
 
@@ -148,7 +152,7 @@ class CarMakerEnv(gym.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(road_type="CRC", check=0)
+    env = CarMakerEnv(road_type="DLC", env_num=0)
     act_lst = []
     next_state_lst = []
     info_lst = []

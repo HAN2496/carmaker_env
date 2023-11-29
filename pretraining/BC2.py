@@ -24,6 +24,7 @@ from imitation.util.util import make_vec_env
 from imitation.algorithms.bc import BC
 from imitation.data import rollout, types
 import torch
+import pandas as pd
 
 # 디바이스 설정
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -115,14 +116,31 @@ model = bc.BC(
     rng=rng
 )
 
-model.train(n_epochs=10 * 10000)
+model.train(n_epochs=100 * 10000)
 
 
 # 훈련된 모델을 사용하여 환경 테스트
 print("Now test START!")
 obs = vec_env.reset()
-for _ in range(1000):
+action_lst = []
+reward_lst = []
+info_lst = []
+while True:
     action, _ = model.policy.predict(obs, deterministic=True)
-    obs, _, done, _ = vec_env.step(action)
-    if done:
+    observation, reward, terminated, info = vec_env.step(action)
+    info_lst.append(info)
+    action_lst.append(action)
+    reward_lst.append(reward)
+    if terminated:
+        reward = np.array(reward)
+        info = np.array(info)
+        action_lst = np.array([action[0] for action in action_lst])
+        df1 = pd.DataFrame(data=reward_lst)
+        df1.to_csv(f'datafiles/pretrain_test/reward.csv')
+        df3 = pd.DataFrame(data=info_lst)
+        df3.to_csv(f'datafiles/pretrain_test/_info.csv', index=False)
+        df4 = pd.DataFrame(data=action_lst)
+        df4.to_csv(f'datafiles/pretrain_test/_action.csv', index=False)
+        print("Episode Finished. Data saved.")
         obs = vec_env.reset()
+        break
