@@ -19,7 +19,7 @@ class Args:
 def make_env(rank,road_type, seed=0):
 
     def _init():
-        env = CarMakerEnv(road_type=road_type, simul_path='pythonCtrl_pretrain', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnv(road_type=road_type, simul_path='pythonCtrl_JX1', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
         #env.seed(seed + rank)
 
         return env
@@ -101,11 +101,11 @@ def main():
     print('put All replay buffer')
 
     expert_dataset = PretrainingDataset(observations, actions)
-    model.pretrain(expert_dataset)
+    model.pretrain(expert_dataset, n_epochs=10 *10000)
     input("All pretrain Finished. Click Enter to start")
     # 이제 모델 훈련
     model.learn(total_timesteps=300 * 10000, callback=bestRewardCallback)
-
+    model.save(f"models/{prefix}_last.pkl")
 
 if __name__ == '__main__':
     main()

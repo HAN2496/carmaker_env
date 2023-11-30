@@ -325,5 +325,5 @@ class SAC(OffPolicyAlgorithm):
             saved_pytorch_variables = ["ent_coef_tensor"]
         return state_dicts, saved_pytorch_variables
 
-    def pretrain(self, expert_Dataset):
-        return super().pretrain(expert_Dataset)
+    def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4, val_interval=None):
+        return super().pretrain(dataset, n_epochs, learning_rate, val_interval)

@@ -74,9 +74,6 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
-    def seed(self, seed=None):
-        random.seed(seed)
-        np.random.seed(seed)
 
     def __del__(self):
         self.cm_thread.join()
@@ -85,8 +82,7 @@ class CarMakerEnv(gym.Env):
         self.test_num = 0
         return np.zeros(self.observation_space.shape)
 
-    def reset(self, seed=None):
-        self.seed(seed)
+    def reset(self):
         initial_observation = self._initial_state()
         if self.use_low == True:
             # 초기화 코드
@@ -98,7 +94,7 @@ class CarMakerEnv(gym.Env):
 
             self.sim_started = False
 
-        return initial_observation, {}
+        return initial_observation
 
     def step(self, action1):
         action = np.append(self.test_num, action1)
@@ -150,8 +146,7 @@ class CarMakerEnv(gym.Env):
         ])
         info = {key: value for key, value in zip(info_key, data)}
         terminated = done
-        truncated = False
-        return state, reward, terminated, truncated, info
+        return state, reward, terminated, info
 
 
     def getReward(self, time):

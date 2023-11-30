@@ -12,7 +12,7 @@ from queue import Queue
 import pandas as pd
 import time
 from carmaker_cone import *
-from carmaker_data_pretrain import *
+from carmaker_data import *
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
@@ -52,7 +52,7 @@ class CarMakerEnv(gym.Env):
         sim_action_num = env_action_num + 1
 
         env_obs_num = np.size(self.data.manage_state_low())
-        sim_obs_num = 18
+        sim_obs_num = 17
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -73,6 +73,7 @@ class CarMakerEnv(gym.Env):
 
         self.test_num = 0
 
+
     def __del__(self):
         self.cm_thread.join()
 
@@ -80,7 +81,12 @@ class CarMakerEnv(gym.Env):
         self.test_num = 0
         return np.zeros(self.observation_space.shape)
 
-    def reset(self):
+    def seed(self, seed=None):
+        np.random.seed(seed)
+
+    def reset(self, seed=None):
+        if seed:
+            self.seed(seed)
         if self.use_low == True:
             # 초기화 코드
             if self.sim_initiated == True:
@@ -91,7 +97,7 @@ class CarMakerEnv(gym.Env):
 
             self.sim_started = False
 
-        return self._initial_state()
+        return self._initial_state(), {}
 
     def step(self, action1):
         action = np.append(self.test_num, action1)
@@ -134,12 +140,12 @@ class CarMakerEnv(gym.Env):
             "num", "time", "x", "y", "yaw",
             "carv", "ang", "vel", "acc",
             "alHori", "roll", "rl", "rr", "fl", "fr",
-            "rl_ext", "rr_ext", "action"])
+            "rl_ext", "rr_ext"])
         data = np.array([
             self.data.test_num, self.data.time, self.data.carx, self.data.cary, self.data.caryaw,
             self.data.carv, self.data.steerAng, self.data.steerVel, self.data.steerAcc,
             self.data.alHori, self.data.roll, self.data.rl, self.data.rr, self.data.fl, self.data.fr,
-            self.data.rl_ext, self.data.rr_ext, self.data.action
+            self.data.rl_ext, self.data.rr_ext
         ])
         info = {key: value for key, value in zip(info_key, data)}
         truncated= False
