@@ -329,15 +329,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         assert self.env is not None, "You must set the environment before calling learn()"
         assert isinstance(self.train_freq, TrainFreq)  # check done in _setup_learn()
-
+        pretrain_learn = 10 * 10000
         while self.num_timesteps < pretrain_learn:
             print(f"Num Time step: still Pretraining: {self.num_timesteps}")
             gradient_steps = self.gradient_steps
             self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
             self.num_timesteps += 1
 
-        while pretrain_learn < self.num_timesteps < total_timesteps:
-            print('now here...')
+        while self.num_timesteps < total_timesteps:
             rollout = self.collect_rollouts(
                 self.env,
                 train_freq=self.train_freq,
