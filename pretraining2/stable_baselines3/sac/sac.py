@@ -303,6 +303,7 @@ class SAC(OffPolicyAlgorithm):
         tb_log_name: str = "SAC",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        pretrain_learn: int = 100000
     ) -> SelfSAC:
         return super().learn(
             total_timesteps=total_timesteps,
@@ -311,6 +312,7 @@ class SAC(OffPolicyAlgorithm):
             tb_log_name=tb_log_name,
             reset_num_timesteps=reset_num_timesteps,
             progress_bar=progress_bar,
+            pretrain_learn=100000
         )
 
     def _excluded_save_params(self) -> List[str]:

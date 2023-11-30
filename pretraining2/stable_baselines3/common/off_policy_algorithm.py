@@ -315,6 +315,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         tb_log_name: str = "run",
         reset_num_timesteps: bool = True,
         progress_bar: bool = False,
+        pretrain_learn: int = 100000
     ) -> SelfOffPolicyAlgorithm:
         total_timesteps, callback = self._setup_learn(
             total_timesteps,
@@ -329,7 +330,14 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         assert self.env is not None, "You must set the environment before calling learn()"
         assert isinstance(self.train_freq, TrainFreq)  # check done in _setup_learn()
 
-        while self.num_timesteps < total_timesteps:
+        while self.num_timesteps < pretrain_learn:
+            print(f"Num Time step: still Pretraining: {self.num_timesteps}")
+            gradient_steps = self.gradient_steps
+            self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
+            self.num_timesteps += 1
+
+        while pretrain_learn < self.num_timesteps < total_timesteps:
+            print('now here...')
             rollout = self.collect_rollouts(
                 self.env,
                 train_freq=self.train_freq,
@@ -604,8 +612,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)
 
-    def pretrain2(self, dataset):
-        pass
     def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4, val_interval=None):
         import time
         start_time = time.time()
