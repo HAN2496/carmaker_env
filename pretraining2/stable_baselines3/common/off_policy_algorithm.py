@@ -606,13 +606,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
     def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4, val_interval=None):
 
-        train_loss = 0.0
         continuous_actions = isinstance(self.action_space, spaces.Box)
-
 
         if val_interval is None:
             val_interval = max(1, n_epochs // 10)
-
 
         loss_function = F.mse_loss
 
@@ -629,7 +626,6 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 # Forward pass
 
                 predicted_actions = self.policy(expert_obs)
-
 
                 # loss
                 loss = loss_function(predicted_actions, expert_actions)
@@ -662,7 +658,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
                 val_loss /= len(dataset.val_loader)
                 # 검증 결과 출력
+                print("==== Training progress {:.2f}% ====".format(100 * (epoch_idx + 1) / n_epochs))
+                print('Epoch {}'.format(epoch_idx + 1))
                 print("Epoch {}: Training loss: {:.8f}, Validation loss: {:.8f}".format(epoch_idx + 1, train_loss, val_loss))
-
+                print()
         print("Pretraining done.")
         return self
