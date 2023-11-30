@@ -1,4 +1,4 @@
-**/models/**/*.pkl
+models/
 __pycache__/
 .idea/
 train.py

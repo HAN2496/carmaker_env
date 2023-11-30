@@ -3,8 +3,8 @@
 cm_control.py에 구현된 기능을 이용
 """
 
-import gym
-from gym import spaces
+import gymnasium as gym
+from gymnasium import spaces
 import numpy as np
 from cm_control import CMcontrolNode
 import threading
@@ -81,7 +81,12 @@ class CarMakerEnv(gym.Env):
         self.test_num = 0
         return np.zeros(self.observation_space.shape)
 
-    def reset(self):
+    def seed(self, seed=None):
+        np.random.seed(seed)
+
+    def reset(self, seed=None):
+        if seed:
+            self.seed(seed)
         if self.use_low == True:
             if self.env_num == 0:
                 self.data.render()            # 초기화 코드
@@ -93,7 +98,7 @@ class CarMakerEnv(gym.Env):
 
             self.sim_started = False
 
-        return self._initial_state()
+        return self._initial_state(), {}
 
     def step(self, action1):
         action = np.append(self.test_num, action1)
@@ -137,7 +142,7 @@ class CarMakerEnv(gym.Env):
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
         if self.use_low and self.env_num == 0:
             self.data.render()
-        return state, reward, done, info
+        return state, reward, done, False, info
 
 
     def getReward(self, time):
