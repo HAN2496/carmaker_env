@@ -605,7 +605,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)
 
     def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4, val_interval=None):
-
+        import time
+        start_time = time.time()
+        #SAC에서만 사용 가능 !!
+        print("This is just can be used for continuous actions!!")
         continuous_actions = isinstance(self.action_space, spaces.Box)
 
         if val_interval is None:
@@ -658,8 +661,10 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
                 val_loss /= len(dataset.val_loader)
                 # 검증 결과 출력
+                end_time = time.time()
+                elapsed_time = end_time - start_time
                 print("==== Training progress {:.2f}% ====".format(100 * (epoch_idx + 1) / n_epochs))
-                print('Epoch {}'.format(epoch_idx + 1))
+                print('Elapsed Time {}'.format(elapsed_time))
                 print("Epoch {}: Training loss: {:.8f}, Validation loss: {:.8f}".format(epoch_idx + 1, train_loss, val_loss))
                 print()
         print("Pretraining done.")
