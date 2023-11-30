@@ -604,6 +604,8 @@ class OffPolicyAlgorithm(BaseAlgorithm):
 
         return RolloutReturn(num_collected_steps * env.num_envs, num_collected_episodes, continue_training)
 
+    def pretrain2(self, dataset):
+        pass
     def pretrain(self, dataset, n_epochs=10, learning_rate=1e-4, val_interval=None):
         import time
         start_time = time.time()
