@@ -3,7 +3,7 @@
 cm_control.py에 구현된 기능을 이용
 """
 
-import gymnasium as gym
+import gymnasium
 from gymnasium import spaces
 import numpy as np
 from cm_control import CMcontrolNode
@@ -37,7 +37,7 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
         else:
             time.sleep(1)
 
-class CarMakerEnv(gym.Env):
+class CarMakerEnv(gymnasium.Env):
     def __init__(self, road_type, env_num=2, port=10001, simul_path='pythonCtrl_JX1', low=True):
         # Action과 State의 크기 및 형태를 정의.
         matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
@@ -142,7 +142,9 @@ class CarMakerEnv(gym.Env):
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
         if self.use_low and self.env_num == 0:
             self.data.render()
-        return state, reward, done, False, info
+
+        truncated = False
+        return state, reward, done, truncated, info
 
 
     def getReward(self, time):
