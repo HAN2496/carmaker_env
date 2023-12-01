@@ -326,15 +326,24 @@ class OffPolicyAlgorithm(BaseAlgorithm):
         assert isinstance(self.train_freq, TrainFreq)  # check done in _setup_learn()
 
         #My code
+        import time
         if pretrain_steps != 0:
+            start_time = time.time()
             num_pretrain_steps = 0
             print("Pretraining Start")
             while num_pretrain_steps < pretrain_steps:
-                if num_pretrain_steps % 100 == 0:
-                    print(f"Pretraining stpes: {num_pretrain_steps}")
+                current_progress = (num_pretrain_steps / pretrain_steps) * 100
+                if current_progress % 10 == 0:
+                    print("================")
+                    print(f"Current Progress: {current_progress}%")
+
+                elapsed_time = time.time() - start_time
+                print(f"Elapsed Time: {elapsed_time:.2f} seconds")
+                print("================")
                 gradient_steps = self.gradient_steps
                 self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
                 num_pretrain_steps += self.env.num_envs
+
             print("Pretraining Finished.")
 
         while self.num_timesteps < total_timesteps:
