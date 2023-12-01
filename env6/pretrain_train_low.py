@@ -52,8 +52,8 @@ def main():
     road_type = "DLC"
     comment = "rws_pretrain"
     buffer_size = 10 * 10000
-    pretrain_steps = 10 * 10000
-    num_proc = 1
+    pretrain_steps = 100 * 10000
+    num_proc = 2
 
     prefix = road_type + "/" + comment
     args = Args(prefix=prefix, alg='sac')
@@ -84,10 +84,14 @@ def main():
     data_len = len(observations)
     for idx in range(buffer_size):
         data_idx = idx % data_len
-        for env_idx in range(num_proc):  # num_proc는 벡터화된 환경의 인스턴스 수
-            replay_buffer.add(observations[data_idx], next_observations[data_idx],
-                              actions[data_idx], rewards[data_idx], dones[data_idx],
-                              [infos[data_idx]])
+        obs = np.array([observations[data_idx]] * num_proc)
+        next_obs = np.array([next_observations[data_idx]] * num_proc)
+        act = np.array([actions[data_idx]] * num_proc)
+        rew = np.array([rewards[data_idx]] * num_proc)
+        done = np.array([dones[data_idx]] * num_proc)
+        info = [infos[data_idx]] * num_proc
+
+        replay_buffer.add(obs, next_obs, act, rew, done, info)
 
 
     # 모델의 리플레이 버퍼에 넣어주기
