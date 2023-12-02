@@ -337,9 +337,9 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                     print("================")
                     print(f"Current Progress: {current_progress}%")
 
-                elapsed_time = time.time() - start_time
-                print(f"Elapsed Time: {elapsed_time:.2f} seconds")
-                print("================")
+                    elapsed_time = time.time() - start_time
+                    print(f"Elapsed Time: {elapsed_time:.2f} seconds")
+                    print("================")
                 gradient_steps = self.gradient_steps
                 self.train(batch_size=self.batch_size, gradient_steps=gradient_steps)
                 num_pretrain_steps += self.env.num_envs
