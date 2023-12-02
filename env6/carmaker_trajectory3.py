@@ -65,49 +65,10 @@ class Trajectory:
 
     def calculate_dev(self, carx, cary, caryaw):
         if self.low:
-            return self.calculate_dev_low(carx, cary, caryaw)
+            arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+            return calculate_dev([carx, cary, caryaw], arr)
         else:
             return self.calculate_dev_b(carx, cary, caryaw)
-
-    def calculate_dev_low(self, carx, cary, caryaw):
-        if self.road_type == "DLC":
-            return self.calculate_dev_DLC(carx, cary, caryaw)
-        elif self.road_type == "SLALOM2":
-            return self.calculate_dev_SLALOM2(carx, cary, caryaw)
-
-    def calculate_dev_b(self, carx, cary, caryaw):
-        if self.road_type == "DLC":
-            return self.calculate_dev_DLC(carx, cary, caryaw)
-
-    def calculate_dev_DLC(self, carx, cary, caryaw):
-        if carx <= 62:
-            return np.array([cary + 10, caryaw])
-        elif 75.5 <= carx <= 86.5:
-            return np.array([cary + 6.485, caryaw])
-        elif 99 <= carx:
-            return np.array([cary + 10.385, caryaw])
-        else:
-            arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj1.csv").loc[:, ["traj_tx", "traj_ty"]].values
-            return calculate_dev([carx, cary, caryaw], arr)
-
-    def calculate_dev_SLALOM2(self, carx, cary, caryaw):
-        if carx <= 85:
-            return np.array([cary + 25, caryaw])
-        elif carx >= 400:
-            return np.array([cary + 25, caryaw])
-        else:
-            arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj1.csv").loc[:, ["traj_tx", "traj_ty"]].values
-            return calculate_dev([carx, cary, caryaw], arr)
-
-    def calculate_dev_crc(self, carx, cary, caryaw):
-        if carx <= 100:
-            return np.array([cary, caryaw])
-        else:
-            norm_yaw = np.mod(caryaw, 2 * np.pi)
-            devDist = 30 - np.linalg.norm(np.array([carx, cary]) - np.array([100, 30]))
-            devAng = norm_yaw - np.mod(np.arctan2(cary - 30, carx - 100) + np.pi / 2, 2 * np.pi)
-            devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
-            return np.array([devDist, devAng])
 
     def save(self):
         pass
