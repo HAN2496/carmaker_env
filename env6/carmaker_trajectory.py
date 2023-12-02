@@ -61,10 +61,14 @@ class Trajectory:
             return self.calculate_dev_b(carx, cary, caryaw)
 
     def calculate_dev_low(self, carx, cary, caryaw):
+        arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj1.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        """
         if self.road_type == "DLC":
             return self.calculate_dev_DLC(carx, cary, caryaw)
         elif self.road_type == "SLALOM2":
             return self.calculate_dev_SLALOM2(carx, cary, caryaw)
+        """
+        return calculate_dev([carx, cary, caryaw], arr)
 
     def calculate_dev_b(self, carx, cary, caryaw):
         arr = self.b.get_xy_points(carx)
