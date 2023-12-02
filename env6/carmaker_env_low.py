@@ -38,16 +38,15 @@ def cm_thread(host, port, action_queue, state_queue, action_num, state_num, stat
             time.sleep(1)
 
 class CarMakerEnv(gymnasium.Env):
-    def __init__(self, road_type, env_num=2, port=10001, simul_path='pythonCtrl_JX1', low=True, show=False):
-        # Action과 State의 크기 및 형태를 정의.
+    def __init__(self, road_type, env_num=2, port=10001, simul_path='pythonCtrl_JX1', use_carmaker=True, show=False):
         matlab_path = 'C:/CM_Projects/JX1_102/src_cm4sl'
         host = '127.0.0.1'
 
         self.env_num = env_num
-        self.use_low = low
+        self.use_carmaker = use_carmaker
         self.road_type = road_type
         self.show = show
-        self.data = Data(road_type=road_type, env_num=env_num, low=low, show=show)
+        self.data = Data(road_type=road_type, env_num=env_num, show=show)
 
         env_action_num = 1
         sim_action_num = env_action_num + 1
@@ -58,7 +57,7 @@ class CarMakerEnv(gymnasium.Env):
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
 
-        if self.use_low:
+        if self.use_carmaker:
             # 카메이커 연동 쓰레드와의 데이터 통신을 위한 큐
             self.status_queue = Queue()
             self.action_queue = Queue()
@@ -88,9 +87,11 @@ class CarMakerEnv(gymnasium.Env):
     def reset(self, seed=None):
         if seed:
             self.seed(seed)
-        if self.use_low == True:
-            if self.env_num == 0 and self.show:
-                self.data.render()
+
+        if self.env_num == 0 and self.show:
+            self.data.render()
+
+        if self.use_carmaker:
             if self.sim_initiated == True:
                 # 한번의 시뮬레이션도 실행하지 않은 상태에서는 stop 명령을 줄 필요가 없음
                 self.status_queue.put("stop")

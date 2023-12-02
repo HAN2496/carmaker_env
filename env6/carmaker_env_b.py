@@ -46,7 +46,7 @@ class CarMakerEnvB(gym.Env):
 
         self.env_num = env_num
         self.road_type = road_type
-        self.data = Data(road_type=road_type, low=False, env_num=env_num, show=True)
+        self.data = Data(road_type=road_type, env_num=env_num, show=True)
         self.traj_end = self.data.traj.end_point
         self.check_while = 0
 
@@ -74,7 +74,7 @@ class CarMakerEnvB(gym.Env):
         self.cm_thread = threading.Thread(target=cm_thread, daemon=False, args=(host,port,self.action_queue, self.state_queue, sim_action_num, sim_obs_num, self.status_queue, matlab_path, simul_path))
         self.cm_thread.start()
 
-        low_level_env = LowLevelCarMakerEnv(road_type=road_type, low=False, env_num=env_num)
+        low_level_env = LowLevelCarMakerEnv(road_type=road_type, use_carmaker=False, env_num=env_num)
         self.low_level_model = SAC.load(f"best_model/DLC_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
 

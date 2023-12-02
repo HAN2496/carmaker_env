@@ -7,9 +7,8 @@ from carmaker_trajectory3 import Trajectory
 import time
 
 class Data:
-    def __init__(self, road_type, low=True, env_num=2, show=False):
+    def __init__(self, road_type, env_num=2, show=False):
         self.road_type = road_type
-        self.low = low
         self.env_num = env_num
         self.car = Car()
         self.road = Road(road_type=road_type)
@@ -42,8 +41,6 @@ class Data:
             pygame.init()
             self.screen = pygame.display.set_mode((self.road.length * self.XSIZE, - self.road.width * self.YSIZE))
             pygame.display.set_caption("B level Environment")
-
-        if self.do_render:
             self.render()
 
         self.traj._init_traj()
@@ -138,7 +135,7 @@ class Data:
             return True
 
     def get_lookahead_traj_abs(self):
-        lookahead_sight = [2 * (i + 1) for i in range(5)]
+        lookahead_sight = [2 * i for i in range(5)]
         self.lookahead_traj_abs = self.traj.find_traj_points(self.carx, lookahead_sight)
 
     def get_lookahead_traj_rel(self):
