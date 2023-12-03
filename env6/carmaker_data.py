@@ -29,9 +29,9 @@ class Data:
         self._init()
 
     def _init(self):
-        x, y = init_car_pos(road_type=self.road_type)
+        x, y, carv = init_car_pos(road_type=self.road_type)
         arr = [
-            0, 0, x, y, 0, 13.8889,
+            0, 0, x, y, 0, carv,
             0, 0, 0,
             0, 0,
             0, 0, 0, 0, 0, 0
@@ -71,10 +71,13 @@ class Data:
 
     def manage_state_low(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()
-        closet_cones = self.get_cones_rel(0).flatten()
         car_data = np.array([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
                              self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext])
-        return np.concatenate((car_data, lookahead_traj_rel, closet_cones))
+        if self.road_type == "DLC":
+            closet_cones = self.get_cones_rel(0).flatten()
+            return np.concatenate((car_data, lookahead_traj_rel, closet_cones))
+        else:
+            return np.concatenate((car_data, lookahead_traj_rel))
 
     def manage_reward_low(self):
         dist_reward = abs(self.devDist) * 100

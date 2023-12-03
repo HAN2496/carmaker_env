@@ -1,7 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from shapely.geometry import Polygon, Point, LineString
+from shapely.geometry import Polygon, Point, LineString, MultiPolygon
 import pandas as pd
+from shapely import affinity
 
 CONER = 0.2
 CARWIDTH = 1.8
@@ -66,18 +67,17 @@ def create_DLC_cone_arr():
 """
 DATA 관련 함수들
 """
-
 def init_car_pos(road_type):
     if road_type == "CRC":
-        return np.array([2.36088498, -5.5])
+        return np.array([2.36088498, -5.5, 13.8889])
     elif road_type == "DLC":
-        return np.array([2.9855712, -10])
+        return np.array([2.9855712, -10, 13.8889])
     elif road_type == "SLALOM2" or "SLALOM":
-        return np.array([2.9855712, -25.0])
+        return np.array([2.9855712, -25.0, 13.8889])
     elif road_type == "UTurn":
-        return np.array([2.3609321776837224, -3.0])
+        return np.array([2.3609321776837224, -3.0, 5.55556])
     elif road_type == "Eight_20m":
-        return np.array([0, 6.27E-06])
+        return np.array([0, 6.27E-06, 5.55556])
 
 def check_car_pos(car_pos):
     if np.size(car_pos) != 3:

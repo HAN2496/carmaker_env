@@ -3,7 +3,6 @@ Cone, Lane, Car 클래스를 정의하는 코드
 """
 
 from common_functions import *
-from shapely import affinity
 
 class Cone:
     def __init__(self, road_type):
@@ -60,10 +59,11 @@ class Lane:
                                (86.5, -7.885 + CONER), (86.5, -11.885 + CONER), (200, -11.885 + CONER)])
 
         elif self.road_type == "SLALOM2":
-            upper_arr = np.array([[0, -25 + DIST_FROM_AXIS], [85, -25 + DIST_FROM_AXIS]] + \
+            straight_dist = (CARWIDTH * 1.1 + 0.25) / 2
+            upper_arr = np.array([[0, -25 + straight_dist], [85, -25 + straight_dist]] + \
                               [[100 + 30 * i, SLALOM2_Y - (i % 2 - 1) * 3 - 2 * (i % 2 - 0.5) * np.sqrt(2) * CONER] for i in range(10)] + \
-                              [[400, -25 + DIST_FROM_AXIS], [510, -25 + DIST_FROM_AXIS]])
-            lower_arr = np.array([[x, y - 2 * DIST_FROM_AXIS] for x, y in upper_arr])
+                              [[400, -25 + straight_dist], [550, -25 + straight_dist]])
+            lower_arr = np.array([[x, y - 2 * straight_dist] for x, y in upper_arr])
 
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM2")
@@ -119,13 +119,20 @@ class Road:
         self.lane.plot(show=False)
         x, y = self.shape.exterior.xy
         plt.plot(x, y, label='Road', color='black')
-        for idx, poly in enumerate(self.forbidden_area.geoms):
-            x, y = poly.exterior.coords.xy
-            if idx == 0:
-                plt.fill(x, y, color='Pink', label = "Forbidden Area", alpha=0.3)
-            else:
-                plt.fill(x, y, color='Pink', alpha=0.3)
+        if isinstance(self.forbidden_area, MultiPolygon):
+            for idx, poly in enumerate(self.forbidden_area.geoms):
+                x, y = poly.exterior.coords.xy
+                if idx == 0:
+                    plt.fill(x, y, color='Pink', label = "Forbidden Area", alpha=0.3)
+                else:
+                    plt.fill(x, y, color='Pink', alpha=0.3)
+        elif isinstance(self.forbidden_area, Polygon):
+            x, y = self.forbidden_area.exterior.coords.xy
+            plt.fill(x, y, color='Pink', label="Forbidden Area", alpha=0.3)
+
         if show:
+            plt.ylim([-28, -23])
+            plt.xlim([0, 600])
             plt.legend()
             plt.show()
 
@@ -170,7 +177,7 @@ class Car:
 
 
 if __name__ == "__main__":
-    road_type = "DLC"
+    road_type = "SLALOM2"
     cone = Cone(road_type=road_type)
     lane = Lane(road_type=road_type)
     road = Road(road_type=road_type)
