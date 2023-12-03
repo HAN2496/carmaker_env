@@ -23,6 +23,7 @@ class Trajectory:
             self.start_point = [p0, p1]
             self.end_point = self.b.get_xy_point(1)
             self.xy = self.b.get_xy_points()
+
     def update_traj(self, car_pos, action):
         #print("Update")
         carx, cary, caryaw = car_pos
@@ -66,7 +67,7 @@ class Trajectory:
     def calculate_dev(self, carx, cary, caryaw):
         if self.low:
             arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
-            return calculate_dev([carx, cary, caryaw], arr)
+            return calculate_dev_low([carx, cary, caryaw], arr)
         else:
             return self.calculate_dev_b(carx, cary, caryaw)
 
@@ -93,24 +94,7 @@ class Trajectory:
             plt.show()
 
 if __name__ == "__main__":
-    road_type, low = "DLC", False
+    road_type, low = "DLC", True
     traj = Trajectory(road_type=road_type, low=low)
     traj.plot()
-    traj.update_traj(
-        [3, -10, 0],
-        [1, -1]
-    )
-    #traj.plot()
-    traj.update_traj(
-        [5, -10, 0],
-        [-1, 1]
-    )
-    #traj.plot()
 
-    traj.update_traj(
-        [6, -10, 0],
-        [1, 1]
-    )
-    traj.plot()
-    traj._init_traj()
-    traj.plot()

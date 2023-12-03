@@ -119,3 +119,31 @@ def calculate_dev(car_pos, traj_data):
     devAng = norm_yaw - path_ang
     devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
     return np.array([devDist, devAng])
+
+def calculate_dev_low(car_pos, traj_data):
+    check_car_pos(car_pos)
+    carx, cary, caryaw = car_pos
+    arr = np.array(traj_data)
+    distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+    dist_index = np.argmin(distances)
+    devDist = distances[dist_index]
+
+    dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
+    dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
+
+    dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
+    dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
+
+    # 분모가 0이 될 수 있는 경우에 대한 예외처리
+    if dx1 == 0:
+        devAng1 = np.inf if dy1 > 0 else -np.inf
+    else:
+        devAng1 = dy1 / dx1
+
+    if dx2 == 0:
+        devAng2 = np.inf if dy2 > 0 else -np.inf
+    else:
+        devAng2 = dy2 / dx2
+
+    devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
+    return np.array([devDist, devAng])

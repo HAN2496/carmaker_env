@@ -160,7 +160,7 @@ class CarMakerEnv(gymnasium.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(road_type="DLC", env_num=0)
+    env = CarMakerEnv(road_type="DLC", simul_path="test_IPG", env_num=0, show=True)
     act_lst = []
     next_state_lst = []
     info_lst = []
@@ -177,7 +177,7 @@ if __name__ == "__main__":
             if i==0:
                 act_lst.append(action)
                 df = pd.DataFrame(data=act_lst)
-            next_state, reward, done, info = env.step(action)
+            next_state, reward, done, _, info = env.step(action)
 
             if i==0:
                 next_state_lst.append(next_state)

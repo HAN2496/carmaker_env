@@ -158,7 +158,7 @@ class CarMakerEnv(gym.Env):
             ahead_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] > carx][:1]
             behind_cones = self.cone.cones_arr[self.cone.cones_arr[:, 0] <= carx][:1]
             closest_cones = np.vstack((behind_cones, ahead_cones))
-
+            closest_cones_rel = self.to_relative_coordinates(carx, cary, caryaw, closest_cones)
 
             state = np.concatenate((dev, np.array([car_v, caryaw, car_steer[0], car_steer[1]]), wheel_steer, r_ext, lookahead_traj_rel, closest_cones_rel))
 

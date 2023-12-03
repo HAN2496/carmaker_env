@@ -71,9 +71,10 @@ class Data:
 
     def manage_state_low(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()
+        closet_cones = self.get_cones_rel(0).flatten()
         car_data = np.array([self.devDist, self.devAng, self.caryaw, self.carv, self.steerAng, self.steerVel,
                              self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext])
-        return np.concatenate((car_data, lookahead_traj_rel))
+        return np.concatenate((car_data, lookahead_traj_rel, closet_cones))
 
     def manage_reward_low(self):
         dist_reward = abs(self.devDist) * 100
@@ -175,8 +176,8 @@ class Data:
 
     def is_car_in_lane(self):
         if self.road.lane.boundary_shape.contains(self.car_shape):
-            return 1
-        return 0
+            return 0
+        return 1
 
     def render(self):
         for event in pygame.event.get():
@@ -250,13 +251,12 @@ class Data:
         ]
         self.put_simul_data(arr)
         action = [1, -1]
-        self.traj.update_traj([self.carx, self.cary, self.caryaw], action)
         if self.do_render:
             self.render()
 
 if __name__ == "__main__":
-    road_type, low = "DLC", False
-    data = Data(road_type=road_type, low=low, env_num=0)
+    road_type, show = "DLC", True
+    data = Data(road_type=road_type, env_num=0, show=show)
     #data.test(100, -10)
     print(data.get_cones_rel([-3, 2]))
     data.plot()
@@ -283,9 +283,7 @@ if __name__ == "__main__":
 
         # 렌더링 실행
         data.render()
-        print(data.manage_reward_b())
-        print(data.traj.xy[-1])
-        print(data.manage_done_b())
+        print(data.is_car_in_lane())
         # 프레임 갱신을 위한 짧은 지연
         time.sleep(0.1)
         pos += 1
@@ -316,8 +314,7 @@ if __name__ == "__main__":
 
         # 렌더링 실행
         data.render()
-        print(data.traj.xy[-1])
-        print(data.manage_reward_b())
+        print(data.is_car_in_lane())
         # 프레임 갱신을 위한 짧은 지연
         time.sleep(0.1)
         pos += 1
