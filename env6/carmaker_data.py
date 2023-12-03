@@ -4,6 +4,7 @@ import pandas as pd
 from scipy.spatial import KDTree
 import pygame
 from carmaker_trajectory3 import Trajectory
+from carmaker_trajectory_low import Trajectory as LowTrajectory
 import time
 
 class Data:
@@ -12,7 +13,7 @@ class Data:
         self.env_num = env_num
         self.car = Car()
         self.road = Road(road_type=road_type)
-        self.traj = Trajectory(road_type=road_type, low=low)
+        self.traj = Trajectory(road_type=road_type)
         self.test_num = 0
 
         self.do_render = False

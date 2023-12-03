@@ -50,9 +50,9 @@ def make_env(rank,road_type, seed=0):
 
 def main():
     road_type = "DLC"
-    comment = "rws_pretrain_200K"
+    comment = "rws_pretrain_100K"
     buffer_size = 10 * 10000
-    pretrain_steps = 200 * 1000
+    pretrain_steps = 100 * 1000
     num_proc = 2
 
     prefix = road_type + "/" + comment
