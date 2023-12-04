@@ -20,18 +20,19 @@ if __name__ == '__main__':
 
     env = CarMakerEnv(port=9999, road_type=road_type, use_carmaker=True, env_num=0)
 #    model = SAC.load(f"best_model/1519999_Check_model.pkl", env=env)
-    model = SAC.load(f"best_model/DLC_best_model.pkl", env=env)
+    model = SAC.load(f"best_model/DLC_best_model2.pkl", env=env)
     print("Model loaded.")
 
-    obs = env.reset()
+    obs = env.reset()[0]
     action_lst = []
     reward_lst=[]
     info_lst = []
     while True:
         action = model.predict(obs)
-        obs, reward, done, info = env.step(action[0])
+        action = action[0]
+        obs, reward, done, _, info = env.step(action)
         info_lst.append(info)
-        action_lst.append(action[0])
+        action_lst.append(action)
         reward_lst.append(reward)
         if done:
             df1 = pd.DataFrame(data=reward_lst)
