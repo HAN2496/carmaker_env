@@ -20,7 +20,7 @@ if __name__ == '__main__':
 
     env = CarMakerEnv(port=9999, road_type=road_type, use_carmaker=True, env_num=0)
 #    model = SAC.load(f"best_model/1519999_Check_model.pkl", env=env)
-    model = SAC.load(f"best_model/896999_best_model.pkl", env=env)
+    model = SAC.load(f"best_model/model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()[0]
