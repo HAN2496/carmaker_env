@@ -38,3 +38,5 @@ tables.append(comparsion_row)
 col = ['name', 'Time', 'inital carv', 'escape carv', 'roll rate', 'yaw rate', 'maxium lateral acc', 'total reward']
 df = pd.DataFrame(tables, columns=col)
 print(df)
+
+print(compare_route(cones, traj, ipg, rl))

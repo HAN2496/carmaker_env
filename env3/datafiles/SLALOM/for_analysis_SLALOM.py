@@ -83,13 +83,28 @@ def calc_performance(dataset, data_dict):
 
     return [dataset, time, initial_carv, escape_carv, roll_rate, yaw_rate, maximum_lateral_acc, total_reward]
 
-
+def compare_route(cones, traj, ipg, rl):
+    xdiff = np.diff(ipg['carx'])
+    ydiff = np.diff(ipg['cary'])
+    total_ipg = 0
+    y_ipg = 0
+    for i in range(len(xdiff)):
+        total_ipg += np.sqrt(xdiff[i] ** 2 + ydiff[i] ** 2)
+        y_ipg += np.abs(ydiff[i])
+    xdiff = np.diff(rl['carx'])
+    ydiff = np.diff(rl['cary'])
+    total_rl = 0
+    y_rl = 0
+    for i in range(len(xdiff)):
+        total_rl += np.sqrt(xdiff[i] ** 2 + ydiff[i] ** 2)
+        y_rl += np.abs(ydiff[i])
+    return total_ipg, total_rl, y_ipg, y_rl
 
 def plot_trajectory(cones, traj, ipg, rl):
     plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='red')
 #    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
-    plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue')
-    plt.plot(rl['carx'], rl['cary'], label="RL")
+    plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=3)
+    plt.plot(rl['carx'], rl['cary'], label="RL", linewidth=3)
 #    plt.axis("equal")
     plt.legend()
     plt.show()

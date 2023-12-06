@@ -76,7 +76,7 @@ class Data:
                              self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext])
         if self.road_type == "DLC":
             closet_cones = self.get_cones_rel(0).flatten()
-            return np.concatenate((car_data, lookahead_traj_rel, closet_cones))
+            return np.concatenate((car_data, lookahead_traj_rel))
         else:
             return np.concatenate((car_data, lookahead_traj_rel))
 

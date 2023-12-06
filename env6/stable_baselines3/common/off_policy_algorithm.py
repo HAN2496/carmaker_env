@@ -345,6 +345,7 @@ class OffPolicyAlgorithm(BaseAlgorithm):
                 num_pretrain_steps += self.env.num_envs
 
             print("Pretraining Finished.")
+            input("Press Enter to Start Learning")
 
         while self.num_timesteps < total_timesteps:
             rollout = self.collect_rollouts(
