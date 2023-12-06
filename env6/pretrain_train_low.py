@@ -50,9 +50,9 @@ def make_env(rank,road_type, seed=0):
 
 def main():
     road_type = "DLC"
-    comment = "rws_pretrain_1M"
-    buffer_size = 10 * 10000
-    pretrain_steps = 1000 * 1000
+    comment = "rws_pretrain_50K"
+    buffer_size = 1 * 10000
+    pretrain_steps = 50 * 1000
     num_proc = 2
 
     prefix = road_type + "/" + comment
@@ -98,7 +98,7 @@ def main():
     model.replay_buffer = replay_buffer
 
     #학습시작
-    model.learn(total_timesteps=300 * 10000, callback=bestRewardCallback, pretrain_steps=pretrain_steps)
+    model.learn(total_timesteps=10 * 10000, callback=bestRewardCallback, pretrain_steps=pretrain_steps)
     model.save(f"models/{prefix}_last.pkl")
 
 if __name__ == '__main__':
