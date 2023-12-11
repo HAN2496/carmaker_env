@@ -71,7 +71,7 @@ def init_car_pos(road_type):
     if road_type == "CRC":
         return np.array([2.36088498, -5.5, 13.8889])
     elif road_type == "DLC":
-        return np.array([2.9855712, -10, 13.8889])
+        return np.array([2.9855712, -10, 13.8889 * 7/5])
     elif road_type == "SLALOM2" or "SLALOM":
         return np.array([2.9855712, -25.0, 13.8889])
     elif road_type == "UTurn":

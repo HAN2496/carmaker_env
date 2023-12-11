@@ -23,7 +23,7 @@ print("Waiting for connection...", TCP_PORT)
 conn, addr = s.accept()
 print("Connection from:", addr)
 time.sleep(2)
-columns=['num', 'Time', 'traj_tx', 'traj_ty']
+columns=['Time', 'traj_tx', 'traj_ty', 'num']
 lst=[]
 
 i=0

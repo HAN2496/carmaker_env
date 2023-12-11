@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point, LineString
 
 CONER = 0.2
-CARWIDTH = 1.8
-CARLENGTH = 4
+CARWIDTH = 1.975
+CARLENGTH = 4.94
 DIST_FROM_AXIS = (CARWIDTH + 1) / 2 + CONER
 XSIZE, YSZIE = 10, 10
 

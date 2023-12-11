@@ -65,10 +65,10 @@ def main():
     """
 
     road_type = "DLC"
-    comment = "rws"
+    comment = "rws_70kph"
     explanation = "carmaker env low"
 
-    num_proc = 5
+    num_proc = 2
     naming = f"{comment}_low"
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')
