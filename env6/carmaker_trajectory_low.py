@@ -8,6 +8,8 @@ class Trajectory:
         self.low = low
         self._init_traj()
         self.end_point = []
+        self.section = 0
+
     def _init_traj(self):
         if self.low:
             self.arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
@@ -60,6 +62,17 @@ class Trajectory:
         if show:
             plt.legend()
             plt.show()
+
+    def check_section_total(self, carx, cary):
+        if self.section == 0 and carx > 150:
+            self.section = 1
+        elif self.section == 1 and carx > 211:
+            self.section = 2
+        elif self.section == 2 and carx > 350:
+            self.section = 3
+        elif self.section == 3 and carx > 350 + 15:
+            self.section = 4
+
 
 if __name__ == "__main__":
     road_type, low = "DLC", False
