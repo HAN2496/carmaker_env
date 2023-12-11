@@ -8,21 +8,27 @@ CONER = 0.2
 CARWIDTH, CARLENGTH = 1.8, 4
 
 def plot_trajectory_each(cones, traj, ipg, rl, ipg_col, rl_col):
+    plt.figure(figsize=(10,6))
     plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='orange', linewidth=3)
     plt.scatter(ipg_col[:, 0], ipg_col[:, 1], color='red', linewidth=3)
-    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='black')
+    plt.plot(traj[:-3500, 0], traj[:-3500, 1], label="Trjaectory", color='black')
     plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=3)
+    plt.xlabel("m")
+    plt.ylabel("m")
+    plt.title("IPG Trajectory")
     plt.legend()
     plt.show()
+
+    plt.figure(figsize=(10,6))
     plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='orange', linewidth=3)
     if rl_col.size > 0:
         plt.scatter(rl_col[:, 0], rl_col[:, 1], color='red', linewidth=3)
-    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='black')
-    plt.plot(rl['carx'], rl['cary'], label='RL', linewidth=3)
+    plt.plot(traj[:-3500, 0], traj[:-3500, 1], label="Trjaectory", color='black')
+    plt.plot(rl['carx'], rl['cary'], label='RL', color='blue', linewidth=3)
 #    plt.axis("equal")
     plt.xlabel("m")
     plt.ylabel("m")
-    plt.title("Trajectory")
+    plt.title("RL (rws not applied) Trajectory")
     plt.legend()
     plt.show()
 
@@ -52,8 +58,8 @@ titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "Car p
 
 
 #그래프 플롯
-plot_multiple(compare_keys, titles, ['ipg', 'rl'], ipg_rl, rl)
-plot_trajectory(cones, traj, ipg_rl, rl, 'RL')
+#plot_multiple(compare_keys, titles, ['ipg', 'rl'], ipg_rl, rl)
+#plot_trajectory(cones, traj, ipg_rl, rl, 'RL')
 
 #충돌 콘 플롯
 ipg_collision = np.array(check_collision(cones, ipg_rl))
