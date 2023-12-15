@@ -64,6 +64,21 @@ def create_DLC_cone_arr():
 
     return np.array(cones)
 
+def create_total_line():
+    upper_arr1 = np.array([(0, -8.885 - CONER), (62, -8.885 - CONER), (62, -5.085 - CONER),
+                       (99, -5.085 - CONER), (99, -8.885 - CONER), (200, -8.85 - CONER)])
+    lower_arr1 = np.array([(0, -11.115 + CONER), (75.5, -11.115 + CONER), (75.5, -7.885 + CONER),
+                       (86.5, -7.885 + CONER), (86.5, -11.885 + CONER), (200, -11.885 + CONER)])
+    straight_dist = (CARWIDTH * 1.1 + 0.25) / 2
+    upper_arr2 = np.array([[0, -25 + straight_dist], [85, -25 + straight_dist]] + \
+                      [[100 + 30 * i, SLALOM2_Y - (i % 2 - 1) * 3 - 2 * (i % 2 - 0.5) * np.sqrt(2) * CONER] for i in range(10)] + \
+                      [[400, -25 + straight_dist], [550, -25 + straight_dist]])
+    lower_arr2 = np.array([[x, y - 2 * straight_dist] for x, y in upper_arr2])
+
+    upper_arr = np.vstack((upper_arr1, upper_arr2))
+    lower_arr = np.vstack((lower_arr1, lower_arr2))
+    return upper_arr, lower_arr
+
 """
 DATA 관련 함수들
 """
@@ -147,3 +162,6 @@ def calculate_dev_low(car_pos, traj_data):
 
     devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
     return np.array([devDist, devAng])
+
+def find_section(carx, cary):
+    pass

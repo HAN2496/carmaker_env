@@ -22,6 +22,8 @@ class Cone:
             y_middle = SLALOM2_Y
             self.arr = create_SLALOM_cone_arr(y_middle)
             self.shape = self.create_cone_shape()
+        elif self.road_type == "Total":
+            pass
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM or SLALOM2")
     def create_cone_shape(self):
@@ -51,6 +53,7 @@ class Lane:
     def __init__(self, road_type):
         self.road_type = road_type
         self.create_lane()
+        self.plot()
     def create_lane(self):
         if self.road_type == "DLC":
             upper_arr = np.array([(0, -8.885 - CONER), (62, -8.885 - CONER), (62, -5.085 - CONER),
@@ -64,7 +67,8 @@ class Lane:
                               [[100 + 30 * i, SLALOM2_Y - (i % 2 - 1) * 3 - 2 * (i % 2 - 0.5) * np.sqrt(2) * CONER] for i in range(10)] + \
                               [[400, -25 + straight_dist], [550, -25 + straight_dist]])
             lower_arr = np.array([[x, y - 2 * straight_dist] for x, y in upper_arr])
-
+        elif self.road_type == "Total":
+            upper_arr, lower_arr = create_total_line()
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM2")
 
@@ -98,6 +102,8 @@ class Road:
             self.create_road_DLC()
         elif self.road_type == "SLALOM2":
             self.create_road_SLALOM2()
+        elif self.road_type == "Total":
+            self.create_road_Total()
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM2")
         self.shape = self.create_road_shape(self.length, self.width)
@@ -111,6 +117,9 @@ class Road:
         self.length = 550
         self.width = SLALOM2_Y * 2
 
+    def create_road_Total(self):
+        self.length = 550
+        self.width = SLALOM2_Y * 2
     def create_road_shape(self, x, y):
         return Polygon([(0, 0), (x, 0), (x, y), (0, y)])
 
@@ -177,7 +186,7 @@ class Car:
 
 
 if __name__ == "__main__":
-    road_type = "SLALOM2"
+    road_type = "Total"
     cone = Cone(road_type=road_type)
     lane = Lane(road_type=road_type)
     road = Road(road_type=road_type)
