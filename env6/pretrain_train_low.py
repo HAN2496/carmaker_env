@@ -50,8 +50,8 @@ def make_env(rank,road_type, seed=0):
 
 def main():
     road_type = "DLC"
-    comment = "rws_pretrain_50K"
-    buffer_size = 1 * 10000
+    comment = "buffer10k_pretrain50k_learn10k"
+    buffer_size = 10 * 1000
     pretrain_steps = 50 * 1000
     num_proc = 2
 

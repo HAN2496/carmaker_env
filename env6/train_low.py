@@ -65,7 +65,7 @@ def main():
     """
 
     road_type = "DLC"
-    comment = "rws_70kph"
+    comment = "rws"
     explanation = "carmaker env low"
 
     num_proc = 2
