@@ -262,7 +262,7 @@ if __name__ == "__main__":
     road_type, show = "DLC", True
     data = Data(road_type=road_type, env_num=0, show=show)
     #data.test(100, -10)
-    print(data.get_cones_rel([-3, 2]))
+    print(np.size(data.manage_state_low()))
     data.plot()
 
     running = True
@@ -270,6 +270,7 @@ if __name__ == "__main__":
     duration = 10  # 렌더링을 실행할 시간(초)
 
 
+    """
     pos = 2
     while running:
         data.test(pos, -10)
@@ -324,4 +325,4 @@ if __name__ == "__main__":
         pos += 1
 
     pygame.quit()
-
+    """

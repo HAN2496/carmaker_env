@@ -120,34 +120,32 @@ class CarMakerEnvB(gym.Env):
             self.sim_started = True
 
 
-        for _ in range(10):
+        #print("In while")
+        #print(f"In while: {round(self.traj_end[0], 2)}, {round(self.data.carx, 2)}")
+        self.low_level_obs = self.data.manage_state_low()
+        steering_changes = self.low_level_model.predict(self.low_level_obs)
+        action_to_sim = np.append(self.data.test_num, steering_changes[0])
 
-            #print("In while")
-            #print(f"In while: {round(self.traj_end[0], 2)}, {round(self.data.carx, 2)}")
-            self.low_level_obs = self.data.manage_state_low()
-            steering_changes = self.low_level_model.predict(self.low_level_obs)
-            action_to_sim = np.append(self.data.test_num, steering_changes[0])
+        # Action 값 전송 / State 값 수신
+        self.action_queue.put(action_to_sim)
+        low_state = self.state_queue.get()
 
-            # Action 값 전송 / State 값 수신
-            self.action_queue.put(action_to_sim)
-            low_state = self.state_queue.get()
+        if self.env_num == 0:
+            self.data.render()
 
-            if self.env_num == 0:
-                self.data.render()
-
-            if low_state == False:
-                #print("DONE: in while")
+        if low_state == False:
+            #print("DONE: in while")
+            state = self._initial_state()
+            done = True
+            break
+        else:
+            low_state = np.array(low_state)  # 어레이 변환
+            self.data.put_simul_data(low_state)
+            if b_done:
+                #print("DONE: in Else")
                 state = self._initial_state()
                 done = True
                 break
-            else:
-                low_state = np.array(low_state)  # 어레이 변환
-                self.data.put_simul_data(low_state)
-                if b_done:
-                    #print("DONE: in Else")
-                    state = self._initial_state()
-                    done = True
-                    break
 
         #print("Out while")
 
