@@ -13,14 +13,14 @@ from stable_baselines3 import SAC
 
 if __name__ == '__main__':
     road_type = "DLC"
-    data_name = 'RL'
-    comment = "rws"
+    data_name = 'pretrain'
+    comment = "buffer10k_pretrain50k_learn10k"
     prefix = data_name + "_" + comment
 
 
     env = CarMakerEnv(port=9999, road_type=road_type, use_carmaker=True, env_num=0)
 #    model = SAC.load(f"best_model/1519999_Check_model.pkl", env=env)
-    model = SAC.load(f"best_model/DLC_best_model.pkl", env=env)
+    model = SAC.load(f"best_model/DLC_buffer10k_pretrain50k_learn10k.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()[0]
