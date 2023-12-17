@@ -14,12 +14,18 @@ from stable_baselines3 import SAC
 if __name__ == '__main__':
     road_type = "DLC"
     data_name = 'pretrain'
-    comment = "buffer10k_pretrain100k_learn10k"
+    buffer_size = 10000
+    pretrain_steps = 50
+    learn_steps = 100
+    comment = f"buffer{buffer_size}k_pretrain{pretrain_steps}k_learn{learn_steps}k"
+    buffer_size = buffer_size * 1000
+    pretrain_steps = pretrain_steps * 1000
+    learn_steps = learn_steps * 1000
     prefix = data_name + "_" + comment
 
 
     env = CarMakerEnv(port=9999, road_type=road_type, use_carmaker=True, env_num=0)
-    model = SAC.load(f"best_model/pretrain/buffer10k_pretrain100k_learn10k/49899_best_model.pkl", env=env)
+    model = SAC.load(f"models/DLC/{comment}/25099_best_model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()[0]

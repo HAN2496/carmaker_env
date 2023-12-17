@@ -53,7 +53,7 @@ class Lane:
     def __init__(self, road_type):
         self.road_type = road_type
         self.create_lane()
-        self.plot()
+
     def create_lane(self):
         if self.road_type == "DLC":
             upper_arr = np.array([(0, -8.885 - CONER), (62, -8.885 - CONER), (62, -5.085 - CONER),
