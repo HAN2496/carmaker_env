@@ -207,6 +207,9 @@ class SAC(OffPolicyAlgorithm):
         # Update learning rate according to lr schedule
         self._update_learning_rate(optimizers)
 
+        #MyCode
+        self.log_gradient_steps(self.learning_rate)
+
         ent_coef_losses, ent_coefs = [], []
         actor_losses, critic_losses = [], []
 
@@ -294,6 +297,22 @@ class SAC(OffPolicyAlgorithm):
         self.logger.record("train/critic_loss", np.mean(critic_losses))
         if len(ent_coef_losses) > 0:
             self.logger.record("train/ent_coef_loss", np.mean(ent_coef_losses))
+
+    def log_gradient_steps(self, learning_rate):
+        import os
+        import csv
+        file_path = 'datafiles/gradient_steps.csv'
+        if not os.path.exists(file_path):
+                # 파일이 없으면 새 파일을 생성하고 헤더를 추가
+                with open(file_path, 'w', newline='') as file:
+                    writer = csv.writer(file)
+                    writer.writerow(["Number"])
+        else:
+            # Append the number to the existing file
+            with open(file_path, 'a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([learning_rate])
+
 
     def learn(
         self: SelfSAC,

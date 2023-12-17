@@ -137,7 +137,6 @@ class CarMakerEnvB(gym.Env):
             #print("DONE: in while")
             state = self._initial_state()
             done = True
-            break
         else:
             low_state = np.array(low_state)  # 어레이 변환
             self.data.put_simul_data(low_state)
@@ -145,7 +144,6 @@ class CarMakerEnvB(gym.Env):
                 #print("DONE: in Else")
                 state = self._initial_state()
                 done = True
-                break
 
         #print("Out while")
 
