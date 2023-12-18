@@ -13,7 +13,7 @@ if __name__ == '__main__':
     filtered_files = [f for f in files if f.endswith('.pkl')]
     filtered_files = [f for f in filtered_files if f != 'model.pkl']
     filtered_files.sort(key=lambda x: int(x.split('_')[0]))
-    filtered_files = [filtered_files[i] for i in range(len(filtered_files)) if i % 10 != 0]
+    filtered_files = [filtered_files[i] for i in range(len(filtered_files)) if i % 1000 != 0]
 
     road_type = "DLC"
     data_name = 'rl'

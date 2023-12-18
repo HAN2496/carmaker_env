@@ -50,10 +50,10 @@ def make_env(rank,road_type, seed=0):
 
 def main():
     road_type = "DLC"
-    buffer_size = 100
-    pretrain_steps = 500
-    learn_steps = 10000
-    comment = f"buffer{buffer_size}k_pretrain{pretrain_steps}k_learn{learn_steps}k"
+    buffer_size = 685
+    pretrain_steps = 100
+    learn_steps = 100
+    comment = f"various_expert_buffer{buffer_size}k_pretrain{pretrain_steps}k_learn{learn_steps}k"
     buffer_size = buffer_size * 1000
     pretrain_steps = pretrain_steps * 1000
     learn_steps = learn_steps * 1000
