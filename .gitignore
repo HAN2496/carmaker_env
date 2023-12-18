@@ -3,4 +3,3 @@ __pycache__/
 .idea/
 train.py
 Log.txt
-*.npz
