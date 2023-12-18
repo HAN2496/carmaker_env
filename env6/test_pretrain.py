@@ -14,8 +14,8 @@ from stable_baselines3 import SAC
 if __name__ == '__main__':
     road_type = "DLC"
     data_name = 'pretrain'
-    buffer_size = 10000
-    pretrain_steps = 50
+    buffer_size = 100
+    pretrain_steps = 500
     learn_steps = 100
     comment = f"buffer{buffer_size}k_pretrain{pretrain_steps}k_learn{learn_steps}k"
     buffer_size = buffer_size * 1000
