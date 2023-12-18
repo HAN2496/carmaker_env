@@ -207,8 +207,6 @@ class SAC(OffPolicyAlgorithm):
         # Update learning rate according to lr schedule
         self._update_learning_rate(optimizers)
 
-        #MyCode
-        self.log_gradient_steps(self.learning_rate)
 
         ent_coef_losses, ent_coefs = [], []
         actor_losses, critic_losses = [], []

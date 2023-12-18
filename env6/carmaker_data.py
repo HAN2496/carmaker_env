@@ -66,9 +66,11 @@ class Data:
         self.get_lookahead_traj_abs()
         self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
 
+        """
         if self.test_num % 150 == 0 and self.env_num == 0:
             print(f"Time: {round(self.time, 2)}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}]"
                   f"Reward : [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
+        """
 
     def manage_state_low(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()
