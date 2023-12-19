@@ -4,19 +4,22 @@ from common_functions import *
 import math
 import bezier
 class Trajectory:
-    def __init__(self, road_type, low=True):
+    def __init__(self, road_type, carx, cary, distances, low=True):
         self.road_type = road_type
         self.section = 0
         self.low = low
+        self.carx, self.cary = carx, cary
+        self.distances = distances
         self.start_point = []
         self.end_point = []
         self._init_traj()
 
     def _init_traj(self):
-        print('here')
         if self.low:
             self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
                              ["traj_tx", "traj_ty"]].values
+            self.xy_diff = np.linalg.norm(self.xy - np.array([self.carx, self.cary]))
+            self.xy = self.xy[self.xy_diff < self.distances[-1]]
         else:
             x, y = init_car_pos(self.road_type)
             self.b = BezierCurve([x, y, 0], dt=0.02)
@@ -25,7 +28,7 @@ class Trajectory:
             self.end_point = self.b.get_xy_point(1)
             self.xy = self.b.get_xy_points()
 
-
+    def manage_traj(self):
     def update_traj(self, car_pos, action):
         #print("Update")
         carx, cary, caryaw = car_pos
@@ -60,6 +63,8 @@ class Trajectory:
         return np.array(result_points)
 
     def find_traj_points(self, x, y, distances):
+        if self.road_type == "Ramp":
+            return self.find_lookahead_traj_ramp(x, y, distances)
         points = []
         for distance in distances:
             x_diff = np.abs(self.xy[:, 0] - (x + distance))
@@ -68,6 +73,8 @@ class Trajectory:
         return np.array(points)
 
     def calculate_dev(self, carx, cary, caryaw):
+        if self.road_type == "Ramp":
+            return self.calculate_dev_ramp(carx, cary, caryaw)
         if self.low:
             arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
             return calculate_dev_low([carx, cary, caryaw], arr)

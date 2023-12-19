@@ -1,16 +1,11 @@
-import os
 import numpy as np
 
-def list_files(directory):
-    return [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+# 예시 데이터셋 생성
+data = np.array([[1, 3], [2, 4], [3, 7], [4, 8]])
 
-directory = r"models\DLC\rws_low"
-files = list_files(directory)
-
-filtered_files = [f for f in files if f.endswith('.pkl')]
-filtered_files = [f for f in filtered_files if f != 'model.pkl']
-filtered_files.sort(key=lambda x: int(x.split('_')[0]))
-filtered_files2 = [filtered_files[i] for i in range(len(filtered_files)) if (i > 100 and i % 50 == 0) or (i < 100 and i % 10 == 0)]
-print(np.size(filtered_files2))
-for i in filtered_files2:
-    print(i)
+# 차이 계산
+differences = data[:, 1] - data[:, 0]
+print(differences)
+# k번째와 k-1번째 요소 간 차이 계산
+differences = np.diff(data, axis=0)
+print(differences)

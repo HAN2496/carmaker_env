@@ -66,7 +66,7 @@ class Data:
         self.devDist, self.devAng = 0, 0
         self.get_lookahead_traj_abs()
         self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
-        self.traj.check_section_ramp(self.carx, self.cary, self.carz)
+
         """
         if self.test_num % 150 == 0 and self.env_num == 0:
             print(f"Time: {round(self.time, 2)}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}]"
@@ -113,8 +113,6 @@ class Data:
         if self.road_type == "DLC":
             cones_rel = self.get_cones_rel(pos=[0, 4])
             return np.concatenate((car_data, cones_rel, lookahead_traj_rel))
-        elif self.road_type == "Ramp":
-            return np.concatenate((car_data, lookahead_traj_rel))
         else:
             return np.concatenate((car_data, lookahead_traj_rel))
 
@@ -147,7 +145,7 @@ class Data:
 
     def get_lookahead_traj_abs(self):
         lookahead_sight = [2 * i for i in range(5)]
-        self.lookahead_traj_abs = self.traj.find_traj_points(self.carx, lookahead_sight)
+        self.lookahead_traj_abs = self.traj.find_traj_points(self.carx, self.cary, lookahead_sight)
 
     def get_lookahead_traj_rel(self):
         lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], self.lookahead_traj_abs).flatten()

@@ -173,6 +173,49 @@ def calculate_dev_low(car_pos, traj_data):
     devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
     return np.array([devDist, devAng])
 
+def find_lookahead_traj_ramp(x, y, distances, section, arr):
+    lookahead_traj_abs = []
+    if section == 0:
+        tmp_traj_points = []
+        for dist in distances:
+            tmp_traj_points.append([x + dist, y])
+        for idx, (traj_x, traj_y) in enumerate(tmp_traj_points):
+            if traj_x < 610:
+                lookahead_traj_abs.append([traj_x, -12.25])
+            else:
+                x_diff = np.abs(arr[:, 0] - traj_x)
+                nearest_idx = np.argmin(x_diff)
+                lookahead_traj_abs.append(arr[nearest_idx].tolist())
+    elif section == 2:
+        tmp_traj_points = []
+        for dist in distances:
+            tmp_traj_points.append([x, y + dist])
+        for idx, (traj_x, traj_y) in enumerate(tmp_traj_points):
+            if traj_y < -140:
+                lookahead_traj_abs.append([650.25, traj_y])
+            else:
+                y_diff = np.abs(arr[:, 1] - traj_y)
+                nearest_idx = np.argmin(y_diff)
+                lookahead_traj_abs.append(arr[nearest_idx].tolist())
+    else:
+        distances = np.array(distances)
+        lookahead_traj_abs = []
+        min_idx = np.argmin(np.sum((arr - np.array([x, y])) ** 2, axis=1))
+        for dist in distances:
+            lookahead_idx = min_idx
+            total_distance = 0.0
+            while total_distance < dist and lookahead_idx + 1 < len(arr):
+                total_distance += np.linalg.norm(arr[lookahead_idx + 1] - arr[lookahead_idx])
+                lookahead_idx += 1
+            if lookahead_idx < len(arr):
+                lookahead_traj_abs.append(arr[lookahead_idx])
+            else:
+                lookahead_traj_abs.append(arr[-1])
+    print(lookahead_traj_abs)
+    return np.array(lookahead_traj_abs)
+xy = pd.read_csv(f"datafiles/Ramp/datasets_traj_ramping.csv").loc[:,
+                             ["traj_tx", "traj_ty"]].values
+find_lookahead_traj_ramp(750, 1, [0, 2, 4, 6, 8], 0, xy)
 def dlc_interpolation(pos1, pos2, x):
     x0, y0 = pos1
     x1, y1 = pos2
