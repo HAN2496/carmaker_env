@@ -16,10 +16,16 @@ class Trajectory:
 
     def _init_traj(self):
         if self.low:
-            self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
+            self.total_traj = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
                              ["traj_tx", "traj_ty"]].values
             self.xy_diff = np.linalg.norm(self.xy - np.array([self.carx, self.cary]))
-            self.xy = self.xy[self.xy_diff < self.distances[-1]]
+            init_xy = []
+            dist = 0
+            for idx, diff in enumerate(self.xy_diff):
+                if diff <= self.distances[-1]:
+                    init_xy.append(self.total_traj[idx])
+                    dist += diff
+            self.xy = init_xy
         else:
             x, y = init_car_pos(self.road_type)
             self.b = BezierCurve([x, y, 0], dt=0.02)
@@ -29,6 +35,7 @@ class Trajectory:
             self.xy = self.b.get_xy_points()
 
     def manage_traj(self):
+        pass
     def update_traj(self, car_pos, action):
         #print("Update")
         carx, cary, caryaw = car_pos

@@ -89,6 +89,18 @@ def create_total_line():
     lower_arr = np.vstack((lower_arr1, lower_arr2))
     return upper_arr, lower_arr
 
+def create_Ramp_line():
+    arr = pd.read_csv(f"datafiles/Ramp/datasets_traj.csv").loc[:,
+                             ["traj_tx", "traj_ty"]].values
+    ang_arr = []
+    for idx, (x, y) in enumerate(arr):
+        if idx == 0:
+            dx, dy = 0, 0
+        else:
+            dx = arr[idx][0] - arr[idx - 1][0]
+            dy = arr[idx][1] - arr[idx - 1][1]
+            path_ang = np.mod(np.arctan2(dy, dx), 2 * np.pi)
+
 """
 DATA 관련 함수들
 """

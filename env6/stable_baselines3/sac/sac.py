@@ -232,8 +232,7 @@ class SAC(OffPolicyAlgorithm):
                 ent_coef_loss = -(self.log_ent_coef * (log_prob + self.target_entropy).detach()).mean()
                 ent_coef_losses.append(ent_coef_loss.item())
             else:
-                ent_coef = self.ent_coef_tensor
-
+                ent_coef = self.ent_coef_tensorx
             ent_coefs.append(ent_coef.item())
 
             # Optimize entropy coefficient, also called

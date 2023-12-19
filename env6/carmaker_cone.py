@@ -69,6 +69,7 @@ class Lane:
             lower_arr = np.array([[x, y - 2 * straight_dist] for x, y in upper_arr])
         elif self.road_type == "Total":
             upper_arr, lower_arr = create_total_line()
+        elif self.road_type == "Ramp":
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM2")
 
