@@ -31,7 +31,7 @@ class Data:
     def _init(self):
         x, y, carv = init_car_pos(road_type=self.road_type)
         arr = [
-            0, 0, x, y, 0, carv,
+            0, 0, x, y, 0, 0, carv,
             0, 0, 0,
             0, 0,
             0, 0, 0, 0, 0, 0
@@ -53,19 +53,20 @@ class Data:
         self.simul_data = arr
         self.test_num += 1
         self.time = arr[1]
-        self.carx, self.cary, self.caryaw, self.carv = arr[2:6]
-        self.steerAng, self.steerVel, self.steerAcc = arr[6:9]
-        self.alHori, self.roll = arr[9:11]
-        self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext = arr[11:]
+        self.carx, self.cary, self.carz, self.caryaw, self.carv = arr[2:7]
+        self.steerAng, self.steerVel, self.steerAcc = arr[7:10]
+        self.alHori, self.roll = arr[10:12]
+        self.rl, self.rr, self.fl, self.fr, self.rl_ext, self.rr_ext = arr[12:]
 
-        self.steer = arr[6:9]
-        self.wheel_steer = arr[11:15]
-        self.wheel_steer_ext = arr[15:]
+        self.steer = arr[7:10]
+        self.wheel_steer = arr[12:16]
+        self.wheel_steer_ext = arr[16:]
 
-        self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
+#        self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
+        self.devDist, self.devAng = 0, 0
         self.get_lookahead_traj_abs()
         self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
-
+        self.traj.check_section_ramp(self.carx, self.cary, self.carz)
         """
         if self.test_num % 150 == 0 and self.env_num == 0:
             print(f"Time: {round(self.time, 2)}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}]"
@@ -112,6 +113,8 @@ class Data:
         if self.road_type == "DLC":
             cones_rel = self.get_cones_rel(pos=[0, 4])
             return np.concatenate((car_data, cones_rel, lookahead_traj_rel))
+        elif self.road_type == "Ramp":
+            return np.concatenate((car_data, lookahead_traj_rel))
         else:
             return np.concatenate((car_data, lookahead_traj_rel))
 
@@ -235,6 +238,8 @@ class Data:
 
         pygame.display.flip()
 
+    def log(self):
+        pass
 
     def plot(self, show=True):
         self.road.plot(show=False)

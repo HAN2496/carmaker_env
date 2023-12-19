@@ -10,7 +10,7 @@ import random
 
 TCP_IP = '127.0.0.1'
 TCP_PORT = 80
-recieve_num = 4
+recieve_num = 8
 BUFFER_SIZE = 8 * recieve_num
 
 
@@ -23,7 +23,7 @@ print("Waiting for connection...", TCP_PORT)
 conn, addr = s.accept()
 print("Connection from:", addr)
 time.sleep(2)
-columns=['Time', 'traj_tx', 'traj_ty', 'num']
+columns=['Time', 'x', 'y', 'z', 'traj_tx', 'traj_ty', 'traj_tz', 'num']
 lst=[]
 
 i=0

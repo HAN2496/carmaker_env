@@ -52,7 +52,7 @@ class CarMakerEnv(gymnasium.Env):
         sim_action_num = env_action_num + 1
 
         env_obs_num = np.size(self.data.manage_state_low())
-        sim_obs_num = 17
+        sim_obs_num = 18
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(env_action_num,), dtype=np.float32)
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(env_obs_num,), dtype=np.float32)
@@ -139,7 +139,7 @@ class CarMakerEnv(gymnasium.Env):
 
         # 리워드 계산
         reward = self.data.manage_reward_low()
-        info_key = np.array(["num", "time", "x", "y", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
+        info_key = np.array(["num", "time", "x", "y", "z", "yaw", "carv", "ang", "vel", "acc", "devDist", "devAng",
                              "alHori", "roll", "rl", "rr", "fl", "fr"])
         info = {key: value for key, value in zip(info_key, self.data.simul_data)}
         if self.show and self.env_num == 0:

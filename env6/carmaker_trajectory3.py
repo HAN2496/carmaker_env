@@ -6,6 +6,7 @@ import bezier
 class Trajectory:
     def __init__(self, road_type, low=True):
         self.road_type = road_type
+        self.section = 0
         self.low = low
         self.start_point = []
         self.end_point = []
@@ -93,6 +94,21 @@ class Trajectory:
             plt.axis('equal')
             plt.show()
 
+    def find_lookahead_traj_ramp(self, x, y, distances):
+        if self.section == 0 and x < 590:
+            return
+
+    def check_section_ramp(self, x, y, z):
+        if x < 600:
+            self.section = 0
+        elif abs(x - 650.25) <= 5.25 and z <= -1:
+            self.section = 1
+
+    def calculate_dev_ramp(self, x, y, yaw):
+        if self.section == 0:
+            return np.array([y+12.25, yaw])
+        elif self.section == 1:
+            return np.array([x - 650.25, yaw  ])
 if __name__ == "__main__":
     road_type, low = "DLC", True
     traj = Trajectory(road_type=road_type, low=low)

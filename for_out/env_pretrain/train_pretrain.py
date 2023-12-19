@@ -51,8 +51,8 @@ def main():
     road_type = "DLC"
     comment = "buffer10k_pretrain50k_learn10k"
     buffer_size = 10 * 1000
-    pretrain_steps = 50 * 1000
-    num_proc = 2
+    pretrain_steps = 0
+    num_proc = 1
 
     prefix = road_type + "/" + comment
     args = Args(prefix=prefix, alg='sac')
