@@ -70,6 +70,7 @@ class Lane:
         elif self.road_type == "Total":
             upper_arr, lower_arr = create_total_line()
         elif self.road_type == "Ramp":
+            pass
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM2")
 

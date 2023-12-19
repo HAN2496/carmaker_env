@@ -12,15 +12,15 @@ import matplotlib.pyplot as plt
 from stable_baselines3 import SAC
 
 if __name__ == '__main__':
-    road_type = "Ramp"
-    data_name = 'IPG'
+    road_type = "DLC"
+    data_name = 'rl'
     prefix = data_name
     #comment = "various_expert_buffer100k_pretrain50k_learn100k"
     #prefix = data_name + "_" + comment
 
 
-    env = CarMakerEnv(port=9999, road_type="DLC", simul_path='test_IPG', use_carmaker=True, env_num=0)
-    model = SAC.load(f"models/DLC/various_expert_buffer100k_pretrain50k_learn100k/47999_best_model.pkl", env=env)
+    env = CarMakerEnv(port=9999, road_type="DLC", use_carmaker=True, env_num=0)
+    model = SAC.load(f"best_model/DLC_buffer100k_pretrain500k_learn10000k.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()[0]

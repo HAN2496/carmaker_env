@@ -16,16 +16,16 @@ class Trajectory:
 
     def _init_traj(self):
         if self.low:
-            self.total_traj = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
+            self.total_xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
                              ["traj_tx", "traj_ty"]].values
-            self.xy_diff = np.linalg.norm(self.xy - np.array([self.carx, self.cary]))
-            init_xy = []
-            dist = 0
-            for idx, diff in enumerate(self.xy_diff):
-                if diff <= self.distances[-1]:
-                    init_xy.append(self.total_traj[idx])
-                    dist += diff
-            self.xy = init_xy
+            self.total_xy_diff = np.linalg.norm(np.diff(self.total_xy, axis=0), axis=1)
+            self.total_sign_diff = calculate_directions(self.total_xy)
+            self.xy_diff = np.array([self.total_xy_diff[0]])
+            self.xy = np.array([self.total_xy[0]])
+            self.xy_idx = 0
+            tmpx, tmpy = self.carx, self.cary
+            self.carx, self.cary = self.total_xy[0]
+            self.manage_traj([tmpx, tmpy], remove=False)
         else:
             x, y = init_car_pos(self.road_type)
             self.b = BezierCurve([x, y, 0], dt=0.02)
@@ -34,8 +34,35 @@ class Trajectory:
             self.end_point = self.b.get_xy_point(1)
             self.xy = self.b.get_xy_points()
 
-    def manage_traj(self):
-        pass
+    def manage_traj(self, car_after, remove=True):
+        car_afterx, car_aftery = car_after
+        delta = np.sqrt((car_after[0] - self.carx) ** 2 + (car_after[1] - self.cary) ** 2)
+        sign = calculate_directions([[self.carx, self.cary], [car_afterx, car_aftery]])
+        diff = 0
+        if sign * self.total_sign_diff[self.xy_idx] < 0:
+            for _ in enumerate(self.total_xy):
+                if self.xy_idx <= 0:
+                    pass
+                if diff <= delta:
+                    self.xy = np.vstack([self.total_xy[self.xy_idx], self.xy])
+                    self.xy_diff = np.append(self.total_xy_diff[self.xy_idx], self.xy_diff)
+                    if remove:
+                        self.xy = self.xy[:-2]
+                        self.xy_diff = self.xy_diff[:-2]
+                    self.xy_idx -= 1
+                    diff += self.total_xy_diff[self.xy_idx]
+        elif sign * self.total_sign_diff[self.xy_idx] > 0:
+            for _ in enumerate(self.total_xy):
+                if diff <= delta:
+                    self.xy = np.vstack([self.xy, self.total_xy[self.xy_idx]])
+                    self.xy_diff = np.append(self.xy_diff, self.total_xy_diff[self.xy_idx])
+                    if remove:
+                        self.xy = self.xy[1:]
+                        self.xy_diff = self.xy_diff[1:]
+                    self.xy_idx += 1
+                    diff += self.total_xy_diff[self.xy_idx]
+        self.carx = car_after[0]
+        self.cary = car_after[1]
     def update_traj(self, car_pos, action):
         #print("Update")
         carx, cary, caryaw = car_pos
@@ -134,7 +161,13 @@ class Trajectory:
             return calculate_dev_low([x, y, yaw], self.xy)
 
 if __name__ == "__main__":
-    road_type, low = "DLC", True
-    traj = Trajectory(road_type=road_type, low=low)
-    traj.plot()
+    road_type, low = "Ramp", True
+    carx, cary = 430, -12.25
+    distances = [0, 2, 4, 6, 8]
+    traj = Trajectory(road_type=road_type, carx=carx, cary=cary, distances=distances, low=low)
+    print(traj.xy)
+    carx, cary = 500, -12.25
+    #traj.manage_traj([carx, cary])
+    #print(traj.xy)
+    #traj.plot()
 
