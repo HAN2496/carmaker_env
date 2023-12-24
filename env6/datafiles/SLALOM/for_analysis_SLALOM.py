@@ -18,11 +18,11 @@ def load_data(type, comment=0):
 
     extracted = {}
     df = data['info']
-    extracted['time'] = df.loc[:, 'time'].values
-    extracted['ang'] = df.loc[:, 'ang'].values
-    extracted['vel'] = df.loc[:, 'vel'].values
-    extracted['acc'] = df.loc[:, 'acc'].values
-    extracted['alHori'] = df.loc[:, 'alHori'].values
+    extracted['time'] = df.loc[:, 'time'].values[:-1]
+    extracted['ang'] = df.loc[:, 'ang'].values[:-1]
+    extracted['vel'] = df.loc[:, 'vel'].values[:-1]
+    extracted['acc'] = df.loc[:, 'acc'].values[:-1]
+    extracted['alHori'] = df.loc[:, 'alHori'].values[:-1]
     extracted['carv'] = df.loc[:, "carv"].values[:-1]
     extracted['carx'] = df.loc[:, 'x'].values[:-1]
     extracted['cary'] = df.loc[:, "y"].values[:-1]
@@ -69,12 +69,12 @@ def get_value_or_interpolate(carx, carv, target_x):
     return linear_interpolation(carx[left_idx], carv[left_idx], carx[right_idx], carv[right_idx], target_x)
 
 def calc_performance(dataset, data_dict):
-
+    changeunit = 3.6
     time = data_dict['time'][-2]
     avg_carv = np.sum(np.abs(data_dict['carv'])) / time
 
-    initial_carv = get_value_or_interpolate(data_dict['carx'], data_dict['carv'], 50)
-    escape_carv = get_value_or_interpolate(data_dict['carx'], data_dict['carv'], 111)
+    initial_carv = get_value_or_interpolate(data_dict['carx'], data_dict['carv'], 100) * changeunit
+    escape_carv = get_value_or_interpolate(data_dict['carx'], data_dict['carv'], 370) * changeunit
 
     roll_rate = np.sum(np.abs(np.diff(data_dict['roll']))) / time
     yaw_rate = np.sum(np.abs(np.diff(data_dict["caryaw"]))) / time
@@ -88,10 +88,13 @@ def calc_performance(dataset, data_dict):
 def plot_trajectory(cones, traj, ipg, rl):
     plt.scatter(cones[:, 0], cones[:, 1], label='Cone', color='red')
 #    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
-    plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue')
-    plt.plot(rl['carx'], rl['cary'], label="RL")
+    plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=4)
+    plt.plot(rl['carx'], rl['cary'], label="mpc-rl", color='green', linewidth=4)
 #    plt.axis("equal")
     plt.legend()
+
+    plt.xlabel('m')
+    plt.ylabel('m')
     plt.show()
 
 def shape_car(carx, cary, caryaw):

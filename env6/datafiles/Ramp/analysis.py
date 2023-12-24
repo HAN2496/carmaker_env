@@ -8,17 +8,17 @@ CONER = 0.2
 CARWIDTH, CARLENGTH = 1.8, 4
 
 #수정하는 부분
-road_types = 'UTurn'
+road_types = 'Ramp'
 traj = pd.read_csv(f'datasets_traj.csv').loc[:, ["traj_tx", "traj_ty"]].values
 
 ipg = load_data('IPG', comment=0)
-rl = load_data('mpc', comment=0)
+rl = load_data('ramp_mpc', comment=0)
 labels = ['ipg', 'mpc']
 
 compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']
 titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "Car pos X", "Car pos Y", "Reward"]
 
-plot_multiple(compare_keys, titles, labels, ipg, rl)
+#plot_multiple(compare_keys, titles, labels, ipg, rl)
 plot_trajectory(traj, ipg, rl)
 
 tables = []

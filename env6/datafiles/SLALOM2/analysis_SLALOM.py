@@ -13,8 +13,8 @@ cones = np.array([[100 + 30 * i, -25] for i in range(10)])
 road_types = 'SLALOM2'
 traj = pd.read_csv(f'datasets_traj.csv').loc[:, ["traj_tx", "traj_ty"]].values
 
-ipg = load_data('IPG', comment='rws')
-rl = load_data('RL', comment='rws')
+ipg = load_data('ipg', comment=0)
+rl = load_data('mpcrl', comment='slalom')
 labels = ['ipg', 'rl']
 
 compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']

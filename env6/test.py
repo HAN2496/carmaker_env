@@ -13,17 +13,18 @@ from stable_baselines3 import SAC
 
 if __name__ == '__main__':
     road_type = "DLC"
-    data_name = 'rl'
+    data_name = 'rl_test'
     prefix = data_name
     #comment = "various_expert_buffer100k_pretrain50k_learn100k"
     #prefix = data_name + "_" + comment
-
+    #simul_path = "test_IPG"
 
     env = CarMakerEnv(port=9999, road_type="DLC", use_carmaker=True, env_num=0)
-    model = SAC.load(f"best_model/DLC_buffer100k_pretrain500k_learn10000k.pkl", env=env)
+    model = SAC.load(f"best_model/DLC_best_model.pkl", env=env)
     print("Model loaded.")
 
     obs = env.reset()[0]
+    print(f"obs size: {np.size(obs)}")
 
     action_lst = []
     reward_lst=[]

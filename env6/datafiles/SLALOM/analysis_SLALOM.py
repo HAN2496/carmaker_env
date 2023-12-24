@@ -11,10 +11,10 @@ cones = np.array([[100 + 30 * i, -10] for i in range(10)])
 
 #수정하는 부분
 road_types = 'SLALOM'
-traj = pd.read_csv(f'datasets_traj.csv.csv').loc[:, ["traj_tx", "traj_ty"]].values
+traj = pd.read_csv(f'datasets_traj.csv').loc[:, ["traj_tx", "traj_ty"]].values
 
-ipg = load_data('IPG', comment='env1')
-rl = load_data('RL', comment='env1')
+ipg = load_data('ipg', comment=0)
+rl = load_data('mpcrl', comment='slalom')
 labels = ['ipg', 'rl']
 
 compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']

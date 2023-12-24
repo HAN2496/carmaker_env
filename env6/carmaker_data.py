@@ -81,7 +81,9 @@ class Data:
             closet_cones = self.get_cones_rel(0).flatten()
             return np.concatenate((car_data, lookahead_traj_rel, closet_cones))
         else:
-            return np.concatenate((car_data, lookahead_traj_rel))
+            return np.zeros(22, )
+        #else:
+        #    return np.concatenate((car_data, lookahead_traj_rel))
 
     def manage_reward_low(self):
         dist_reward = abs(self.devDist) * 100
