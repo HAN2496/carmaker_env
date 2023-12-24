@@ -86,8 +86,9 @@ def calc_performance(dataset, data_dict):
 def plot_trajectory(traj, ipg, rl):
     plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
     plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=4)
-    plt.plot(rl['carx'], rl['cary'], label="mpc", color='red', linewidth=4)
+    plt.plot(rl['carx'], rl['cary'], label="mpc-rl", color='red', linewidth=4)
 #    plt.axis("equal")
+    plt.xlim([70, 90])
     plt.legend()
     plt.show()
 

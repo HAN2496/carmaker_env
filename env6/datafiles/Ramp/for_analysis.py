@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -8,7 +10,7 @@ import re
 CONER = 0.2
 CARWIDTH, CARLENGTH = 1.8, 4
 
-def load_data(type, comment=0):
+def load_data(type, comment=0, cut_start=0, cut_end = 0):
     data = {}
     if comment == 0:
         data['info'] = pd.read_csv(f'{type}_info.csv')
@@ -19,6 +21,13 @@ def load_data(type, comment=0):
 
     extracted = {}
     df = data['info']
+
+    if cut_start >0:
+        for x in df.loc[:, 'x'].values[:-1]:
+            if x > cut_start:
+                df = df[:, :cut_start]
+                break
+
     extracted['time'] = df.loc[:, 'time'].values
     extracted['ang'] = df.loc[:, 'ang'].values
     extracted['vel'] = df.loc[:, 'vel'].values
@@ -28,10 +37,15 @@ def load_data(type, comment=0):
     extracted['carx'] = df.loc[:, 'x'].values[:-1]
     extracted['cary'] = df.loc[:, "y"].values[:-1]
     extracted['caryaw'] = df.loc[:, "yaw"].values[:-1]
+    extracted['car_info'] = np.column_stack((extracted['carx'], extracted['cary'], extracted['caryaw']))
     extracted['roll'] = df.loc[:, "roll"].values[:-1]
 
     extracted['reward'] = data['reward']
+    plt.plot(extracted['alHori'])
+    plt.show()
+
     return extracted
+
 
 
 def plot_compare(x_data_list, title, idx, labels, subplot_shape):
@@ -78,18 +92,20 @@ def calc_performance(dataset, data_dict):
     yaw_rate = np.sum(np.abs(np.diff(data_dict["caryaw"]))) / time
     maximum_lateral_acc = np.max(np.abs(data_dict['alHori']))
     total_reward = np.sum(data_dict['reward'])
-
-    return [dataset, time,  roll_rate, yaw_rate, maximum_lateral_acc, total_reward]
+    data = np.column_stack((data_dict['carx'], data_dict['cary']))
+    distances = np.sqrt(np.sum(np.diff(data, axis=0)**2, axis=1))
+    total_length = np.sum(distances)
+    return [dataset, time,  roll_rate, yaw_rate, maximum_lateral_acc, total_length, total_reward]
 
 
 
 def plot_trajectory(traj, ipg, rl):
     plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
     plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=4)
-    plt.plot(rl['carx'], rl['cary'], label="mpc", color='green', linewidth=4)
+    plt.plot(rl['carx'], rl['cary'], label="mpc-rl", color='green', linewidth=4)
 #    plt.axis("equal")
-    plt.xlim([600, 800])
-    plt.ylim([-30, -10])
+    #plt.xlim([600, 900])
+    #plt.ylim([-250, 0])
     plt.legend()
     plt.xlabel('m')
     plt.ylabel('m')
@@ -146,3 +162,39 @@ def calc_turning_radius(ipg, mpc):
     mpc_dery = mpc_max_y - mpc_min_y
 
     return (ipg_dery / ipg_derx), (mpc_dery / mpc_derx)
+
+def check_traj_dist(traj, ipg, rl):
+    ipg_xy = np.column_stack((ipg['carx'], ipg['cary'], ipg['caryaw']))
+    rl_xy = np.column_stack((rl['carx'], rl['cary'], rl['caryaw']))
+    ipg_devDist, ipg_devAng = 0, 0
+    rl_devDist, rl_devAng = 0, 0
+    for idx, ipg in enumerate(ipg_xy):
+        dist, ang = calculate_dev(ipg, traj)
+        if dist > 10000 or math.isnan(dist):
+            print(idx, ipg)
+        ipg_devDist += np.abs(dist)
+        ipg_devAng += np.abs(ang)
+    for idx, rl in enumerate(rl_xy):
+        dist, ang = calculate_dev(rl, traj)
+        rl_devDist += np.abs(dist)
+        rl_devAng += np.abs(ang)
+    print(f"IPG Total Dev Dist: {ipg_devDist}, Dev Ang: {ipg_devAng}")
+    print(f"RL Total Dev Dist: {rl_devDist}, Dev Ang: {rl_devAng}")
+
+
+def calculate_dev(car_pos, traj_data):
+    carx, cary, caryaw = car_pos
+
+    norm_yaw = np.remainder(caryaw + np.pi, 2 * np.pi) - np.pi
+
+    arr = np.array(traj_data)
+    distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+    dist_index = np.argmin(distances)
+    devDist = distances[dist_index]
+
+    dx = arr[dist_index][0] - arr[dist_index - 1][0]
+    dy = arr[dist_index][1] - arr[dist_index - 1][1]
+    path_ang = np.remainder(np.arctan2(dy, dx) + np.pi, 2 * np.pi) - np.pi
+    devAng = norm_yaw - path_ang
+    devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
+    return np.array([devDist, devAng])

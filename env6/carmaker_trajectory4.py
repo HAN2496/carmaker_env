@@ -10,13 +10,14 @@ class Trajectory:
         self.low = low
         self.carx, self.cary = carx, cary
         self.distances = distances
+        self.sight = distances[-1]
         self.start_point = []
         self.end_point = []
         self._init_traj()
 
     def _init_traj(self):
         if self.low:
-            self.total_xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
+            self.total_xy = pd.read_csv(f"datafiles/{self.road_type}/test.csv").loc[:,
                              ["traj_tx", "traj_ty"]].values
             self.total_xy_diff = np.linalg.norm(np.diff(self.total_xy, axis=0), axis=1)
             self.total_sign_diff = calculate_directions(self.total_xy)
@@ -43,7 +44,7 @@ class Trajectory:
             for _ in enumerate(self.total_xy):
                 if self.xy_idx <= 0:
                     pass
-                if diff <= delta:
+                if diff <= delta + self.sight:
                     self.xy = np.vstack([self.total_xy[self.xy_idx], self.xy])
                     self.xy_diff = np.append(self.total_xy_diff[self.xy_idx], self.xy_diff)
                     if remove:
@@ -162,12 +163,12 @@ class Trajectory:
 
 if __name__ == "__main__":
     road_type, low = "Ramp", True
-    carx, cary = 430, -12.25
+    carx, cary = 0, 0
     distances = [0, 2, 4, 6, 8]
     traj = Trajectory(road_type=road_type, carx=carx, cary=cary, distances=distances, low=low)
     print(traj.xy)
-    carx, cary = 500, -12.25
-    #traj.manage_traj([carx, cary])
+    carx, cary = 5, 0
+    traj.manage_traj([carx, cary])
     #print(traj.xy)
     #traj.plot()
 

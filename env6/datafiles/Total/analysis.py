@@ -32,7 +32,7 @@ for col1, col2 in zip(tables[0][1:], tables[1][1:]):
     comparsion_row.append(comp)
 tables.append(comparsion_row)
 
-col = ['name', 'Time',  'roll rate', 'yaw rate', 'maxium lateral acc', 'total reward']
+col = ['name', 'Time',  'roll rate', 'yaw rate', 'maxium lateral acc','total distance', 'total reward']
 df = pd.DataFrame(tables, columns=col)
 print(df)
 
@@ -55,6 +55,8 @@ def create_DLC_cone_arr():
             cones.extend([[x_base, y1], [x_base, y2]])
 
     return np.array(cones)
-
+cones = create_DLC_cone_arr()
+plt.plot()
+plt.show()
 print(check_collision(create_DLC_cone_arr(), ipg))
 print(check_collision(create_DLC_cone_arr(), rl))

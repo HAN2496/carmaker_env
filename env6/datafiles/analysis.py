@@ -2,24 +2,27 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import re
-from for_analysis import *
+from for_analysis_SLALOM import *
 
 CONER = 0.2
-CARWIDTH, CARLENGTH = 1.8, 4
+CARWIDTH, CARLENGTH = 1.975, 4.94
+
+cones = np.array([[100 + 30 * i, -10] for i in range(10)])
 
 #수정하는 부분
-road_types = 'Ramp'
+road_types = 'SLALOM'
 traj = pd.read_csv(f'datasets_traj.csv').loc[:, ["traj_tx", "traj_ty"]].values
 
-ipg = load_data('IPG', comment=0)
-rl = load_data('ramp_mpc', comment=0)
-labels = ['ipg', 'mpc-rl']
+ipg = load_data('ipg', comment=0)
+rl = load_data('mpcrl', comment='slalom')
+labels = ['ipg', 'rl']
 
-compare_keys = ['ang', 'vel', 'acc', 'caryaw', 'alHori', 'roll']
-titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "caryaw", "alHori", "Roll"]
+compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']
+titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "Car pos X", "Car pos Y", "Reward"]
 
 plot_multiple(compare_keys, titles, labels, ipg, rl)
-plot_trajectory(traj, ipg, rl)
+plot_trajectory(cones, traj, ipg, rl)
+print(check_collision(cones, ipg))
 
 tables = []
 for dataset, data_dict in zip(labels, [ipg, rl]):
@@ -32,11 +35,6 @@ for col1, col2 in zip(tables[0][1:], tables[1][1:]):
     comparsion_row.append(comp)
 tables.append(comparsion_row)
 
-col = ['name', 'Time',  'roll rate', 'yaw rate', 'maxium lateral acc','total distance', 'total reward']
+col = ['name', 'Time', 'inital carv', 'escape carv', 'roll rate', 'yaw rate', 'maxium lateral acc', 'total reward']
 df = pd.DataFrame(tables, columns=col)
 print(df)
-
-check_traj_dist(traj, ipg, rl)
-
-#회전반경
-print(calc_turning_radius(ipg, rl))
