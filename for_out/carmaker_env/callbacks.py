@@ -46,10 +46,8 @@ def getBestRewardCallback(args):
                 # print(x[-1], 'timesteps')
                 # print("Best mean reward: {:.2f} - Last mean reward per episode: {:.2f}".format(best_mean_reward, mean_reward))
 
-                if n_steps < 50 * 1000 / 2:
-                    pass
                 # New best model, you could save the agent here
-                elif mean_reward > best_mean_reward:
+                if mean_reward > best_mean_reward:
                     best_mean_reward = mean_reward
                     # Example for saving best model
                     print("Saving new best model",best_mean_reward)

@@ -5,7 +5,7 @@
 3. 테스트를 수행한다.
 """
 
-from carmaker_env_low import CarMakerEnv
+from DLC_env_low import CarMakerEnv
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -13,30 +13,26 @@ from stable_baselines3 import SAC
 
 if __name__ == '__main__':
     road_type = "DLC"
-    data_name = 'rl_test'
-    prefix = data_name
-    #comment = "various_expert_buffer100k_pretrain50k_learn100k"
-    #prefix = data_name + "_" + comment
-    #simul_path = "test_IPG"
+    data_name = 'IPG'
+    comment = "cutting_zero_RL"
+    prefix = data_name + "_" + comment
 
-    env = CarMakerEnv(port=9999, road_type="DLC", use_carmaker=True, env_num=0)
-    model = SAC.load(f"best_model/DLC_best_model.pkl", env=env)
+
+    env = CarMakerEnv(host='127.0.0.1', simul_path='test_IPG', port=9999, check=0)
+    model = SAC.load(f"best_model/DLC_env1_best_model.pkl", env=env)
+#    model = SAC.load(f"41599_best_model.pkl", env=env)
     print("Model loaded.")
 
-    obs = env.reset()[0]
-    print(f"obs size: {np.size(obs)}")
-
+    obs = env.reset()
     action_lst = []
     reward_lst=[]
     info_lst = []
     while True:
         action = model.predict(obs)
-        action = action[0]
-        obs, reward, done, _, info = env.step(action)
+        obs, reward, done, info = env.step(action[0])
         info_lst.append(info)
-        action_lst.append(action)
+        action_lst.append(action[0])
         reward_lst.append(reward)
-
         if done:
             df1 = pd.DataFrame(data=reward_lst)
             df1.to_csv(f'datafiles/{road_type}/{prefix}_reward.csv')

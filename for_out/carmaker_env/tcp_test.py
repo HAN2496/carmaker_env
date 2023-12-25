@@ -8,10 +8,9 @@ import time
 import numpy as np
 import time
 import random
-
 TCP_IP = '127.0.0.1'
 TCP_PORT = 80
-data_num = 6
+data_num = 17
 BUFFER_SIZE = 8 * data_num
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

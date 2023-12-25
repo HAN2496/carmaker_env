@@ -7,7 +7,8 @@
     3-1. total_timesteps 수를 변화시켜 충분히 학습하도록 한다.
 4. 학습이 완료된 후 웨이트 파일(e.g. model.pkl)을 저장한다.
 """
-from carmaker_env_b import CarMakerEnvB as CarMakerEnv
+import sys
+from SLALOM_env_b1 import CarMakerEnvB
 from stable_baselines3 import SAC, PPO
 from stable_baselines3.common.vec_env import SubprocVecEnv
 from callbacks import getBestRewardCallback, logDir, rmsLogging
@@ -16,6 +17,7 @@ from stable_baselines3.common.utils import set_random_seed
 import os
 import torch
 import logging
+from datetime import datetime
 
 logging.basicConfig(filename='Log.txt', level=logging.INFO, format='%(asctime)s - %(message)s')
 custom_logger = logging.getLogger('customLogger')
@@ -41,10 +43,10 @@ class Args:
         self.prefix = prefix
         self.alg = alg
 
-def make_env(rank, road_type, seed=0):
+def make_env(rank, seed=0):
 
     def _init():
-        env = CarMakerEnv(road_type=road_type, env_num=rank, port=10000 + rank)  # 모니터 같은거 씌워줘야 할거임
+        env = CarMakerEnvB(host='127.0.0.1', port=10000 + rank, check=rank)  # 모니터 같은거 씌워줘야 할거임
         env.seed(seed + rank)
 
         return env
@@ -61,18 +63,19 @@ def main():
     4. 추가 설명 내용이 있을 경우 explanation에 글을 작성하면 Log.txt에 기록됨
     """
 
-    road_type = "DLC"
-    comment = "rws_b"
-    explanation = "env b"
+    env_num = 2
+    road_type = "SLALOM"
+    comment = "b"
+    explanation = "simplify reward"
 
     num_proc = 1
-    naming = f"env_{comment}"
+    naming = f"env{env_num}_{comment}"
     prefix = road_type + "/" + naming
     args = Args(prefix=prefix, alg='sac')
 
     bestRewardCallback = getBestRewardCallback(args)
 
-    env = SubprocVecEnv([make_env(i, road_type=road_type) for i in range(num_proc)])
+    env = SubprocVecEnv([make_env(i) for i in range(num_proc)])
     env = VecMonitor(env, f"models/{prefix}")
 
     input("Program Start.\n")
@@ -84,21 +87,19 @@ def main():
         custom_logger.info(f"[{prefix}]")
         custom_logger.info(f" --> {explanation}")
         logging.info(f"{prefix} - Training Start")
-        model.learn(total_timesteps=10000*300, log_interval=50, callback=bestRewardCallback)
-
+        model.learn(total_timesteps=10000*400, log_interval=50, callback=bestRewardCallback)
 
     except KeyboardInterrupt:
         logging.info(f"{prefix} - Keyboard Interrupt")
         print("Learning interrupted. Will save the model now.")
 
-
     finally:
-        """
         print("Saving model..")
         logging.info(f"{prefix} - Training End")
         model.save(f"models/{prefix}_last.pkl")
+        model.save(f"model_forcheck/{prefix}_last.pkl")
         print("Model saved.")
-        """
+
 
 if __name__ == '__main__':
     main()
