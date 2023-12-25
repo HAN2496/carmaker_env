@@ -79,7 +79,6 @@ class CarMakerEnvB(gym.Env):
         self.traj_data = self.make_trajectory(self.traj_data[0], self.traj_data[1])
         self.traj_point = self.find_nearest_point(2, -10, [3*i for i in range(5)])
         low_level_env = LowLevelCarMakerEnv(use_carmaker=False)
-#        self.low_level_model = SAC.load(f"models/{self.road_type}/512399_best_model.pkl", env=low_level_env)
         self.low_level_model = SAC.load(f"1st_best_model.pkl", env=low_level_env)
         self.low_level_obs = low_level_env.reset()
         self.before_traj_point = np.array([15, -10])

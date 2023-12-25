@@ -12,12 +12,10 @@ from queue import Queue
 import pandas as pd
 import time
 from SLALOM_env_low import CarMakerEnv as LowLevelCarMakerEnv
-from stable_baselines3 import PPO, SAC
-from scipy.interpolate import interp1d
-from shapely.geometry import Polygon, Point, LineString
+from stable_baselines3 import SAC
+from shapely.geometry import Point
 from SLALOM_cone1 import Road, Car, Cone
-import pygame
-from SLALOM_data1 import Data
+from SLALOM_data import Data
 
 # 카메이커 컨트롤 노드 구동을 위한 쓰레드
 # CMcontrolNode 내의 sim_start에서 while loop로 통신을 처리하므로, 강화학습 프로세스와 분리를 위해 별도 쓰레드로 관리
