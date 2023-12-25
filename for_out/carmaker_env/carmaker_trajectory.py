@@ -1,6 +1,6 @@
 from MyBezierCurve import BezierCurve
-from carmaker_cone import *
 from common_functions import *
+from scipy.interpolate import interp1d
 
 class Trajectory:
     def __init__(self, road_type, low=True):
@@ -17,6 +17,32 @@ class Trajectory:
             self.b = BezierCurve(x, y, 0.02)
             self.arr = self.b.get_all_xy_points()
             self.end_point = self.b.get_last_point()
+
+    def make_traj_point(self, carx, cary, caryaw, action):
+        theta = action * 0.05 + caryaw
+        new_traj_point = np.array([carx + 8 * np.cos(theta),
+                                   cary + 8 * np.sin(theta)])
+        return new_traj_point
+
+    def make_trajectory(self,carx, cary, caryaw, action):
+        arr = self.arr.copy()
+
+        new_traj_point = self.make_traj_point(carx, cary, caryaw, action)
+        arr = np.vstack((arr, new_traj_point))
+        arr = arr[arr[:, 0].argsort()]
+
+        if abs(arr[-2][0] - arr[-1][0]) > 0.01:
+            f = interp1d(arr[-2:, 0], arr[-2:, 1])
+            xnew = np.arange(arr[-2][0], arr[-1][0], 0.01)
+            ynew = f(xnew)
+            interpolate_arr = np.column_stack((xnew, ynew))
+            new_arr = np.vstack((arr[:-1], interpolate_arr, arr[-1]))
+            return new_arr
+        else:
+            return arr
+
+
+
     def update_traj(self, carx, action):
         action = action[0] / np.pi / 12
         self.b.add_curve(
@@ -46,6 +72,7 @@ class Trajectory:
                 result_points.append(self.arr[-1])
 
         return np.array(result_points)
+
     def find_traj_points(self, carx, distances):
         points = []
         for distance in distances:
