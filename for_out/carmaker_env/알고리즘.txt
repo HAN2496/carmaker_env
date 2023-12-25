@@ -1,0 +1,7 @@
+[trajectory1]
+
+[trajectory2]
+trajectory를 생성한 뒤 bezier 커브로 두 trajectory를 매끄럽게 연결
+
+[trajectory3]
+6,6,6 길이를 가지는 베지에 커브의 곡선을 생성. 단, 

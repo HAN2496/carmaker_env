@@ -35,6 +35,8 @@ for col1, col2 in zip(tables[0][1:], tables[1][1:]):
     comparsion_row.append(comp)
 tables.append(comparsion_row)
 
-col = ['name', 'Time', 'inital carv', 'escape carv', 'roll rate', 'yaw rate', 'maxium lateral acc', 'total reward']
+col = ['name', 'Time', 'inital carv', 'escape carv', 'roll rate', 'yaw rate', 'maxium lateral acc', 'total distance', 'total reward']
 df = pd.DataFrame(tables, columns=col)
 print(df)
+
+print(check_traj_dist(traj, ipg, rl))

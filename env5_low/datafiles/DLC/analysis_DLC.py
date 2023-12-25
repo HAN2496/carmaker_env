@@ -23,11 +23,14 @@ cones = np.array(cone1 + cone2 + cone3)
 road_types = 'DLC'
 traj = pd.read_csv(f'datasets_traj.csv').loc[:, ["traj_tx", "traj_ty"]].values
 
-ipg_rl = load_data('IPG', 'cutting_zero_rl')
-ipg_mpc = load_data('IPG', 'cutting_zero')
-rl = load_data('RL', "env1")
-mpc = load_data('mpc')
-labels = ['ipg', 'rl', 'mpc']
+cut_start = 30
+cut_end=130
+ipg_rl = load_data('IPG', 'rws', cut_start=cut_start, cut_end=cut_end)
+ipg_mpc = ipg_rl
+#ipg_mpc = load_data('IPG', 'rws', cut_start=cut_start, cut_end=cut_end)
+rl = load_data('RL', "env1", cut_start=cut_start, cut_end=cut_end)
+mpc = load_data('mpc', cut_start=cut_start, cut_end=cut_end)
+labels = ['ipg', 'rl', 'mpc-rl']
 
 compare_keys = ['ang', 'vel', 'acc', 'carx', 'cary', 'reward']
 titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "Car pos X", "Car pos Y", "Reward"]
@@ -35,7 +38,7 @@ titles = ['Steering Angle', "Steering Velocity", "Steering Acceleration", "Car p
 plot_multiple(compare_keys, titles, ['ipg', 'rl'], ipg_rl, rl)
 plot_multiple(compare_keys, titles, ['ipg', 'mpc'], ipg_mpc, mpc)
 plot_trajectory(cones, traj, ipg_rl, rl, 'RL')
-plot_trajectory(cones, traj, ipg_mpc, mpc, 'MPC')
+plot_trajectory(cones, traj, ipg_mpc, mpc, 'mpc-rl')
 
 print("IPG: ", check_collision(cones, ipg_mpc))
 print("RL: ",check_collision(cones, rl))
@@ -64,9 +67,11 @@ for col1, col2 in zip(tables_mpc[0][1:], tables_mpc[1][1:]):
     comparsion_row.append(comp)
 tables_mpc.append(comparsion_row)
 
-col = ['name', 'Time', 'inital carv', 'escape carv', 'roll rate', 'yaw rate', 'maxium lateral acc', 'total reward']
+col = ['name', 'Time', 'inital carv', 'escape carv', 'roll rate', 'yaw rate', 'maxium lateral acc', 'total distance','total reward']
 df = pd.DataFrame(tables_rl, columns=col)
 print(df)
 
 df = pd.DataFrame(tables_mpc, columns=col)
 print(df)
+
+print(check_traj_dist(traj, ipg_mpc, mpc))

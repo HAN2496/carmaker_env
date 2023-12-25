@@ -8,7 +8,7 @@ import re
 CONER = 0.2
 CARWIDTH, CARLENGTH = 1.8, 4
 
-def load_data(type, comment=0):
+def load_data(type, comment=0, cut_start=0, cut_end = 0):
     data = {}
     if comment == 0:
         data['info'] = pd.read_csv(f'{type}_info.csv')
@@ -19,6 +19,18 @@ def load_data(type, comment=0):
 
     extracted = {}
     df = data['info']
+
+    if cut_start >0:
+        for idx, x in enumerate(df.loc[:, 'x'].values[:-1]):
+            if x > cut_start:
+                df = df.iloc[idx:, :]
+                break
+    if cut_end != 0:
+        for idx, y in reversed(list(enumerate(df.loc[:, 'y'].values[:-1]))):
+            if y < cut_end:
+                df = df.iloc[:idx, :]
+                break
+
     extracted['time'] = df.loc[:, 'time'].values
     extracted['ang'] = df.loc[:, 'ang'].values
     extracted['vel'] = df.loc[:, 'vel'].values
@@ -71,7 +83,8 @@ def get_value_or_interpolate(carx, carv, target_x):
 
 def calc_performance(dataset, data_dict):
 
-    time = data_dict['time'][-2]
+    print(f"Time: {data_dict['time'][0]}")
+    time = data_dict['time'][-2] - data_dict['time'][0]
     avg_carv = np.sum(np.abs(data_dict['carv'])) / time
 
     roll_rate = np.sum(np.abs(np.diff(data_dict['roll']))) / time
@@ -87,15 +100,33 @@ def calc_performance(dataset, data_dict):
 
 
 def plot_trajectory(traj, ipg, rl):
-    #plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
+    plt.plot(traj[:, 0], traj[:, 1], label="Trjaectory", color='orange')
     plt.plot(ipg['carx'], ipg['cary'], label="IPG", color='blue', linewidth=4)
     plt.plot(rl['carx'], rl['cary'], label="mpc-rl", color='green', linewidth=4)
 #    plt.axis("equal")
-    plt.xlim([800, 1300])
-    #plt.ylim([-16, -10])
+    plt.xlim([130, 230])
+    plt.ylim([-16, -7])
     plt.legend()
     plt.xlabel('m')
     plt.ylabel('m')
+    def create_DLC_cone_arr():
+        sections = [
+            {'start': 150, 'gap': 3, 'cone_dist': 2.4225, 'num': 5, 'y_offset': -12.25},
+            {'start': 175, 'gap': 11.5/4, 'cone_dist': 2.975, 'num': 5, 'y_offset': -12.25+2.61125},  #
+            {'start': 199, 'gap': 3, 'cone_dist': 3, 'num': 5, 'y_offset': -12.25-0.28875}
+        ]
+        cones = []
+
+        for section in sections:
+            for i in range(section['num']):  # Each section has 5 pairs
+                x_base = section['start'] + section['gap'] * i
+                y1 = section['y_offset'] - section['cone_dist'] / 2 + 0.2
+                y2 = section['y_offset'] + section['cone_dist'] / 2 - 0.2
+                cones.extend([[x_base, y1], [x_base, y2]])
+
+        return np.array(cones)
+    cones = create_DLC_cone_arr()
+    plt.scatter(cones[:, 0], cones[:, 1])
     plt.show()
 
 def shape_car(carx, cary, caryaw):
@@ -149,3 +180,42 @@ def calc_turning_radius(ipg, mpc):
     mpc_dery = mpc_max_y - mpc_min_y
 
     return (ipg_dery / ipg_derx), (mpc_dery / mpc_derx)
+
+import math
+def check_traj_dist(traj, ipg, rl):
+    ipg_xy = np.column_stack((ipg['carx'], ipg['cary'], ipg['caryaw']))
+    rl_xy = np.column_stack((rl['carx'], rl['cary'], rl['caryaw']))
+    ipg_devDist, ipg_devAng = 0, 0
+    rl_devDist, rl_devAng = 0, 0
+    for idx, ipg in enumerate(ipg_xy):
+        dist, ang = calculate_dev(ipg, traj)
+        if dist > 10000 or math.isnan(dist):
+            print(idx, ipg)
+        ipg_devDist += np.abs(dist)
+        ipg_devAng += np.abs(ang)
+    for idx, rl in enumerate(rl_xy):
+        dist, ang = calculate_dev(rl, traj)
+        rl_devDist += np.abs(dist)
+        rl_devAng += np.abs(ang)
+    print(f"IPG Total Dev Dist: {ipg_devDist}, Dev Ang: {ipg_devAng}")
+    print(f"RL Total Dev Dist: {rl_devDist}, Dev Ang: {rl_devAng}")
+    print(f"Comparision Dev Dist: {(rl_devDist-ipg_devDist)/ipg_devDist * 100}")
+    print(f"Comparision Dev Ang: {(rl_devAng-ipg_devAng)/ipg_devAng * 100}")
+
+
+def calculate_dev(car_pos, traj_data):
+    carx, cary, caryaw = car_pos
+
+    norm_yaw = np.remainder(caryaw + np.pi, 2 * np.pi) - np.pi
+
+    arr = np.array(traj_data)
+    distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+    dist_index = np.argmin(distances)
+    devDist = distances[dist_index]
+
+    dx = arr[dist_index][0] - arr[dist_index - 1][0]
+    dy = arr[dist_index][1] - arr[dist_index - 1][1]
+    path_ang = np.remainder(np.arctan2(dy, dx) + np.pi, 2 * np.pi) - np.pi
+    devAng = norm_yaw - path_ang
+    devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
+    return np.array([devDist, devAng])

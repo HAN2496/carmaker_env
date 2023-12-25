@@ -23,16 +23,24 @@ def load_data(type, comment=0, cut_start=0, cut_end = 0):
     df = data['info']
 
     if cut_start >0:
-        for x in df.loc[:, 'x'].values[:-1]:
+        for idx, x in enumerate(df.loc[:, 'x'].values[:-1]):
             if x > cut_start:
-                df = df[:, :cut_start]
+                df = df.iloc[idx:, :]
+                break
+    if cut_end != 0:
+        for idx, y in reversed(list(enumerate(df.loc[:, 'y'].values[:-1]))):
+            if y < cut_end:
+                df = df.iloc[:idx, :]
                 break
 
     extracted['time'] = df.loc[:, 'time'].values
     extracted['ang'] = df.loc[:, 'ang'].values
     extracted['vel'] = df.loc[:, 'vel'].values
     extracted['acc'] = df.loc[:, 'acc'].values
-    extracted['alHori'] = df.loc[:, 'alHori'].values
+    if type == "ramp_mpc":
+        extracted['alHori'] = df.loc[:, 'alHori'].values / 1000
+    else:
+        extracted['alHori'] = df.loc[:, 'alHori'].values
     extracted['carv'] = df.loc[:, "carv"].values[:-1]
     extracted['carx'] = df.loc[:, 'x'].values[:-1]
     extracted['cary'] = df.loc[:, "y"].values[:-1]
@@ -41,8 +49,6 @@ def load_data(type, comment=0, cut_start=0, cut_end = 0):
     extracted['roll'] = df.loc[:, "roll"].values[:-1]
 
     extracted['reward'] = data['reward']
-    plt.plot(extracted['alHori'])
-    plt.show()
 
     return extracted
 
@@ -85,7 +91,7 @@ def get_value_or_interpolate(carx, carv, target_x):
 
 def calc_performance(dataset, data_dict):
 
-    time = data_dict['time'][-2]
+    time = data_dict['time'][-2] - data_dict['time'][0]
     avg_carv = np.sum(np.abs(data_dict['carv'])) / time
 
     roll_rate = np.sum(np.abs(np.diff(data_dict['roll']))) / time
@@ -178,9 +184,17 @@ def check_traj_dist(traj, ipg, rl):
         dist, ang = calculate_dev(rl, traj)
         rl_devDist += np.abs(dist)
         rl_devAng += np.abs(ang)
+    ipg_devDist = round(ipg_devDist, 3)
+    ipg_devAng = round(ipg_devAng, 3)
+    rl_devDist = round(rl_devDist, 3)
+    rl_devAng = round(rl_devAng, 3)
+    error_dist = round((rl_devDist-ipg_devDist)/ipg_devDist * 100, 3)
+    error_ang = round((rl_devAng-ipg_devAng)/ipg_devAng * 100, 3)
     print(f"IPG Total Dev Dist: {ipg_devDist}, Dev Ang: {ipg_devAng}")
     print(f"RL Total Dev Dist: {rl_devDist}, Dev Ang: {rl_devAng}")
-
+    print('\n')
+    print(f"Comparision Dev Dist: {error_dist}")
+    print(f"Comparision Dev Ang: {error_ang}")
 
 def calculate_dev(car_pos, traj_data):
     carx, cary, caryaw = car_pos

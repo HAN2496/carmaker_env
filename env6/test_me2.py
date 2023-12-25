@@ -1,19 +1,44 @@
-import numpy as np
-import matplotlib.pyplot as plt
-import cv2
-import pandas as pd
+def calculate_straight_segment_properties(lon, lat):
+    """
+    Calculate the length and angle for each straight segment between consecutive points.
+    """
+    segment_lengths = []
+    segment_angles = []
 
-contour_points_df = pd.read_csv('datafiles/contour_points.csv')
-# Extracting the x and y coordinates of the points marked in red
-x_coords = contour_points_df['x']
-y_coords = contour_points_df['y']
+    for i in range(len(lon) - 1):
+        length = haversine(lon[i], lat[i], lon[i + 1], lat[i + 1])
+        angle = calculate_bearing(lon[i], lat[i], lon[i + 1], lat[i + 1])
+        segment_lengths.append(length)
+        segment_angles.append(angle)
 
-# Plotting the points
-plt.figure(figsize=(10, 5))
-plt.plot(x_coords, y_coords, 'ro-')  # 'ro-' means red color, circle markers, and solid line
-plt.title("Plot of Red Points on the Road Contour")
-plt.xlabel("X Coordinates")
-plt.ylabel("Y Coordinates")
-plt.gca().invert_yaxis()  # Invert y-axis to match the image orientation
-plt.grid(True)
-plt.show()
+    return segment_lengths, segment_angles
+
+def calculate_curved_segment_properties(lon, lat):
+    """
+    Approximate curved segments using every three consecutive points and calculate properties.
+    """
+    curved_segment_properties = []
+
+    for i in range(len(lon) - 2):
+        p1 = (lon[i], lat[i])
+        p2 = (lon[i + 1], lat[i + 1])
+        p3 = (lon[i + 2], lat[i + 2])
+
+        try:
+            center, radius = circle_through_three_points(p1, p2, p3)
+            angle = np.degrees(np.arccos(1 - haversine(lon[i], lat[i], lon[i + 1], lat[i + 1])**2 / (2 * radius**2)))
+            length = np.radians(angle) * radius
+            curved_segment_properties.append((radius, angle, length))
+        except:
+            # Skip segments where calculations fail
+            continue
+
+    return curved_segment_properties
+
+# Calculate properties for straight segments
+straight_segment_lengths, straight_segment_angles = calculate_straight_segment_properties(lon, lat)
+
+# Calculate properties for curved segments
+curved_segment_properties = calculate_curved_segment_properties(lon, lat)
+
+straight_segment_lengths[:5], straight_segment_angles[:5], curved_segment_properties[:5]  # Display first few results
