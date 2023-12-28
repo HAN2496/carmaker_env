@@ -13,7 +13,8 @@ class Trajectory:
         self._init_traj()
 
     def _init_traj(self):
-        print('here')
+        print('Init trajectory')
+        self.section = 0
         if self.low:
             if self.road_type == "Ramp":
                 self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj1.csv").loc[:,

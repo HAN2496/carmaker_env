@@ -160,13 +160,13 @@ class CarMakerEnv(gymnasium.Env):
 
 if __name__ == "__main__":
     # 환경 테스트
-    env = CarMakerEnv(road_type="DLC", simul_path="test_IPG", env_num=0, show=True)
+    env = CarMakerEnv(road_type="Ramp", simul_path="test_IPG", env_num=0, show=False)
     act_lst = []
     next_state_lst = []
     info_lst = []
 
 
-    for i in range(1):
+    for i in range(2):
         # 환경 초기화
         state = env.reset()
 
