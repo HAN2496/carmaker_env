@@ -119,7 +119,7 @@ def create_Ramp_line(show=False):
         plt.show()
     return upper_arr, lower_arr
 
-create_Ramp_line(show=True)
+#create_Ramp_line(show=True)
 
 """
 DATA 관련 함수들
