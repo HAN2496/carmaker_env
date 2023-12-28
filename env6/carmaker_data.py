@@ -12,7 +12,7 @@ class Data:
         self.road_type = road_type
         self.env_num = env_num
         self.car = Car()
-        self.road = Road(road_type=road_type)
+        #self.road = Road(road_type=road_type)
         self.traj = Trajectory(road_type=road_type)
         self.test_num = 0
 
@@ -95,7 +95,7 @@ class Data:
         elif self.road_type == "Eight_20m":
             col_reward = 0
         else:
-            col_reward = abs(self.alHori) * 1000
+            col_reward = 0
 
         e = - col_reward - dist_reward - ang_reward
         self.reward = e
