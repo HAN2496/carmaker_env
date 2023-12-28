@@ -15,8 +15,12 @@ class Trajectory:
     def _init_traj(self):
         print('here')
         if self.low:
-            self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
-                             ["traj_tx", "traj_ty"]].values
+            if self.road_type == "Ramp":
+                self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj1.csv").loc[:,
+                          ["traj_tx", "traj_ty"]].values
+            else:
+                self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:,
+                                 ["traj_tx", "traj_ty"]].values
         else:
             x, y = init_car_pos(self.road_type)
             self.b = BezierCurve([x, y, 0], dt=0.02)
@@ -24,8 +28,13 @@ class Trajectory:
             self.start_point = [p0, p1]
             self.end_point = self.b.get_xy_point(1)
             self.xy = self.b.get_xy_points()
-
-
+    def check_traj(self, carx):
+        if self.low and self.road_type == "Ramp" and self.section == 0:
+            if carx >= 690:
+                print("Trajectory Changed")
+                self.section = 1
+                self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj2.csv").loc[:,
+                          ["traj_tx", "traj_ty"]].values
     def update_traj(self, car_pos, action):
         #print("Update")
         carx, cary, caryaw = car_pos

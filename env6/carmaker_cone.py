@@ -9,20 +9,24 @@ class Cone:
         self.cone_r = CONER
         self.road_type = road_type
         self.create_cone()
+        self.exist = False
 
     def create_cone(self):
         if self.road_type == "DLC":
             self.arr = create_DLC_cone_arr()
             self.shape = self.create_cone_shape()
+            self.exist = True
         elif self.road_type == "SLALOM":
             y_middle = -10
             self.arr = create_SLALOM_cone_arr(y_middle)
             self.shape = self.create_cone_shape()
+            self.exist = True
         elif self.road_type == "SLALOM2":
             y_middle = SLALOM2_Y
             self.arr = create_SLALOM_cone_arr(y_middle)
             self.shape = self.create_cone_shape()
-        elif self.road_type == "Total":
+            self.exist = True
+        elif self.road_type == "Total" or "Ramp":
             pass
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM or SLALOM2")
@@ -70,7 +74,7 @@ class Lane:
         elif self.road_type == "Total":
             upper_arr, lower_arr = create_total_line()
         elif self.road_type == "Ramp":
-            pass
+            upper_arr, lower_arr = create_Ramp_line()
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM2")
 
@@ -100,33 +104,55 @@ class Road:
         self.create_road()
 
     def create_road(self):
+        self.arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        """
         if self.road_type == "DLC":
             self.create_road_DLC()
         elif self.road_type == "SLALOM2":
             self.create_road_SLALOM2()
         elif self.road_type == "Total":
             self.create_road_Total()
+        elif self.road_type == "Ramp":
+            self.create_road_Ramp()
         else:
             raise TypeError("Wrong Road type. Put DLC or SLALOM2")
-        self.shape = self.create_road_shape(self.length, self.width)
+        """
+        #self.shape = self.create_road_shape(self.length, self.width)
+        x1, y1 = np.min(self.arr[:, 0]), np.min(self.arr[:, 1])
+        x2, y2 = np.max(self.arr[:, 0]), np.max(self.arr[:, 1])
+        self.shape = Polygon([(x1, y1), (x2, y1), (x2, y2), (x1, y2)])
         self.forbidden_area = self.shape.difference(self.lane.boundary_shape)
 
     def create_road_DLC(self):
+        x1, y1 = np.min(self.arr[:, 0]), np.min(self.arr[:, 1])
+        x2, y2 = np.max(self.arr[:, 0]), np.max(self.arr[:, 1])
         self.length = 200
         self.width = -20
 
     def create_road_SLALOM2(self):
+        x1, y1 = np.min(self.arr[:, 0]), np.min(self.arr[:, 1])
+        x2, y2 = np.max(self.arr[:, 0]), np.max(self.arr[:, 1])
         self.length = 550
         self.width = SLALOM2_Y * 2
 
     def create_road_Total(self):
         self.length = 550
         self.width = SLALOM2_Y * 2
+
+    def create_road_Ramp(self):
+        arr = pd.read_csv(f"datafiles/Ramp/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+        x1, y1 = np.min(arr[:, 0]), np.min(arr[:, 1])
+        x2, y2 = np.max(arr[:, 0]), np.max(arr[:, 1])
+        self.length = x2 - x1
+        self.width = - y2 + y1
+        self.edge = np.array([[x1, y1], [x2, y1], [x2, y2], [x1, y1]])
+
     def create_road_shape(self, x, y):
         return Polygon([(0, 0), (x, 0), (x, y), (0, y)])
 
     def plot(self, show=True):
-        self.cone.plot(show=False)
+        if self.cone.exist:
+            self.cone.plot(show=False)
         self.lane.plot(show=False)
         x, y = self.shape.exterior.xy
         plt.plot(x, y, label='Road', color='black')
@@ -142,8 +168,8 @@ class Road:
             plt.fill(x, y, color='Pink', label="Forbidden Area", alpha=0.3)
 
         if show:
-            plt.ylim([-28, -23])
-            plt.xlim([0, 600])
+            #plt.ylim([-28, -23])
+            #plt.xlim([0, 600])
             plt.legend()
             plt.show()
 
@@ -188,8 +214,8 @@ class Car:
 
 
 if __name__ == "__main__":
-    road_type = "Total"
+    road_type = "Ramp"
     cone = Cone(road_type=road_type)
     lane = Lane(road_type=road_type)
     road = Road(road_type=road_type)
-    road.plot()
+    lane.plot()

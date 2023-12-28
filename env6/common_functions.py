@@ -89,35 +89,37 @@ def create_total_line():
     lower_arr = np.vstack((lower_arr1, lower_arr2))
     return upper_arr, lower_arr
 
-def create_Ramp_line():
-    arr = pd.read_csv(f"datafiles/Ramp/datasets_traj.csv").loc[:,
-                             ["traj_tx", "traj_ty"]].values
+def create_Ramp_line(show=False):
+    arr = pd.read_csv(f"datafiles/Ramp/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
+    before_ang = 0
     upper_arr = []
     lower_arr = []
     for idx, (x, y) in enumerate(arr):
-        if idx == 0:
-            dx1 = arr[idx + 1][0] - arr[idx][0]
-            dy1 = arr[idx + 1][1] - arr[idx][1]
-            front_ang = np.arctan2(dy1, dx1)
-            ang = front_ang
-        else:
-            dx1 = arr[idx + 1][0] - arr[idx][0]
-            dy1 = arr[idx + 1][1] - arr[idx][1]
-            dx2 = arr[idx - 1][0] - arr[idx][0]
-            dy2 = arr[idx - 1][1] - arr[idx][1]
-            front_ang = np.arctan2(dy1, dx1)
-            behind_ang = np.arctan2(dy2, dx2)
-            ang = (front_ang + behind_ang) / 2
-
         if idx == arr.shape[0] - 1:
-            dx2 = arr[idx - 1][0] - arr[idx][0]
-            dy2 = arr[idx - 1][1] - arr[idx][1]
-            behind_ang = np.arctan2(dy2, dx2)
-            ang = behind_ang
+            ang = before_ang
+        else:
+            dx1 = arr[idx + 1][0] - x
+            dy1 = arr[idx + 1][1] - y
+            front_ang = np.arctan2(dy1, dx1)
+            ang = front_ang + np.pi/2
         upper = arr[idx] + np.array([np.cos(ang) * DIST_FROM_AXIS, np.sin(ang) * DIST_FROM_AXIS])
-        lower = arr[idx] + np.array([np.cos(ang) * DIST_FROM_AXIS, np.sin(ang) * DIST_FROM_AXIS])
+        lower = arr[idx] - np.array([np.cos(ang) * DIST_FROM_AXIS, np.sin(ang) * DIST_FROM_AXIS])
         upper_arr.append(upper)
         lower_arr.append(lower)
+        before_ang = ang
+    upper_arr = np.array(upper_arr)
+    lower_arr = np.array(lower_arr)
+    if show:
+        plt.scatter(arr[:, 0], arr[:, 1], s=0.1, color='black', label='Traj')
+        plt.scatter(upper_arr[:, 0], upper_arr[:, 1], s=0.1, color='red', label='Upper line')
+        plt.scatter(lower_arr[:, 0], lower_arr[:, 1], s=0.1, color='blue', label='Lower line')
+        plt.legend()
+        #plt.xlim([600, 900])
+        #plt.ylim([-300, -150])
+        plt.show()
+    return upper_arr, lower_arr
+
+create_Ramp_line(show=True)
 
 """
 DATA 관련 함수들
@@ -133,6 +135,8 @@ def init_car_pos(road_type):
         return np.array([2.3609321776837224, -3.0, 5.55556])
     elif road_type == "Eight_20m":
         return np.array([0, 6.27E-06, 5.55556])
+    elif road_type == "Ramp":
+        return np.array([402.9714655, -12.24999372, 13.8889])
 
 def check_car_pos(car_pos):
     if np.size(car_pos) != 3:
