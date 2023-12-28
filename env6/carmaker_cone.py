@@ -64,13 +64,14 @@ class Lane:
                                (99, -5.085 - CONER), (99, -8.885 - CONER), (200, -8.85 - CONER)])
             lower_arr = np.array([(0, -11.115 + CONER), (75.5, -11.115 + CONER), (75.5, -7.885 + CONER),
                                (86.5, -7.885 + CONER), (86.5, -11.885 + CONER), (200, -11.885 + CONER)])
-
+            lower_arr = lower_arr[::-1]
         elif self.road_type == "SLALOM2":
             straight_dist = (CARWIDTH * 1.1 + 0.25) / 2
             upper_arr = np.array([[0, -25 + straight_dist], [85, -25 + straight_dist]] + \
                               [[100 + 30 * i, SLALOM2_Y - (i % 2 - 1) * 3 - 2 * (i % 2 - 0.5) * np.sqrt(2) * CONER] for i in range(10)] + \
                               [[400, -25 + straight_dist], [550, -25 + straight_dist]])
             lower_arr = np.array([[x, y - 2 * straight_dist] for x, y in upper_arr])
+            lower_arr = lower_arr[::-1]
         elif self.road_type == "Total":
             upper_arr, lower_arr = create_total_line()
         elif self.road_type == "Ramp":
@@ -82,9 +83,10 @@ class Lane:
         self.lower_arr = lower_arr
         self.upper_shape = LineString(upper_arr)
         self.lower_shape = LineString(lower_arr)
-        self.boundary_arr = np.array(upper_arr.tolist() + lower_arr.tolist()[::-1])
+        self.boundary_arr = np.array(upper_arr.tolist() + lower_arr.tolist())
         self.boundary_shape = Polygon(self.boundary_arr)
-
+        if self.boundary_shape.is_valid == False:
+            self.boundary_shape = Polygon(self.boundary_arr).buffer(0)
     def plot(self, show=True):
         x, y = self.upper_shape.xy
         plt.plot(x, y, color='black', linewidth=3, label='Upper Lane')
@@ -95,7 +97,6 @@ class Lane:
         if show:
             plt.legend()
             plt.show()
-
 class Road:
     def __init__(self, road_type):
         self.road_type = road_type
@@ -105,50 +106,10 @@ class Road:
 
     def create_road(self):
         self.arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
-        """
-        if self.road_type == "DLC":
-            self.create_road_DLC()
-        elif self.road_type == "SLALOM2":
-            self.create_road_SLALOM2()
-        elif self.road_type == "Total":
-            self.create_road_Total()
-        elif self.road_type == "Ramp":
-            self.create_road_Ramp()
-        else:
-            raise TypeError("Wrong Road type. Put DLC or SLALOM2")
-        """
-        #self.shape = self.create_road_shape(self.length, self.width)
         x1, y1 = np.min(self.arr[:, 0]), np.min(self.arr[:, 1])
         x2, y2 = np.max(self.arr[:, 0]), np.max(self.arr[:, 1])
         self.shape = Polygon([(x1, y1), (x2, y1), (x2, y2), (x1, y2)])
         self.forbidden_area = self.shape.difference(self.lane.boundary_shape)
-
-    def create_road_DLC(self):
-        x1, y1 = np.min(self.arr[:, 0]), np.min(self.arr[:, 1])
-        x2, y2 = np.max(self.arr[:, 0]), np.max(self.arr[:, 1])
-        self.length = 200
-        self.width = -20
-
-    def create_road_SLALOM2(self):
-        x1, y1 = np.min(self.arr[:, 0]), np.min(self.arr[:, 1])
-        x2, y2 = np.max(self.arr[:, 0]), np.max(self.arr[:, 1])
-        self.length = 550
-        self.width = SLALOM2_Y * 2
-
-    def create_road_Total(self):
-        self.length = 550
-        self.width = SLALOM2_Y * 2
-
-    def create_road_Ramp(self):
-        arr = pd.read_csv(f"datafiles/Ramp/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
-        x1, y1 = np.min(arr[:, 0]), np.min(arr[:, 1])
-        x2, y2 = np.max(arr[:, 0]), np.max(arr[:, 1])
-        self.length = x2 - x1
-        self.width = - y2 + y1
-        self.edge = np.array([[x1, y1], [x2, y1], [x2, y2], [x1, y1]])
-
-    def create_road_shape(self, x, y):
-        return Polygon([(0, 0), (x, 0), (x, y), (0, y)])
 
     def plot(self, show=True):
         if self.cone.exist:
@@ -160,9 +121,9 @@ class Road:
             for idx, poly in enumerate(self.forbidden_area.geoms):
                 x, y = poly.exterior.coords.xy
                 if idx == 0:
-                    plt.fill(x, y, color='Pink', label = "Forbidden Area", alpha=0.3)
+                    plt.fill(x, y, color='Pink', label = "Forbidden Area", alpha=1)
                 else:
-                    plt.fill(x, y, color='Pink', alpha=0.3)
+                    plt.fill(x, y, color='Pink', alpha=1)
         elif isinstance(self.forbidden_area, Polygon):
             x, y = self.forbidden_area.exterior.coords.xy
             plt.fill(x, y, color='Pink', label="Forbidden Area", alpha=0.3)
@@ -218,4 +179,4 @@ if __name__ == "__main__":
     cone = Cone(road_type=road_type)
     lane = Lane(road_type=road_type)
     road = Road(road_type=road_type)
-    lane.plot()
+    road.plot()

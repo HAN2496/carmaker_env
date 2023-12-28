@@ -12,7 +12,7 @@ class Data:
         self.road_type = road_type
         self.env_num = env_num
         self.car = Car()
-        #self.road = Road(road_type=road_type)
+        self.road = Road(road_type=road_type)
         self.traj = Trajectory(road_type=road_type)
         self.test_num = 0
 
@@ -68,7 +68,7 @@ class Data:
         self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
 
         if self.road_type == "Ramp":
-            self.traj.check_traj(self.carx)
+            self.traj.is_traj_shoud_change(self.carx)
         """
         if self.test_num % 150 == 0 and self.env_num == 0:
             print(f"Time: {round(self.time, 2)}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}]"
@@ -83,7 +83,7 @@ class Data:
             closet_cones = self.get_cones_rel(0).flatten()
             return np.concatenate((car_data, lookahead_traj_rel, closet_cones))
         else:
-            return np.zeros(22, )
+            return np.concatenate((car_data, lookahead_traj_rel))
         #else:
         #    return np.concatenate((car_data, lookahead_traj_rel))
 

@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, Point, LineString, MultiPolygon
 import pandas as pd
 from shapely import affinity
+from shapely.ops import unary_union
 
 CONER = 0.2
 CARWIDTH = 1.8
@@ -158,6 +159,8 @@ def to_relative_coordinates(car_pos, arr):
 
     return np.array(relative_coords)
 
+def tranform_coords():
+    pass
 """
 Trajectory 관련 함수
 """

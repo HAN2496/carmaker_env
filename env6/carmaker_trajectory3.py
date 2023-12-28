@@ -28,13 +28,14 @@ class Trajectory:
             self.start_point = [p0, p1]
             self.end_point = self.b.get_xy_point(1)
             self.xy = self.b.get_xy_points()
-    def check_traj(self, carx):
+    def is_traj_shoud_change(self, carx):
         if self.low and self.road_type == "Ramp" and self.section == 0:
             if carx >= 690:
                 print("Trajectory Changed")
                 self.section = 1
                 self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj2.csv").loc[:,
                           ["traj_tx", "traj_ty"]].values
+
     def update_traj(self, car_pos, action):
         #print("Update")
         carx, cary, caryaw = car_pos
