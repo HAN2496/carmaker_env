@@ -92,14 +92,32 @@ def create_total_line():
 def create_Ramp_line():
     arr = pd.read_csv(f"datafiles/Ramp/datasets_traj.csv").loc[:,
                              ["traj_tx", "traj_ty"]].values
-    ang_arr = []
+    upper_arr = []
+    lower_arr = []
     for idx, (x, y) in enumerate(arr):
         if idx == 0:
-            dx, dy = 0, 0
+            dx1 = arr[idx + 1][0] - arr[idx][0]
+            dy1 = arr[idx + 1][1] - arr[idx][1]
+            front_ang = np.arctan2(dy1, dx1)
+            ang = front_ang
         else:
-            dx = arr[idx][0] - arr[idx - 1][0]
-            dy = arr[idx][1] - arr[idx - 1][1]
-            path_ang = np.mod(np.arctan2(dy, dx), 2 * np.pi)
+            dx1 = arr[idx + 1][0] - arr[idx][0]
+            dy1 = arr[idx + 1][1] - arr[idx][1]
+            dx2 = arr[idx - 1][0] - arr[idx][0]
+            dy2 = arr[idx - 1][1] - arr[idx][1]
+            front_ang = np.arctan2(dy1, dx1)
+            behind_ang = np.arctan2(dy2, dx2)
+            ang = (front_ang + behind_ang) / 2
+
+        if idx == arr.shape[0] - 1:
+            dx2 = arr[idx - 1][0] - arr[idx][0]
+            dy2 = arr[idx - 1][1] - arr[idx][1]
+            behind_ang = np.arctan2(dy2, dx2)
+            ang = behind_ang
+        upper = arr[idx] + np.array([np.cos(ang) * DIST_FROM_AXIS, np.sin(ang) * DIST_FROM_AXIS])
+        lower = arr[idx] + np.array([np.cos(ang) * DIST_FROM_AXIS, np.sin(ang) * DIST_FROM_AXIS])
+        upper_arr.append(upper)
+        lower_arr.append(lower)
 
 """
 DATA 관련 함수들
