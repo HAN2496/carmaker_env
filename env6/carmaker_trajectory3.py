@@ -4,9 +4,10 @@ from common_functions import *
 import math
 import bezier
 class Trajectory:
-    def __init__(self, road_type, low=True):
+    def __init__(self, road_type, distances, low=True):
         self.road_type = road_type
         self.section = 0
+        self.distances = distances
         self.low = low
         self.start_point = []
         self.end_point = []
@@ -30,6 +31,15 @@ class Trajectory:
             self.start_point = [p0, p1]
             self.end_point = self.b.get_xy_point(1)
             self.xy = self.b.get_xy_points()
+
+    def manage_traj(self, car_pos):
+        carx, cary, caryaw = car_pos
+        self.find_traj_points(carx, cary, caryaw)
+        if 0 not in self.distances:
+            self.devDist, self.devAng = self.calculate_dev(carx, cary, caryaw)
+        if self.road_type == "Ramp":
+            self.is_traj_shoud_change(carx)
+
     def is_traj_shoud_change(self, carx):
         if self.low and self.road_type == "Ramp" and self.section == 0:
             if carx >= 690:
@@ -39,7 +49,6 @@ class Trajectory:
                           ["traj_tx", "traj_ty"]].values
 
     def update_traj(self, car_pos, action):
-        #print("Update")
         carx, cary, caryaw = car_pos
         action1 = action[0] #/ np.pi
         action2 = action[1] #/ np.pi
@@ -69,22 +78,21 @@ class Trajectory:
             else:
                 result_points.append(self.xy[-1])
 
-        return np.array(result_points)
+        self.lookahed_traj = np.array(result_points)
 
-    def find_traj_points(self, x, y, yaw, distances):
+    def find_traj_points(self, x, y, yaw):
         points = []
-        for distance in distances:
+        for distance in self.distances:
             x_diff = np.abs(self.xy[:, 0] - (x + distance))
             nearest_idx = np.argmin(x_diff)
             points.append(self.xy[nearest_idx])
             if distance == 0:
-                self.devDist, self.devAng = calculate_dev([x, y, yaw], self.xy, index=nearest_idx)
-        return np.array(points)
+                self.devDist, self.devAng = calculate_dev_low([x, y, yaw], self.xy, index=nearest_idx)
+        self.lookahed_traj = np.array(points)
 
     def calculate_dev(self, carx, cary, caryaw):
         if self.low:
-            arr = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj.csv").loc[:, ["traj_tx", "traj_ty"]].values
-            return calculate_dev_low([carx, cary, caryaw], arr)
+            return calculate_dev_low([carx, cary, caryaw], self.xy)
         else:
             return self.calculate_dev_b(carx, cary, caryaw)
 

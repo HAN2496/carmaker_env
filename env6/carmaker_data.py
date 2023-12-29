@@ -13,7 +13,8 @@ class Data:
         self.env_num = env_num
         self.car = Car()
         self.road = Road(road_type=road_type)
-        self.traj = Trajectory(road_type=road_type)
+        self.lookahead_sight = [2 * i for i in range(5)]
+        self.traj = Trajectory(road_type=road_type, distances=self.lookahead_sight)
         self.test_num = 0
 
         self.do_render = False
@@ -62,17 +63,14 @@ class Data:
         self.wheel_steer = arr[12:16]
         self.wheel_steer_ext = arr[16:]
 
-        self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
-        self.get_lookahead_traj_abs()
-        self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
+        self.traj.manage_traj([self.carx, self.cary, self.caryaw])
+        self.devDist, self.devAng = self.traj.devDist, self.traj.devAng
 
-        if self.road_type == "Ramp":
-            self.traj.is_traj_shoud_change(self.carx)
+        self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
 
         if self.test_num % 150 == 0 and self.env_num == 0:
             print(f"Time: {round(self.time, 2)}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}]"
                   f"Reward {self.reward}: [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
-
 
     def manage_state_low(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()
@@ -83,8 +81,6 @@ class Data:
             return np.concatenate((car_data, lookahead_traj_rel, closet_cones))
         else:
             return np.concatenate((car_data, lookahead_traj_rel))
-        #else:
-        #    return np.concatenate((car_data, lookahead_traj_rel))
 
     def manage_reward_low(self):
         dist_reward = abs(self.devDist) * 100
@@ -147,8 +143,7 @@ class Data:
             return True
 
     def get_lookahead_traj_abs(self):
-        lookahead_sight = [2 * i for i in range(5)]
-        self.lookahead_traj_abs = self.traj.find_traj_points(self.carx, self.cary, lookahead_sight)
+        self.lookahead_traj_abs = self.traj.lookahed_traj
 
     def get_lookahead_traj_rel(self):
         lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], self.lookahead_traj_abs).flatten()

@@ -1,5 +1,4 @@
 import numpy as np
-
-for i in range(10):
-    i = i + 6
-    print(i)
+a=[1,2,3]
+if 3 in a:
+    print("ehre")
