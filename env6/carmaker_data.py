@@ -83,8 +83,8 @@ class Data:
             return np.concatenate((car_data, lookahead_traj_rel))
 
     def manage_reward_low(self):
-        dist_reward = abs(self.devDist) * 100
-        ang_reward = abs(self.devAng) * 500
+        dist_reward = abs(self.traj.devDist) * 100
+        ang_reward = abs(self.traj.devAng) * 500
         if self.road_type == "DLC" or self.road_type == "SLALOM2":
             col_reward = self.is_car_in_lane() * 1000
         elif self.road_type == "Eight_20m":
@@ -146,7 +146,7 @@ class Data:
         self.lookahead_traj_abs = self.traj.lookahed_traj
 
     def get_lookahead_traj_rel(self):
-        lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], self.lookahead_traj_abs).flatten()
+        lookahead_traj_rel = to_relative_coordinates([self.carx, self.cary, self.caryaw], self.traj.lookahed_traj).flatten()
         return lookahead_traj_rel
 
     def get_cones_rel(self, pos):

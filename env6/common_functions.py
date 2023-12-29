@@ -189,9 +189,10 @@ def calculate_dev_low(car_pos, traj_data, index=-1):
     if index == -1:
         distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
         dist_index = np.argmin(distances)
+        devDist = distances[dist_index]
     else:
         dist_index = index
-    devDist = distances[dist_index]
+        devDist = np.sqrt(np.sum((arr[dist_index] - [carx, cary])**2))
 
     dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
     dy1 = arr[dist_index + 1][1] - arr[dist_index][1]
