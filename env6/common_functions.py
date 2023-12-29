@@ -200,18 +200,8 @@ def calculate_dev_low(car_pos, traj_data, index=-1):
     dx2 = arr[dist_index][0] - arr[dist_index - 1][0]
     dy2 = arr[dist_index][1] - arr[dist_index - 1][1]
 
-    # 분모가 0이 될 수 있는 경우에 대한 예외처리
-    if dx1 == 0:
-        devAng1 = np.inf if dy1 > 0 else -np.inf
-    else:
-        devAng1 = dy1 / dx1
-
-    if dx2 == 0:
-        devAng2 = np.inf if dy2 > 0 else -np.inf
-    else:
-        devAng2 = dy2 / dx2
-
-    devAng = - np.arctan((devAng1 + devAng2) / 2) - caryaw
+    caryaw = (caryaw + np.pi) % (2 * np.pi) - np.pi
+    devAng = np.arctan2(dy1+dy2, dx1+dx2)-caryaw
     return np.array([devDist, devAng])
 
 def calculate_directions(array):
