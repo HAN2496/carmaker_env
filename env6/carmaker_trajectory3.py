@@ -11,9 +11,10 @@ class Trajectory:
         self.start_point = []
         self.end_point = []
         self._init_traj()
+        self.devDist, self.devAng = 0, 0
 
     def _init_traj(self):
-        print('Init trajectory')
+        print(f'Init trajectory, Section changes to {self.section}')
         self.section = 0
         if self.low:
             if self.road_type == "Ramp":
@@ -70,12 +71,14 @@ class Trajectory:
 
         return np.array(result_points)
 
-    def find_traj_points(self, x, y, distances):
+    def find_traj_points(self, x, y, yaw, distances):
         points = []
         for distance in distances:
             x_diff = np.abs(self.xy[:, 0] - (x + distance))
             nearest_idx = np.argmin(x_diff)
             points.append(self.xy[nearest_idx])
+            if distance == 0:
+                self.devDist, self.devAng = calculate_dev([x, y, yaw], self.xy, index=nearest_idx)
         return np.array(points)
 
     def calculate_dev(self, carx, cary, caryaw):

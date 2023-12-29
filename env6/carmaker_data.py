@@ -62,18 +62,17 @@ class Data:
         self.wheel_steer = arr[12:16]
         self.wheel_steer_ext = arr[16:]
 
-#        self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
-        self.devDist, self.devAng = 0, 0
+        self.devDist, self.devAng = self.traj.calculate_dev(self.carx, self.cary, self.caryaw)
         self.get_lookahead_traj_abs()
         self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
 
         if self.road_type == "Ramp":
             self.traj.is_traj_shoud_change(self.carx)
-        """
+
         if self.test_num % 150 == 0 and self.env_num == 0:
             print(f"Time: {round(self.time, 2)}, Pos : [x: {round(self.carx, 2)}] [y: {round(self.cary, 2)}]"
-                  f"Reward : [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
-        """
+                  f"Reward {self.reward}: [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
+
 
     def manage_state_low(self):
         lookahead_traj_rel = self.get_lookahead_traj_rel()

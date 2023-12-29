@@ -182,12 +182,15 @@ def calculate_dev(car_pos, traj_data):
     devAng = (devAng + np.pi) % (2 * np.pi) - np.pi
     return np.array([devDist, devAng])
 
-def calculate_dev_low(car_pos, traj_data):
+def calculate_dev_low(car_pos, traj_data, index=-1):
     check_car_pos(car_pos)
     carx, cary, caryaw = car_pos
     arr = np.array(traj_data)
-    distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
-    dist_index = np.argmin(distances)
+    if index == -1:
+        distances = np.sqrt(np.sum((arr - [carx, cary]) ** 2, axis=1))
+        dist_index = np.argmin(distances)
+    else:
+        dist_index = index
     devDist = distances[dist_index]
 
     dx1 = arr[dist_index + 1][0] - arr[dist_index][0]
