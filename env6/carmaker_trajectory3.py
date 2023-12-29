@@ -13,6 +13,8 @@ class Trajectory:
         self.end_point = []
         self._init_traj()
         self.devDist, self.devAng = 0, 0
+        x, y, _ = init_car_pos(road_type=self.road_type)
+        self.manage_traj([x, y, 0])
 
     def _init_traj(self):
         print(f'Init trajectory, Section changes to {self.section}')
