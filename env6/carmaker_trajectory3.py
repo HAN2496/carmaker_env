@@ -15,7 +15,7 @@ class Trajectory:
         self._init_traj()
         self.devDist, self.devAng = 0, 0
         x, y, _ = init_car_pos(road_type=self.road_type)
-        self.manage_traj([x, y, 0])
+        self.manage_traj([x, y, 0.681124, 0])
 
     def _init_traj(self):
         if self.env_num == 0:
@@ -74,9 +74,11 @@ class Trajectory:
 
         result_points = []
 
-        min_idx = np.argmin(np.sum((self.xy - np.array([x, y])) ** 2, axis=1))
+        min_idx = np.argmin(np.sqrt(np.sum((self.xy - [x, y]) ** 2, axis=1)))
 
         for dist in self.distances:
+            if dist == 0:
+                self.devDist, self.devAng = calculate_dev_low([x, y, yaw], self.xy, index=min_idx)
             lookahead_idx = min_idx
             total_distance = 0.0
             while total_distance <= dist and lookahead_idx + 1 < len(self.xy):
@@ -88,8 +90,7 @@ class Trajectory:
             else:
                 result_points.append(self.xy[-1])
 
-            if dist == 0:
-                self.devDist, self.devAng = calculate_dev_low([x, y, yaw], self.xy, index=min_idx)
+
         self.lookahed_traj = np.array(result_points)
 
     def find_traj_points(self, x, y, yaw):
