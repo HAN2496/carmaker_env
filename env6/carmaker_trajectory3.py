@@ -4,11 +4,12 @@ from common_functions import *
 import math
 import bezier
 class Trajectory:
-    def __init__(self, road_type, distances, low=True):
+    def __init__(self, road_type, distances, env_num=2, low=True):
         self.road_type = road_type
         self.section = 0
         self.distances = distances
         self.low = low
+        self.env_num = env_num
         self.start_point = []
         self.end_point = []
         self._init_traj()
@@ -17,7 +18,8 @@ class Trajectory:
         self.manage_traj([x, y, 0])
 
     def _init_traj(self):
-        print(f'Init trajectory, Section changes to {self.section}')
+        if self.env_num == 0:
+            print(f'Init trajectory, Section changes to {self.section}')
         self.section = 0
         if self.low:
             if self.road_type == "Ramp":
@@ -35,21 +37,28 @@ class Trajectory:
             self.xy = self.b.get_xy_points()
 
     def manage_traj(self, car_pos):
-        carx, cary, caryaw = car_pos
+        carx, cary, carz, caryaw = car_pos
         self.find_lookahead_traj(carx, cary, caryaw)
         if 0 not in self.distances:
             self.devDist, self.devAng = self.calculate_dev(carx, cary, caryaw)
-        if self.road_type == "Ramp":
-            self.is_traj_shoud_change(carx)
+        if self.road_type == "Ramp" and self.low:
+            self.is_traj_shoud_change(carx, cary, carz)
 
-    def is_traj_shoud_change(self, carx):
-        if self.low and self.road_type == "Ramp" and self.section == 0:
+    def is_traj_shoud_change(self, carx, cary, carz):
+        if self.section == 0:
             if carx >= 690:
-                print("Trajectory Changed")
+                if self.env_num == 0:
+                    print("Section change to 1")
                 self.section = 1
                 self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj2.csv").loc[:,
                           ["traj_tx", "traj_ty"]].values
-
+        elif self.section == 1:
+            if carx < 690 and cary > -100 and carz > -3:
+                if self.env_num == 0:
+                    print("Section change to 0")
+                self.section = 0
+                self.xy = pd.read_csv(f"datafiles/{self.road_type}/datasets_traj1.csv").loc[:,
+                          ["traj_tx", "traj_ty"]].values
     def update_traj(self, car_pos, action):
         carx, cary, caryaw = car_pos
         action1 = action[0] #/ np.pi
@@ -70,7 +79,7 @@ class Trajectory:
         for dist in self.distances:
             lookahead_idx = min_idx
             total_distance = 0.0
-            while total_distance < dist and lookahead_idx + 1 < len(self.xy):
+            while total_distance <= dist and lookahead_idx + 1 < len(self.xy):
                 total_distance += np.linalg.norm(self.xy[lookahead_idx + 1] - self.xy[lookahead_idx])
                 lookahead_idx += 1
 
@@ -80,7 +89,7 @@ class Trajectory:
                 result_points.append(self.xy[-1])
 
             if dist == 0:
-                self.devDist, self.devAng = calculate_dev_low([x, y, yaw], self.xy, index=lookahead_idx)
+                self.devDist, self.devAng = calculate_dev_low([x, y, yaw], self.xy, index=min_idx)
         self.lookahed_traj = np.array(result_points)
 
     def find_traj_points(self, x, y, yaw):
