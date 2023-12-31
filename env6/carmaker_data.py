@@ -90,7 +90,7 @@ class Data:
         elif self.road_type == "Eight_20m":
             col_reward = 0
         else:
-            col_reward = 0
+            col_reward = abs(self.alHori) * 1500
 
         e = - col_reward - dist_reward - ang_reward
         self.reward = e
