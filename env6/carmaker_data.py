@@ -69,7 +69,7 @@ class Data:
         self.car_shape = self.car.shape_car(self.carx, self.cary, self.caryaw)
 
         if self.test_num % 400 == 0 and self.env_num == 0:
-            print(f"Time: {round(self.time, 2)}, Pos : ({round(self.carx, 2)}, {round(self.cary, 2)} {round(self.carz, 2)})"
+            print(f"Time: {round(self.time, 2)}, Pos : ({round(self.carx, 2)}, {round(self.cary, 2)} {round(self.carz, 2)}) "
                   f"Reward: [dist : {round(self.devDist,2)}] [angle : {round(self.devAng, 2)}]")
 
     def manage_state_low(self):

@@ -39,8 +39,8 @@ class Trajectory:
     def manage_traj(self, car_pos):
         carx, cary, carz, caryaw = car_pos
         self.find_lookahead_traj(carx, cary, caryaw)
-        if 0 not in self.distances:
-            self.devDist, self.devAng = self.calculate_dev(carx, cary, caryaw)
+        #if 0 not in self.distances:
+        self.devDist, self.devAng = self.calculate_dev(carx, cary, caryaw)
         if self.road_type == "Ramp" and self.low:
             self.is_traj_shoud_change(carx, cary, carz)
 
@@ -77,8 +77,8 @@ class Trajectory:
         min_idx = np.argmin(np.sqrt(np.sum((self.xy - [x, y]) ** 2, axis=1)))
 
         for dist in self.distances:
-            if dist == 0:
-                self.devDist, self.devAng = calculate_dev_low([x, y, yaw], self.xy, index=min_idx)
+            #if dist == 0:
+            #    self.devDist, self.devAng = calculate_dev_low([x, y, yaw], self.xy, index=min_idx)
             lookahead_idx = min_idx
             total_distance = 0.0
             while total_distance <= dist and lookahead_idx + 1 < len(self.xy):
